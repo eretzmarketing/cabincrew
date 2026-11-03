@@ -69,7 +69,7 @@ pm2 save
 
 # Volta sozinho depois de reiniciar o servidor
 LINHA="@reboot . $NVM_DIR/nvm.sh && pm2 resurrect"
-( crontab -l 2>/dev/null | grep -v "pm2 resurrect" ; echo "$LINHA" ) | crontab -
+{ crontab -l 2>/dev/null | grep -v "pm2 resurrect" || true; echo "$LINHA"; } | crontab - || echo "Aviso: não foi possível agendar o reinício automático (crontab)."
 
 echo
 echo "Pronto! Teste em https://$DOMINIO"
