@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { sair } from "@/app/actions";
-import { ApelidoForm } from "@/components/forms";
+import { NovaSenhaForm, PerfilForm } from "@/components/forms";
 import { getUser } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Minha conta", robots: { index: false } };
 
 export default async function ContaPage() {
   const { supabase, user, profile } = await getUser();
-  if (!user || !profile) redirect("/entrar?next=/conta");
+  if (!user || !profile) redirect("/entrar?modo=entrar&next=/conta");
 
   const { count } = await supabase.from("relatos").select("id", { count: "exact", head: true }).eq("autor_id", user.id);
 
@@ -26,10 +26,17 @@ export default async function ContaPage() {
             <span className="font-display text-[28px] font-extrabold">{count ?? 0}</span>
           </div>
         </div>
-        <div className="flex flex-col gap-4 rounded-[20px] border border-line bg-white p-6">
-          <p className="text-[15px] text-ink-2">Conectado como <strong className="text-navy">{user.email}</strong></p>
-          <ApelidoForm atual={profile.apelido} />
-        </div>
+        <section className="flex flex-col gap-4 rounded-[20px] border border-line bg-white p-6">
+          <div className="flex flex-col gap-1">
+            <h2 className="font-display text-xl font-bold">Meus dados</h2>
+            <p className="text-[15px] text-ink-2">E-mail: <strong className="text-navy">{user.email}</strong></p>
+          </div>
+          <PerfilForm p={profile} />
+        </section>
+        <section className="flex flex-col gap-4 rounded-[20px] border border-line bg-white p-6">
+          <h2 className="font-display text-xl font-bold">Trocar senha</h2>
+          <NovaSenhaForm />
+        </section>
         <form action={sair}>
           <button type="submit" className="min-h-11 cursor-pointer rounded-full border-2 border-line bg-white px-5 font-semibold text-navy hover:border-navy">Sair</button>
         </form>

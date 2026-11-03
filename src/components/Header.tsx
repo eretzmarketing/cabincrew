@@ -31,12 +31,12 @@ export default async function Header() {
             </Link>
           ) : (
             <>
-              <Link href="/entrar" className="hidden px-2 py-3 text-[15px] font-semibold text-navy hover:text-brand-strong sm:inline">Entrar</Link>
+              <Link href="/entrar?modo=entrar" className="hidden px-2 py-3 text-[15px] font-semibold text-navy hover:text-brand-strong sm:inline">Entrar</Link>
               <Link
-                href="/entrar"
+                href="/entrar?modo=cadastro"
                 className="inline-flex min-h-11 items-center rounded-full bg-brand-strong px-5 font-display text-[15px] font-bold text-white hover:bg-brand-deep"
               >
-                <span className="sm:hidden">Entrar</span>
+                <span className="sm:hidden">Criar conta</span>
                 <span className="hidden sm:inline">Criar conta grátis</span>
               </Link>
             </>

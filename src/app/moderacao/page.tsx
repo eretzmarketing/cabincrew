@@ -20,7 +20,7 @@ export default async function ModeracaoPage() {
   const { supabase, profile } = await getUser();
   if (!profile?.is_admin) redirect("/");
 
-  const [{ data: companhias }, { data: selecoes }, { data: relatos }, { count: espera }] = await Promise.all([
+  const [{ data: companhias }, { data: selecoes }, { data: relatos }, { count: espera }, { data: cadastros, count: totalCadastros }] = await Promise.all([
     supabase.from("companhias").select("id, nome").order("nome"),
     supabase.from("selecoes_resumo").select("*").order("mes_ref", { ascending: false }),
     supabase
@@ -29,6 +29,11 @@ export default async function ModeracaoPage() {
       .order("created_at", { ascending: false })
       .limit(200),
     supabase.from("lista_espera").select("email", { count: "exact", head: true }),
+    supabase
+      .from("profiles")
+      .select("nome, whatsapp, escola, pontos, created_at", { count: "exact" })
+      .order("created_at", { ascending: false })
+      .limit(100),
   ]);
 
   const pendentes = ((relatos ?? []) as unknown as Pendente[]).filter(
@@ -66,6 +71,31 @@ export default async function ModeracaoPage() {
               </form>
             </article>
           ))}
+        </section>
+
+        <section className="flex flex-col gap-4">
+          <h2 className="font-display text-xl font-bold">Cadastros ({totalCadastros ?? 0})</h2>
+          <div className="overflow-x-auto rounded-2xl border border-line bg-white">
+            <table className="w-full min-w-[720px] text-left text-[15px]">
+              <thead className="border-b border-line text-sm text-muted">
+                <tr><th className="p-3 font-semibold">Nome</th><th className="p-3 font-semibold">WhatsApp</th><th className="p-3 font-semibold">Escola</th><th className="p-3 font-semibold">Pontos</th><th className="p-3 font-semibold">Cadastro</th></tr>
+              </thead>
+              <tbody>
+                {(cadastros ?? []).map((c, i) => (
+                  <tr key={i} className="border-b border-[#eceef3] last:border-0">
+                    <td className="p-3">{c.nome ?? "—"}</td>
+                    <td className="p-3">
+                      {c.whatsapp ? <a href={`https://wa.me/${c.whatsapp.replace("+", "")}`} target="_blank" rel="noreferrer">{c.whatsapp}</a> : "—"}
+                    </td>
+                    <td className="p-3">{c.escola ?? "—"}</td>
+                    <td className="p-3">{c.pontos}</td>
+                    <td className="p-3">{new Date(c.created_at).toLocaleDateString("pt-BR")}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <span className="text-sm text-muted">Mostrando os 100 mais recentes. Para exportar todos: Supabase › Table Editor › profiles › Export CSV.</span>
         </section>
 
         <section className="flex flex-col gap-4 rounded-[20px] border border-line bg-white p-6">

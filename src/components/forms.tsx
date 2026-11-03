@@ -2,15 +2,20 @@
 
 import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
+import Link from "next/link";
 import {
+  cadastrar,
   criarSelecao,
+  definirNovaSenha,
+  entrar,
   entrarListaEspera,
-  enviarLink,
+  esqueciSenha,
   publicarRelato,
-  salvarApelido,
+  salvarPerfil,
   type FormState,
 } from "@/app/actions";
 import { FASES } from "@/lib/forum";
+import { ESCOLAS, ESCOLA_OUTRA } from "@/lib/escolas";
 
 const input =
   "min-h-12 w-full rounded-xl border border-[#c9cedb] bg-white px-3.5 text-[15px] text-navy placeholder:text-muted";
@@ -57,10 +62,82 @@ export function ListaEsperaForm() {
   );
 }
 
+/* ---------- Escola: lista + "não está na lista" ---------- */
+function CampoEscola({ inicial = "" }: { inicial?: string }) {
+  const naLista = !inicial || ESCOLAS.includes(inicial);
+  const [sel, setSel] = useState(naLista ? inicial : "__outra");
+  return (
+    <div className="flex flex-col gap-3">
+      <label className={label}>
+        Escola de aviação
+        <select name="escola" required value={sel} onChange={(e) => setSel(e.target.value)} className={input}>
+          <option value="" disabled>Selecione sua escola</option>
+          <option value="__outra">{ESCOLA_OUTRA}</option>
+          {ESCOLAS.map((e) => <option key={e} value={e}>{e}</option>)}
+        </select>
+      </label>
+      {sel === "__outra" && (
+        <label className={label}>
+          Nome da sua escola
+          <input name="escola_outra" required maxLength={120} defaultValue={naLista ? "" : inicial} placeholder="Digite o nome da escola" className={input} />
+        </label>
+      )}
+    </div>
+  );
+}
+
+/** Formata enquanto digita: (11) 98765-4321 */
+function formatarWhatsapp(v: string) {
+  const d = v.replace(/\D/g, "").replace(/^55(?=\d{10,11}$)/, "").slice(0, 11);
+  if (d.length <= 2) return d.length ? `(${d}` : "";
+  if (d.length <= 6) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
+  if (d.length <= 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
+  return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
+}
+
+function CampoWhatsapp({ inicial = "" }: { inicial?: string }) {
+  const [v, setV] = useState(formatarWhatsapp(inicial));
+  return (
+    <label className={label}>
+      WhatsApp
+      <input name="whatsapp" type="tel" inputMode="tel" autoComplete="tel-national" required value={v} onChange={(e) => setV(formatarWhatsapp(e.target.value))} placeholder="(11) 98765-4321" className={input} />
+    </label>
+  );
+}
+
+/* ---------- Cadastro ---------- */
+export function CadastroForm({ next }: { next: string }) {
+  const [state, action] = useActionState(cadastrar, undefined);
+  return (
+    <form action={action} className="flex flex-col gap-4">
+      <input type="hidden" name="next" value={next} />
+      <label className={label}>
+        Nome completo
+        <input name="nome" required maxLength={80} autoComplete="name" placeholder="Seu nome" className={input} />
+      </label>
+      <label className={label}>
+        E-mail
+        <input name="email" type="email" required autoComplete="email" placeholder="voce@email.com" className={input} />
+      </label>
+      <CampoWhatsapp />
+      <CampoEscola />
+      <label className={label}>
+        Crie uma senha
+        <input name="senha" type="password" required minLength={8} autoComplete="new-password" placeholder="Mínimo de 8 caracteres" className={input} />
+      </label>
+      <label className="flex min-h-11 cursor-pointer items-start gap-3 text-sm leading-relaxed text-ink-2">
+        <input type="checkbox" name="aceite" required className="mt-0.5 h-5 w-5 shrink-0 accent-brand-strong" />
+        <span>Li e aceito as <Link href="/regras" target="_blank" className="font-semibold text-brand-strong underline">regras do fórum</Link> e a <Link href="/privacidade" target="_blank" className="font-semibold text-brand-strong underline">política de privacidade</Link>.</span>
+      </label>
+      <Aviso state={state} />
+      <Enviar className="w-full">Criar minha conta</Enviar>
+    </form>
+  );
+}
+
 /* ---------- Login ---------- */
 export function EntrarForm({ next }: { next: string }) {
-  const [state, action] = useActionState(enviarLink, undefined);
-  if (state?.ok) return <Aviso state={state} />;
+  const [state, action] = useActionState(entrar, undefined);
   return (
     <form action={action} className="flex flex-col gap-4">
       <input type="hidden" name="next" value={next} />
@@ -68,24 +145,65 @@ export function EntrarForm({ next }: { next: string }) {
         E-mail
         <input name="email" type="email" required autoComplete="email" placeholder="voce@email.com" className={input} />
       </label>
-      <Enviar className="w-full">Receber link de acesso</Enviar>
+      <label className={label}>
+        Senha
+        <input name="senha" type="password" required autoComplete="current-password" className={input} />
+      </label>
+      <Link href="/entrar?modo=esqueci" className="self-end text-sm font-semibold">Esqueci minha senha</Link>
       <Aviso state={state} />
+      <Enviar className="w-full">Entrar</Enviar>
     </form>
   );
 }
 
-/* ---------- Apelido ---------- */
-export function ApelidoForm({ atual }: { atual: string }) {
-  const [state, action] = useActionState(salvarApelido, undefined);
+/* ---------- Esqueci a senha ---------- */
+export function EsqueciForm() {
+  const [state, action] = useActionState(esqueciSenha, undefined);
+  if (state?.ok) return <Aviso state={state} />;
   return (
-    <form action={action} className="flex flex-col gap-3">
+    <form action={action} className="flex flex-col gap-4">
+      <label className={label}>
+        E-mail da sua conta
+        <input name="email" type="email" required autoComplete="email" className={input} />
+      </label>
+      <Aviso state={state} />
+      <Enviar className="w-full">Enviar link para nova senha</Enviar>
+    </form>
+  );
+}
+
+export function NovaSenhaForm() {
+  const [state, action] = useActionState(definirNovaSenha, undefined);
+  return (
+    <form action={action} className="flex flex-col gap-4">
+      <label className={label}>
+        Nova senha
+        <input name="senha" type="password" required minLength={8} autoComplete="new-password" className={input} />
+      </label>
+      <Aviso state={state} />
+      <Enviar className="self-start">Salvar nova senha</Enviar>
+    </form>
+  );
+}
+
+/* ---------- Meus dados ---------- */
+export function PerfilForm({ p }: { p: { apelido: string; nome: string | null; whatsapp: string | null; escola: string | null } }) {
+  const [state, action] = useActionState(salvarPerfil, undefined);
+  return (
+    <form action={action} className="flex flex-col gap-4">
+      <label className={label}>
+        Nome completo
+        <input name="nome" required maxLength={80} defaultValue={p.nome ?? ""} className={input} />
+      </label>
       <label className={label}>
         Apelido público
-        <input name="apelido" defaultValue={atual} maxLength={40} className={input} />
+        <input name="apelido" required maxLength={40} defaultValue={p.apelido} className={input} />
+        <span className="text-sm font-normal text-muted">Aparece apenas nos relatos que você não publicar como anônimo.</span>
       </label>
-      <span className="text-sm text-muted">Aparece apenas nos relatos que você não publicar como anônimo.</span>
-      <Enviar className="self-start">Salvar</Enviar>
+      <CampoWhatsapp inicial={p.whatsapp ?? ""} />
+      <CampoEscola inicial={p.escola ?? ""} />
       <Aviso state={state} />
+      <Enviar className="self-start">Salvar</Enviar>
     </form>
   );
 }

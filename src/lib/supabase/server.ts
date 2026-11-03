@@ -36,7 +36,7 @@ export async function getUser() {
   if (!user) return { supabase, user: null, profile: null };
   const { data: profile } = await supabase
     .from("profiles")
-    .select("apelido, is_admin, pontos")
+    .select("apelido, is_admin, pontos, nome, whatsapp, escola")
     .eq("id", user.id)
     .single();
   return { supabase, user, profile };

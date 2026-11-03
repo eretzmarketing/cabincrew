@@ -18,44 +18,119 @@ export async function entrarListaEspera(_: FormState, form: FormData): Promise<F
   return { ok: true, msg: "Pronto! Avisaremos você quando o Crew Select abrir." };
 }
 
-/* ---------- Login por link no e-mail ---------- */
-export async function enviarLink(_: FormState, form: FormData): Promise<FormState> {
-  const email = String(form.get("email") ?? "").trim().toLowerCase();
-  const next = String(form.get("next") ?? "/forum");
-  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return { erro: "Digite um e-mail válido." };
+/* ---------- Cadastro e login (e-mail + senha, sem confirmação por e-mail) ---------- */
+const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
+function destinoSeguro(form: FormData) {
+  return seguro(String(form.get("next") ?? "/forum"));
+}
+
+/** Aceita (11) 98765-4321, 11987654321, +55 11 98765-4321… e devolve +5511987654321 */
+function normalizarWhatsapp(bruto: string) {
+  let d = bruto.replace(/\D/g, "");
+  if (d.startsWith("55") && d.length >= 12) d = d.slice(2);
+  if (d.length !== 10 && d.length !== 11) return null;
+  return `+55${d}`;
+}
+
+export async function cadastrar(_: FormState, form: FormData): Promise<FormState> {
+  const nome = String(form.get("nome") ?? "").trim().replace(/\s+/g, " ");
+  const email = String(form.get("email") ?? "").trim().toLowerCase();
+  const whatsapp = normalizarWhatsapp(String(form.get("whatsapp") ?? ""));
+  const escolaSel = String(form.get("escola") ?? "");
+  const escola = (escolaSel === "__outra" ? String(form.get("escola_outra") ?? "") : escolaSel).trim();
+  const senha = String(form.get("senha") ?? "");
+
+  if (nome.length < 2 || nome.length > 80) return { erro: "Informe seu nome." };
+  if (!EMAIL_RE.test(email)) return { erro: "Digite um e-mail válido." };
+  if (!whatsapp) return { erro: "Digite um WhatsApp válido com DDD, por exemplo (11) 98765-4321." };
+  if (escola.length < 2) return { erro: "Informe sua escola de aviação." };
+  if (senha.length < 8) return { erro: "A senha precisa ter pelo menos 8 caracteres." };
+  if (form.get("aceite") !== "on") return { erro: "Aceite as regras do fórum e a política de privacidade." };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password: senha,
+    options: { data: { nome, whatsapp, escola: escola.slice(0, 120) } },
+  });
+  if (error) {
+    if (/registered|already/i.test(error.message)) return { erro: "Este e-mail já tem cadastro. Use a aba Entrar." };
+    if (/password/i.test(error.message)) return { erro: "Escolha uma senha mais forte (letras e números, 8+ caracteres)." };
+    return { erro: "Não foi possível criar a conta agora. Tente de novo em instantes." };
+  }
+  if (!data.session) {
+    return { erro: "Conta criada, mas o login automático está desativado no Supabase (desligue “Confirm email”)." };
+  }
+  revalidatePath("/", "layout");
+  redirect(destinoSeguro(form));
+}
+
+export async function entrar(_: FormState, form: FormData): Promise<FormState> {
+  const email = String(form.get("email") ?? "").trim().toLowerCase();
+  const senha = String(form.get("senha") ?? "");
+  if (!EMAIL_RE.test(email) || !senha) return { erro: "Preencha e-mail e senha." };
+  const supabase = await createClient();
+  const { error } = await supabase.auth.signInWithPassword({ email, password: senha });
+  if (error) return { erro: "E-mail ou senha incorretos." };
+  revalidatePath("/", "layout");
+  redirect(destinoSeguro(form));
+}
+
+export async function esqueciSenha(_: FormState, form: FormData): Promise<FormState> {
+  const email = String(form.get("email") ?? "").trim().toLowerCase();
+  if (!EMAIL_RE.test(email)) return { erro: "Digite um e-mail válido." };
   const h = await headers();
   const origem = process.env.NEXT_PUBLIC_SITE_URL ?? `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host")}`;
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithOtp({
-    email,
-    options: { emailRedirectTo: `${origem}/auth/callback?next=${encodeURIComponent(seguro(next))}` },
+  await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${origem}/auth/callback?next=/conta/nova-senha`,
   });
-  if (error) return { erro: "Não conseguimos enviar o link. Aguarde um minuto e tente de novo." };
-  return { ok: true, msg: `Enviamos um link de acesso para ${email}. Abra o e-mail neste mesmo navegador.` };
+  return { ok: true, msg: "Se houver uma conta com esse e-mail, enviamos um link para criar uma nova senha. Confira também o spam." };
+}
+
+export async function definirNovaSenha(_: FormState, form: FormData): Promise<FormState> {
+  const senha = String(form.get("senha") ?? "");
+  if (senha.length < 8) return { erro: "A senha precisa ter pelo menos 8 caracteres." };
+  const { supabase, user } = await getUser();
+  if (!user) redirect("/entrar?modo=esqueci");
+  const { error } = await supabase.auth.updateUser({ password: senha });
+  if (error) return { erro: "Não foi possível trocar a senha. Escolha outra e tente de novo." };
+  return { ok: true, msg: "Senha atualizada." };
 }
 
 export async function sair() {
   const supabase = await createClient();
   await supabase.auth.signOut();
+  revalidatePath("/", "layout");
   redirect("/");
 }
 
-export async function salvarApelido(_: FormState, form: FormData): Promise<FormState> {
+export async function salvarPerfil(_: FormState, form: FormData): Promise<FormState> {
   const apelido = String(form.get("apelido") ?? "").trim();
-  if (apelido.length < 2 || apelido.length > 40) return { erro: "Use entre 2 e 40 caracteres." };
+  const nome = String(form.get("nome") ?? "").trim().replace(/\s+/g, " ");
+  const whatsapp = normalizarWhatsapp(String(form.get("whatsapp") ?? ""));
+  const escolaSel = String(form.get("escola") ?? "");
+  const escola = (escolaSel === "__outra" ? String(form.get("escola_outra") ?? "") : escolaSel).trim();
+  if (apelido.length < 2 || apelido.length > 40) return { erro: "O apelido precisa ter entre 2 e 40 caracteres." };
+  if (nome.length < 2 || nome.length > 80) return { erro: "Informe seu nome." };
+  if (!whatsapp) return { erro: "WhatsApp inválido. Use o DDD, por exemplo (11) 98765-4321." };
+  if (escola.length < 2) return { erro: "Informe sua escola de aviação." };
   const { supabase, user } = await getUser();
-  if (!user) redirect("/entrar");
-  const { error } = await supabase.from("profiles").update({ apelido }).eq("id", user.id);
+  if (!user) redirect("/entrar?modo=entrar");
+  const { error } = await supabase
+    .from("profiles")
+    .update({ apelido, nome, whatsapp, escola: escola.slice(0, 120) })
+    .eq("id", user.id);
   if (error) return { erro: "Não foi possível salvar." };
   revalidatePath("/", "layout");
-  return { ok: true, msg: "Apelido atualizado." };
+  return { ok: true, msg: "Dados atualizados." };
 }
 
 /* ---------- Relatos ---------- */
 export async function publicarRelato(_: FormState, form: FormData): Promise<FormState> {
   const { supabase, user } = await getUser();
-  if (!user) redirect("/entrar");
+  if (!user) redirect("/entrar?modo=entrar");
 
   const slug = String(form.get("slug") ?? "");
   const fase = Number(form.get("fase"));
@@ -97,7 +172,7 @@ export async function publicarRelato(_: FormState, form: FormData): Promise<Form
 export async function alternarConfirmacao(form: FormData) {
   const { supabase, user } = await getUser();
   const slug = String(form.get("slug"));
-  if (!user) redirect(`/entrar?next=/forum/${slug}`);
+  if (!user) redirect(`/entrar?modo=cadastro&next=/forum/${slug}`);
   const relatoId = String(form.get("relato_id"));
   if (form.get("confirmei") === "true") {
     await supabase.from("confirmacoes").delete().eq("relato_id", relatoId).eq("user_id", user.id);
@@ -110,7 +185,7 @@ export async function alternarConfirmacao(form: FormData) {
 export async function denunciar(form: FormData) {
   const { supabase, user } = await getUser();
   const slug = String(form.get("slug"));
-  if (!user) redirect(`/entrar?next=/forum/${slug}`);
+  if (!user) redirect(`/entrar?modo=cadastro&next=/forum/${slug}`);
   await supabase.from("denuncias").insert({
     relato_id: String(form.get("relato_id")),
     user_id: user.id,
@@ -122,7 +197,7 @@ export async function denunciar(form: FormData) {
 
 export async function apagarMeuRelato(form: FormData) {
   const { supabase, user } = await getUser();
-  if (!user) redirect("/entrar");
+  if (!user) redirect("/entrar?modo=entrar");
   const slug = String(form.get("slug"));
   await supabase.from("relatos").delete().eq("id", String(form.get("relato_id"))).eq("autor_id", user.id);
   revalidatePath(`/forum/${slug}`);

@@ -19,7 +19,7 @@ export default async function RelatarPage({
   const { slug } = await params;
   const { fase } = await searchParams;
   const { supabase, user } = await getUser();
-  if (!user) redirect(`/entrar?next=/forum/${slug}/relatar`);
+  if (!user) redirect(`/entrar?modo=cadastro&next=/forum/${slug}/relatar`);
 
   const { data } = await supabase.from("selecoes_resumo").select("*").eq("slug", slug).maybeSingle();
   const s = data as Selecao | null;

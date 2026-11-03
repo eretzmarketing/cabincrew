@@ -86,7 +86,7 @@ export default async function SelecaoPage({ params, searchParams }: Props) {
             </div>
             {s.status !== "encerrada" && (
               <Link
-                href={logado ? `/forum/${slug}/relatar?fase=${fase}` : `/entrar?next=/forum/${slug}/relatar?fase=${fase}`}
+                href={logado ? `/forum/${slug}/relatar?fase=${fase}` : `/entrar?modo=cadastro&next=/forum/${slug}/relatar?fase=${fase}`}
                 className="inline-flex min-h-12 items-center rounded-full bg-brand-strong px-[22px] font-display text-[15px] font-bold text-white hover:bg-brand-deep"
               >
                 Relatar minha etapa
@@ -142,7 +142,7 @@ export default async function SelecaoPage({ params, searchParams }: Props) {
               <strong className="font-display text-lg">Ainda não há relatos nesta fase</strong>
               <span className="max-w-[420px] text-[15px] text-ink-2">Se você já passou por ela neste processo, seu relato vai ajudar muitos candidatos.</span>
               {s.status !== "encerrada" && (
-                <Link href={logado ? `/forum/${slug}/relatar?fase=${fase}` : `/entrar?next=/forum/${slug}/relatar?fase=${fase}`} className="rounded-full bg-brand-strong px-[22px] py-3.5 font-display text-[15px] font-bold text-white hover:bg-brand-deep">
+                <Link href={logado ? `/forum/${slug}/relatar?fase=${fase}` : `/entrar?modo=cadastro&next=/forum/${slug}/relatar?fase=${fase}`} className="rounded-full bg-brand-strong px-[22px] py-3.5 font-display text-[15px] font-bold text-white hover:bg-brand-deep">
                   Seja o primeiro a relatar
                 </Link>
               )}
@@ -229,7 +229,7 @@ export default async function SelecaoPage({ params, searchParams }: Props) {
           <div className="flex flex-col gap-3.5 rounded-[20px] bg-navy p-[26px] text-white">
             <strong className="font-display text-[19px]">Já passou por alguma fase?</strong>
             <span className="text-[15px] leading-relaxed text-[#d7dbe6]">Leva dois minutos. Relatos confirmados por outros candidatos ganham o selo de verificado.</span>
-            <Link href={logado ? `/forum/${slug}/relatar?fase=${fase}` : `/entrar?next=/forum/${slug}/relatar?fase=${fase}`} className="self-start rounded-full bg-brand-strong px-5 py-3 font-display text-[15px] font-bold text-white hover:bg-brand-deep">
+            <Link href={logado ? `/forum/${slug}/relatar?fase=${fase}` : `/entrar?modo=cadastro&next=/forum/${slug}/relatar?fase=${fase}`} className="self-start rounded-full bg-brand-strong px-5 py-3 font-display text-[15px] font-bold text-white hover:bg-brand-deep">
               Relatar minha etapa
             </Link>
           </div>

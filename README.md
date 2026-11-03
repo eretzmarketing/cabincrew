@@ -9,7 +9,7 @@ Site da comunidade Cabin Crew: Home e Fórum de Seleções de comissário de voo
 - **Home** com seleções em andamento, fases, lista de espera do Crew Select
 - **Fórum**: lista de seleções com filtro por companhia, página de cada seleção com abas por fase, linha do tempo e contadores
 - **Relatos** com campos padronizados, opção de anônimo, confirmação ("Passei por isso também") e selo de verificado a partir de 3 confirmações
-- **Login sem senha** (link enviado por e-mail); a conta é criada no primeiro acesso
+- **Cadastro direto** com nome, e-mail, WhatsApp, escola de aviação e senha, sem confirmação por e-mail (a pessoa entra na hora); recuperação de senha por e-mail
 - **Pontos**: +5 por relato, +2 por confirmação recebida
 - **Moderação**: denúncias, ocultação automática com 3 denúncias, painel `/moderacao` para criar seleções, mudar status e revisar relatos
 - Regras do fórum, privacidade, sitemap, robots, ícones e imagem de compartilhamento
@@ -20,11 +20,13 @@ Site da comunidade Cabin Crew: Home e Fórum de Seleções de comissário de voo
 ### 1. Supabase
 1. Crie um projeto em [supabase.com](https://supabase.com) (região São Paulo).
 2. Em **SQL Editor**, cole e rode todo o arquivo `supabase/migrations/0001_forum.sql`.
-3. (Opcional, para testar) rode `supabase/seed_exemplo.sql`, que cria três seleções de exemplo.
-4. Em **Authentication › URL Configuration**:
+3. Rode também `supabase/migrations/0002_cadastro.sql` (nome, WhatsApp e escola no perfil).
+   (Opcional, para testar) rode `supabase/seed_exemplo.sql`, que cria três seleções de exemplo.
+4. Em **Authentication › Sign In / Providers › Email**, **desligue "Confirm email"**. Assim o cadastro entra direto, sem depender do e-mail.
+5. Em **Authentication › URL Configuration** (usado só na recuperação de senha):
    - *Site URL*: `https://cabincrew.com.br`
    - *Redirect URLs*: `https://cabincrew.com.br/auth/callback` e `http://localhost:3000/auth/callback`
-5. Em **Project Settings › API**, copie a **Project URL** e a **publishable key**.
+6. Em **Project Settings › API**, copie a **Project URL** e a **publishable key**.
    Nunca coloque a *secret key* / *service_role* no site.
 
 ### 2. Vercel
@@ -70,8 +72,8 @@ where id = (select id from auth.users where email = 'SEU@EMAIL.COM');
 
 O link **Moderação** aparece no menu.
 
-### 4. E-mail de login (recomendado antes do lançamento)
-O Supabase envia poucos e-mails por hora no plano gratuito. Para produção, configure um SMTP próprio em **Authentication › Emails › SMTP Settings** (Resend, Amazon SES, Brevo etc.) e traduza o modelo do e-mail "Magic Link" para português.
+### 4. E-mail de recuperação de senha (recomendado antes do lançamento)
+O cadastro não usa e-mail, mas a recuperação de senha sim. O Supabase envia poucos e-mails por hora no plano gratuito. Para produção, configure um SMTP próprio em **Authentication › Emails › SMTP Settings** (Resend, Amazon SES, Brevo etc.) e traduza o modelo do e-mail "Reset Password" para português.
 
 ## Rodar no computador
 
