@@ -37,6 +37,17 @@ Site da comunidade Cabin Crew: Home e Fórum de Seleções de comissário de voo
 4. Em **Settings › Domains**, adicione `cabincrew.com.br`, `www.cabincrew.com.br`, `comissariadevoo.com.br` e `www.comissariadevoo.com.br`, e ajuste o DNS no Registro.br como a Vercel indicar.
    Só aponte o `comissariadevoo.com.br` quando quiser tirar o redirecionamento atual para a Horsky.
 
+### 2b. Alternativa: VPS própria (no lugar da Vercel)
+1. No Registro.br, aponte `cabincrew.com.br` e `www` (registro **A**) para o IP da VPS.
+2. Entre na VPS por SSH e rode:
+   ```bash
+   curl -fsSL https://raw.githubusercontent.com/eretzmarketing/cabincrew/main/deploy/instalar-vps.sh -o instalar.sh
+   bash instalar.sh
+   ```
+   O script pede a Project URL e a publishable key do Supabase, compila, mantém o site no ar com PM2,
+   configura o Nginx e ativa o HTTPS.
+3. Para atualizar depois de novas mudanças no GitHub, rode `bash /var/www/cabincrew/deploy/instalar-vps.sh` de novo.
+
 ### 3. Virar administrador
 Depois de entrar no site com o seu e-mail, rode no SQL Editor:
 
