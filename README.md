@@ -1,36 +1,72 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Cabin Crew — cabincrew.com.br
 
-## Getting Started
+Site da comunidade Cabin Crew: Home e Fórum de Seleções de comissário de voo, com relatos organizados por companhia, processo seletivo e fase.
 
-First, run the development server:
+**Tecnologia:** Next.js 16 · Tailwind CSS 4 · Supabase (banco, login por e-mail) · hospedagem na Vercel.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## O que já funciona
+
+- **Home** com seleções em andamento, fases, lista de espera do Crew Select
+- **Fórum**: lista de seleções com filtro por companhia, página de cada seleção com abas por fase, linha do tempo e contadores
+- **Relatos** com campos padronizados, opção de anônimo, confirmação ("Passei por isso também") e selo de verificado a partir de 3 confirmações
+- **Login sem senha** (link enviado por e-mail); a conta é criada no primeiro acesso
+- **Pontos**: +5 por relato, +2 por confirmação recebida
+- **Moderação**: denúncias, ocultação automática com 3 denúncias, painel `/moderacao` para criar seleções, mudar status e revisar relatos
+- Regras do fórum, privacidade, sitemap, robots, ícones e imagem de compartilhamento
+- Redirecionamento 301 de `comissariadevoo.com.br` para `cabincrew.com.br`, página por página
+
+## Colocar no ar (passo a passo)
+
+### 1. Supabase
+1. Crie um projeto em [supabase.com](https://supabase.com) (região São Paulo).
+2. Em **SQL Editor**, cole e rode todo o arquivo `supabase/migrations/0001_forum.sql`.
+3. (Opcional, para testar) rode `supabase/seed_exemplo.sql`, que cria três seleções de exemplo.
+4. Em **Authentication › URL Configuration**:
+   - *Site URL*: `https://cabincrew.com.br`
+   - *Redirect URLs*: `https://cabincrew.com.br/auth/callback` e `http://localhost:3000/auth/callback`
+5. Em **Project Settings › API**, copie a **Project URL** e a **publishable key**.
+   Nunca coloque a *secret key* / *service_role* no site.
+
+### 2. Vercel
+1. Em [vercel.com](https://vercel.com), **Add New › Project** e importe o repositório `eretzmarketing/cabincrew`.
+2. Em **Environment Variables**, cadastre:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+   - `NEXT_PUBLIC_SITE_URL` = `https://cabincrew.com.br`
+3. Clique em **Deploy**.
+4. Em **Settings › Domains**, adicione `cabincrew.com.br`, `www.cabincrew.com.br`, `comissariadevoo.com.br` e `www.comissariadevoo.com.br`, e ajuste o DNS no Registro.br como a Vercel indicar.
+   Só aponte o `comissariadevoo.com.br` quando quiser tirar o redirecionamento atual para a Horsky.
+
+### 3. Virar administrador
+Depois de entrar no site com o seu e-mail, rode no SQL Editor:
+
+```sql
+update profiles set is_admin = true
+where id = (select id from auth.users where email = 'SEU@EMAIL.COM');
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+O link **Moderação** aparece no menu.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 4. E-mail de login (recomendado antes do lançamento)
+O Supabase envia poucos e-mails por hora no plano gratuito. Para produção, configure um SMTP próprio em **Authentication › Emails › SMTP Settings** (Resend, Amazon SES, Brevo etc.) e traduza o modelo do e-mail "Magic Link" para português.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Rodar no computador
 
-## Learn More
+```bash
+cp .env.example .env.local   # preencha os valores
+npm install
+npm run dev                  # http://localhost:3000
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Estrutura
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+src/app/                 páginas (home, forum, entrar, conta, moderacao, regras, privacidade)
+src/app/actions.ts       todas as ações (publicar, confirmar, denunciar, moderar…)
+src/components/          cabeçalho, rodapé, cards, formulários
+src/lib/forum.ts         fases, rótulos e formatação
+src/lib/supabase/        conexão com o Supabase
+supabase/migrations/     banco de dados e regras de segurança
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+A segurança está no banco (Row Level Security): mesmo chamando a API diretamente, ninguém publica em nome de outro, confirma o próprio relato, vê o autor de um relato anônimo ou se torna administrador.

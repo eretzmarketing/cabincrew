@@ -1,26 +1,33 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+  --font-display: var(--font-montserrat), system-ui, sans-serif;
+
+  /* Cabin Crew — paleta oficial */
+  --color-brand: #ef0036;        /* vermelho da marca: destaques e logo */
+  --color-brand-strong: #d10030; /* botões e links (contraste AA com branco) */
+  --color-brand-deep: #a30026;   /* hover */
+  --color-brand-soft: #fff4f6;
+  --color-brand-line: #ffd3dd;
+  --color-navy: #313950;         /* azul-marinho da marca */
+  --color-navy-deep: #232a3d;
+  --color-ink-2: #4a5168;
+  --color-muted: #5b6276;
+  --color-line: #e3e6ee;
+  --color-soft: #f5f6f9;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: #ffffff;
+  color: var(--color-navy);
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-brand);
+  outline-offset: 2px;
 }
