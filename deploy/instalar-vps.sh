@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # =====================================================================
+# ATENÇÃO: NÃO use em servidores com CloudPanel — use deploy/cloudpanel.sh.
 # Cabin Crew — instalação em VPS Ubuntu/Debian (rodar como root)
 #
 #   bash instalar-vps.sh

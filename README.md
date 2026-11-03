@@ -37,7 +37,19 @@ Site da comunidade Cabin Crew: Home e Fórum de Seleções de comissário de voo
 4. Em **Settings › Domains**, adicione `cabincrew.com.br`, `www.cabincrew.com.br`, `comissariadevoo.com.br` e `www.comissariadevoo.com.br`, e ajuste o DNS no Registro.br como a Vercel indicar.
    Só aponte o `comissariadevoo.com.br` quando quiser tirar o redirecionamento atual para a Horsky.
 
-### 2b. Alternativa: VPS própria (no lugar da Vercel)
+### 2a. Servidor com CloudPanel (recomendado se você usa CloudPanel)
+1. No CloudPanel, apague o site PHP antigo de `cabincrew.com.br` (se existir) e crie um **Node.js Site**:
+   domínio `cabincrew.com.br`, Node.js **22**, App Port **3000**.
+2. Envie o código para `htdocs/cabincrew.com.br` (File Manager, enviando o .zip e extraindo; ou deixe o script
+   baixar do GitHub).
+3. Conecte por SSH **como o usuário do site** e rode `bash ~/htdocs/cabincrew.com.br/deploy/cloudpanel.sh`.
+4. Na aba **SSL/TLS** do site, emita o certificado Let's Encrypt.
+5. Para o redirecionamento do domínio antigo, adicione `comissariadevoo.com.br` em *Settings › Domain aliases*
+   (ou crie um site de redirecionamento) quando quiser tirá-lo da Horsky.
+
+Não use o `instalar-vps.sh` em servidores com CloudPanel: ele altera o Nginx que o painel gerencia.
+
+### 2b. Alternativa: VPS sem painel (no lugar da Vercel)
 1. No Registro.br, aponte `cabincrew.com.br` e `www` (registro **A**) para o IP da VPS.
 2. Entre na VPS por SSH e rode:
    ```bash
