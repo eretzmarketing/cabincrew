@@ -1,7 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
+import { getConfig } from "@/lib/config";
 
-export default function Footer() {
+export default async function Footer() {
+  const { forum_ativo } = await getConfig();
   return (
     <footer className="bg-navy-deep px-6 pt-14 pb-10 text-[#c9cedb]">
       <div className="mx-auto flex max-w-[1152px] flex-col gap-9">
@@ -12,14 +14,17 @@ export default function Footer() {
           </div>
           <nav aria-label="Rodapé" className="flex flex-wrap gap-14 text-[15px]">
             <div className="flex flex-col gap-2.5">
-              <strong className="font-display text-white">Comunidade</strong>
-              <Link href="/forum" className="hover:text-white">Fórum de Seleções</Link>
-              <Link href="/regras" className="hover:text-white">Regras do fórum</Link>
+              <strong className="font-display text-white">Crew Select</strong>
+              <Link href="/crew-select" className="hover:text-white">Área do aluno</Link>
+              <Link href="/conta" className="hover:text-white">Minha conta</Link>
             </div>
-            <div className="flex flex-col gap-2.5">
-              <strong className="font-display text-white">Carreira</strong>
-              <Link href="/#crew-select" className="hover:text-white">Crew Select</Link>
-            </div>
+            {forum_ativo && (
+              <div className="flex flex-col gap-2.5">
+                <strong className="font-display text-white">Comunidade</strong>
+                <Link href="/forum" className="hover:text-white">Fórum de Seleções</Link>
+                <Link href="/regras" className="hover:text-white">Regras do fórum</Link>
+              </div>
+            )}
             <div className="flex flex-col gap-2.5">
               <strong className="font-display text-white">Cabin Crew</strong>
               <Link href="/privacidade" className="hover:text-white">Privacidade</Link>

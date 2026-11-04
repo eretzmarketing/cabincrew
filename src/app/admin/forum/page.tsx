@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { moderarRelato, mudarStatusSelecao } from "@/app/actions";
 import { CriarSelecaoForm } from "@/components/forms";
+import { Card, Chave, Titulo } from "@/components/admin-ui";
+import { getConfig } from "@/lib/config";
 import { STATUS_SELECAO, mesAno, type Selecao } from "@/lib/forum";
 import { getUser } from "@/lib/supabase/server";
 
-export const metadata: Metadata = { title: "Moderação", robots: { index: false } };
+export const metadata: Metadata = { title: "Fórum de Seleções" };
 
 type Pendente = {
   id: string;
@@ -16,11 +17,11 @@ type Pendente = {
   denuncias: { motivo: string; resolvida: boolean }[];
 };
 
-export default async function ModeracaoPage() {
-  const { supabase, profile } = await getUser();
-  if (!profile?.is_admin) redirect("/");
+export default async function AdminForumPage() {
+  const { supabase } = await getUser();
+  const cfg = await getConfig();
 
-  const [{ data: companhias }, { data: selecoes }, { data: relatos }, { count: espera }, { data: cadastros, count: totalCadastros }] = await Promise.all([
+  const [{ data: companhias }, { data: selecoes }, { data: relatos }] = await Promise.all([
     supabase.from("companhias").select("id, nome").order("nome"),
     supabase.from("selecoes_resumo").select("*").order("mes_ref", { ascending: false }),
     supabase
@@ -28,12 +29,6 @@ export default async function ModeracaoPage() {
       .select("id, texto, status, selecoes(slug), denuncias(motivo, resolvida)")
       .order("created_at", { ascending: false })
       .limit(200),
-    supabase.from("lista_espera").select("email", { count: "exact", head: true }),
-    supabase
-      .from("profiles")
-      .select("nome, whatsapp, escola, pontos, created_at", { count: "exact" })
-      .order("created_at", { ascending: false })
-      .limit(100),
   ]);
 
   const pendentes = ((relatos ?? []) as unknown as Pendente[]).filter(
@@ -43,12 +38,18 @@ export default async function ModeracaoPage() {
   const btn = "min-h-11 cursor-pointer rounded-full px-4 text-sm font-semibold";
 
   return (
-    <main className="bg-soft px-6 py-12">
-      <div className="mx-auto flex max-w-[1000px] flex-col gap-10">
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <h1 className="font-display text-[32px] font-extrabold">Moderação</h1>
-          <span className="text-[15px] text-ink-2">Lista de espera do Crew Select: <strong className="text-navy">{espera ?? 0}</strong> e-mails</span>
-        </div>
+    <>
+        <Titulo sub="Relatos dos candidatos por companhia, processo e fase.">Fórum de Seleções</Titulo>
+
+        <Card>
+          <Chave
+            chave="forum_ativo"
+            ligado={cfg.forum_ativo}
+            titulo="Fórum no site"
+            descricao="Desligado: o fórum some do menu e as páginas ficam indisponíveis para os alunos. Você, como administrador, continua podendo ver e preparar as seleções."
+          />
+          {!cfg.forum_ativo && <Link href="/forum" className="self-start text-sm font-semibold">Ver o fórum como administrador →</Link>}
+        </Card>
 
         <section className="flex flex-col gap-4">
           <h2 className="font-display text-xl font-bold">Relatos denunciados ou ocultos ({pendentes.length})</h2>
@@ -71,31 +72,6 @@ export default async function ModeracaoPage() {
               </form>
             </article>
           ))}
-        </section>
-
-        <section className="flex flex-col gap-4">
-          <h2 className="font-display text-xl font-bold">Cadastros ({totalCadastros ?? 0})</h2>
-          <div className="overflow-x-auto rounded-2xl border border-line bg-white">
-            <table className="w-full min-w-[720px] text-left text-[15px]">
-              <thead className="border-b border-line text-sm text-muted">
-                <tr><th className="p-3 font-semibold">Nome</th><th className="p-3 font-semibold">WhatsApp</th><th className="p-3 font-semibold">Escola</th><th className="p-3 font-semibold">Pontos</th><th className="p-3 font-semibold">Cadastro</th></tr>
-              </thead>
-              <tbody>
-                {(cadastros ?? []).map((c, i) => (
-                  <tr key={i} className="border-b border-[#eceef3] last:border-0">
-                    <td className="p-3">{c.nome ?? "—"}</td>
-                    <td className="p-3">
-                      {c.whatsapp ? <a href={`https://wa.me/${c.whatsapp.replace("+", "")}`} target="_blank" rel="noreferrer">{c.whatsapp}</a> : "—"}
-                    </td>
-                    <td className="p-3">{c.escola ?? "—"}</td>
-                    <td className="p-3">{c.pontos}</td>
-                    <td className="p-3">{new Date(c.created_at).toLocaleDateString("pt-BR")}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <span className="text-sm text-muted">Mostrando os 100 mais recentes. Para exportar todos: Supabase › Table Editor › profiles › Export CSV.</span>
         </section>
 
         <section className="flex flex-col gap-4 rounded-[20px] border border-line bg-white p-6">
@@ -131,7 +107,6 @@ export default async function ModeracaoPage() {
             </table>
           </div>
         </section>
-      </div>
-    </main>
+    </>
   );
 }

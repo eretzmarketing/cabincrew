@@ -13,7 +13,7 @@ export default async function EntrarPage({
   searchParams: Promise<{ next?: string; erro?: string; modo?: string }>;
 }) {
   const { next, erro, modo } = await searchParams;
-  const destino = next && next.startsWith("/") && !next.startsWith("//") ? next : "/forum";
+  const destino = next && next.startsWith("/") && !next.startsWith("//") ? next : "/crew-select";
   const { user } = await getUser();
   if (user) redirect(destino);
 
@@ -27,7 +27,7 @@ export default async function EntrarPage({
   return (
     <main className="flex min-h-[calc(100vh-200px)] bg-soft">
       <div className="relative hidden flex-1 md:block">
-        <Image src="/img/relato.jpg" alt="" fill priority sizes="50vw" className="object-cover object-[35%_center]" />
+        <Image src="/img/hero.jpg" alt="" fill priority sizes="50vw" className="object-cover object-[18%_center]" />
       </div>
       <div className="flex flex-1 items-start justify-center px-6 py-12 md:items-center">
         <div className="flex w-full max-w-[440px] flex-col gap-6">
@@ -48,7 +48,7 @@ export default async function EntrarPage({
                 </h1>
                 <p className="text-base leading-relaxed text-ink-2">
                   {aba === "cadastro"
-                    ? "Leva menos de um minuto e você já entra no fórum."
+                    ? "Leva menos de um minuto e você já começa o Crew Select."
                     : "Entre com o e-mail e a senha do seu cadastro."}
                 </p>
               </div>

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { exigirForum } from "@/lib/forum-gate";
 import Link from "next/link";
 import SelecaoCard from "@/components/SelecaoCard";
 import type { Selecao } from "@/lib/forum";
@@ -10,6 +11,7 @@ export const metadata: Metadata = {
 };
 
 export default async function ForumPage({ searchParams }: { searchParams: Promise<{ companhia?: string; status?: string }> }) {
+  await exigirForum();
   const { companhia, status } = await searchParams;
   const supabase = await createClient();
 

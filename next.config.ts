@@ -13,12 +13,13 @@ const nextConfig: NextConfig = {
   // Quando comissariadevoo.com.br apontar para este projeto, cada página
   // antiga redireciona (301) para a mesma página em cabincrew.com.br.
   async redirects() {
-    return ["comissariadevoo.com.br", "www.comissariadevoo.com.br", "www.cabincrew.com.br"].map((host) => ({
+    const internos = [{ source: "/moderacao", destination: "/admin/forum", permanent: true }];
+    return [...internos, ...["comissariadevoo.com.br", "www.comissariadevoo.com.br", "www.cabincrew.com.br"].map((host) => ({
       source: "/:path*",
       has: [{ type: "host" as const, value: host }],
       destination: "https://cabincrew.com.br/:path*",
       permanent: true,
-    }));
+    }))];
   },
 };
 

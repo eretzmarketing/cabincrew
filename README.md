@@ -6,21 +6,19 @@ Site da comunidade Cabin Crew: Home e Fórum de Seleções de comissário de voo
 
 ## O que já funciona
 
-- **Home** com seleções em andamento, fases, lista de espera do Crew Select
-- **Fórum**: lista de seleções com filtro por companhia, página de cada seleção com abas por fase, linha do tempo e contadores
-- **Relatos** com campos padronizados, opção de anônimo, confirmação ("Passei por isso também") e selo de verificado a partir de 3 confirmações
-- **Cadastro direto** com nome, e-mail, WhatsApp, escola de aviação e senha, sem confirmação por e-mail (a pessoa entra na hora); recuperação de senha por e-mail
-- **Pontos**: +5 por relato, +2 por confirmação recebida
-- **Moderação**: denúncias, ocultação automática com 3 denúncias, painel `/moderacao` para criar seleções, mudar status e revisar relatos
-- Regras do fórum, privacidade, sitemap, robots, ícones e imagem de compartilhamento
-- Redirecionamento 301 de `comissariadevoo.com.br` para `cabincrew.com.br`, página por página
+- **Entrada pelo login** (`/entrar`): a página inicial leva quem não está logado ao login e quem está logado ao Crew Select
+- **Cadastro direto** com nome, e-mail, WhatsApp, escola de aviação e senha, sem confirmação por e-mail; recuperação de senha por e-mail
+- **Crew Select** (`/crew-select`): jornada com os 13 módulos por fase da seleção, aulas em texto, vídeo (YouTube/Vimeo) ou material, progresso por aluno e "continuar de onde parei"
+- **Painel administrador** (`/admin`): visão geral, usuários (busca, WhatsApp, exportação em CSV, dar/remover acesso de admin), editor de módulos e aulas com pré-visualização, fórum (chave liga/desliga, seleções e moderação) e configurações
+- **Fórum de Seleções**: relatos por companhia, processo e fase. **Desligado por padrão**; ligue em Administrador › Configurações
+- Segurança no banco (RLS): alunos só veem aulas publicadas e o próprio progresso; só administradores alteram conteúdo e configurações
 
 ## Colocar no ar (passo a passo)
 
 ### 1. Supabase
 1. Crie um projeto em [supabase.com](https://supabase.com) (região São Paulo).
 2. Em **SQL Editor**, cole e rode todo o arquivo `supabase/migrations/0001_forum.sql`.
-3. Rode também `supabase/migrations/0002_cadastro.sql` (nome, WhatsApp e escola no perfil).
+3. Rode também `supabase/migrations/0002_cadastro.sql` (cadastro) e `supabase/migrations/0003_crew_select.sql` (painel e Crew Select).
    (Opcional, para testar) rode `supabase/seed_exemplo.sql`, que cria três seleções de exemplo.
 4. Em **Authentication › Sign In / Providers › Email**, **desligue "Confirm email"**. Assim o cadastro entra direto, sem depender do e-mail.
 5. Em **Authentication › URL Configuration** (usado só na recuperação de senha):
@@ -70,7 +68,7 @@ update profiles set is_admin = true
 where id = (select id from auth.users where email = 'SEU@EMAIL.COM');
 ```
 
-O link **Moderação** aparece no menu.
+O link **Administrador** aparece no menu.
 
 ### 4. E-mail de recuperação de senha (recomendado antes do lançamento)
 O cadastro não usa e-mail, mas a recuperação de senha sim. O Supabase envia poucos e-mails por hora no plano gratuito. Para produção, configure um SMTP próprio em **Authentication › Emails › SMTP Settings** (Resend, Amazon SES, Brevo etc.) e traduza o modelo do e-mail "Reset Password" para português.

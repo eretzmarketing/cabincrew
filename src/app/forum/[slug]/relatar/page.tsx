@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { exigirForum } from "@/lib/forum-gate";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
@@ -16,6 +17,7 @@ export default async function RelatarPage({
   params: Promise<{ slug: string }>;
   searchParams: Promise<{ fase?: string }>;
 }) {
+  await exigirForum();
   const { slug } = await params;
   const { fase } = await searchParams;
   const { supabase, user } = await getUser();

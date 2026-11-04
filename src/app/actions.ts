@@ -22,7 +22,7 @@ export async function entrarListaEspera(_: FormState, form: FormData): Promise<F
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 function destinoSeguro(form: FormData) {
-  return seguro(String(form.get("next") ?? "/forum"));
+  return seguro(String(form.get("next") ?? "/crew-select"));
 }
 
 /** Aceita (11) 98765-4321, 11987654321, +55 11 98765-4321… e devolve +5511987654321 */
@@ -254,5 +254,6 @@ export async function moderarRelato(form: FormData) {
 }
 
 function seguro(caminho: string) {
-  return caminho.startsWith("/") && !caminho.startsWith("//") ? caminho : "/forum";
+  return caminho.startsWith("/") && !caminho.startsWith("//") ? caminho 
+ : "/crew-select";
 }

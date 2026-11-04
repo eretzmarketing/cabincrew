@@ -31,3 +31,21 @@ body {
   outline: 3px solid var(--color-brand);
   outline-offset: 2px;
 }
+
+/* Texto das aulas (Markdown) */
+.aula-conteudo { font-size: 17px; line-height: 1.75; color: var(--color-navy); }
+.aula-conteudo > * + * { margin-top: 1em; }
+.aula-conteudo h1, .aula-conteudo h2, .aula-conteudo h3 { font-family: var(--font-display); font-weight: 800; line-height: 1.25; margin-top: 1.6em; }
+.aula-conteudo h1 { font-size: 28px; }
+.aula-conteudo h2 { font-size: 23px; }
+.aula-conteudo h3 { font-size: 19px; }
+.aula-conteudo ul, .aula-conteudo ol { padding-left: 1.4em; }
+.aula-conteudo ul { list-style: disc; }
+.aula-conteudo ol { list-style: decimal; }
+.aula-conteudo li + li { margin-top: .35em; }
+.aula-conteudo a { color: var(--color-brand-strong); text-decoration: underline; }
+.aula-conteudo strong { font-weight: 700; }
+.aula-conteudo blockquote { border-left: 4px solid var(--color-brand); background: var(--color-brand-soft); padding: .8em 1.1em; border-radius: 0 12px 12px 0; }
+.aula-conteudo code { background: var(--color-soft); padding: .1em .35em; border-radius: 6px; font-size: .92em; }
+.aula-conteudo hr { border: 0; border-top: 1px solid var(--color-line); }
+.aula-conteudo img { max-width: 100%; border-radius: 12px; }

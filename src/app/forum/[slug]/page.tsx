@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { exigirForum } from "@/lib/forum-gate";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { alternarConfirmacao, apagarMeuRelato, denunciar } from "@/app/actions";
@@ -28,6 +29,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function SelecaoPage({ params, searchParams }: Props) {
+  await exigirForum();
   const { slug } = await params;
   const sp = await searchParams;
   const { supabase, selecao: s } = await buscarSelecao(slug);

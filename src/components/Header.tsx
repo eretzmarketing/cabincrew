@@ -1,9 +1,11 @@
 import Image from "next/image";
 import Link from "next/link";
+import { getConfig } from "@/lib/config";
 import { getUser } from "@/lib/supabase/server";
 
 export default async function Header() {
-  const { user, profile } = await getUser();
+  const [{ user, profile }, { forum_ativo }] = await Promise.all([getUser(), getConfig()]);
+  const link = "text-navy hover:text-brand-strong";
 
   return (
     <header className="border-b border-line bg-white">
@@ -11,13 +13,15 @@ export default async function Header() {
         <Link href="/" aria-label="Cabin Crew — início" className="flex items-center">
           <Image src="/img/logo.png" alt="Cabin Crew — Comunidade Oficial" width={215} height={36} priority className="h-9 w-auto" />
         </Link>
-        <nav aria-label="Principal" className="order-3 flex w-full flex-wrap items-center gap-x-7 gap-y-2 font-display text-[15px] font-semibold md:order-none md:w-auto">
-          <Link href="/forum" className="text-navy hover:text-brand-strong">Fórum de Seleções</Link>
-          <Link href="/#crew-select" className="text-navy hover:text-brand-strong">Crew Select</Link>
-          {profile?.is_admin && (
-            <Link href="/moderacao" className="text-navy hover:text-brand-strong">Moderação</Link>
-          )}
-        </nav>
+
+        {user && (
+          <nav aria-label="Principal" className="order-3 flex w-full flex-wrap items-center gap-x-7 gap-y-2 font-display text-[15px] font-semibold md:order-none md:w-auto">
+            <Link href="/crew-select" className={link}>Crew Select</Link>
+            {forum_ativo && <Link href="/forum" className={link}>Fórum de Seleções</Link>}
+            {profile?.is_admin && <Link href="/admin" className={link}>Administrador</Link>}
+          </nav>
+        )}
+
         <div className="flex items-center gap-3">
           {user ? (
             <Link
