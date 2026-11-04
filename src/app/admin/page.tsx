@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Card, Numero, Titulo, btnSecundario } from "@/components/admin-ui";
+import { Card, Chave, Numero, Titulo, btnSecundario } from "@/components/admin-ui";
 import { getConfig } from "@/lib/config";
 import { getUser } from "@/lib/supabase/server";
 
@@ -29,6 +29,15 @@ export default async function AdminHome() {
   return (
     <>
       <Titulo sub="Resumo da plataforma Cabin Crew.">Visão geral</Titulo>
+
+      <Card className={cfg.manutencao ? "border-2 border-brand" : ""}>
+        <Chave
+          chave="manutencao"
+          ligado={cfg.manutencao}
+          titulo="Modo manutenção"
+          descricao="Ligado: o site mostra só a página “Em breve” para o público, sem cadastro. Você continua acessando tudo."
+        />
+      </Card>
 
       <div className="flex flex-wrap gap-4">
         <Numero rotulo="Cadastros" valor={usuarios} detalhe={`${hojeN} hoje · ${semanaN} nos últimos 7 dias`} />

@@ -9,6 +9,14 @@ export default async function ConfiguracoesPage() {
   return (
     <>
       <Titulo sub="Ligue ou desligue recursos do site. As mudanças valem na hora.">Configurações</Titulo>
+      <Card className={cfg.manutencao ? "border-2 border-brand" : ""}>
+        <Chave
+          chave="manutencao"
+          ligado={cfg.manutencao}
+          titulo="Modo manutenção"
+          descricao="Ligado: o público e os alunos veem apenas a página “Em breve”, sem cadastro. Administradores continuam usando o site normalmente. Para entrar com o site em manutenção, use cabincrew.com.br/entrar?equipe"
+        />
+      </Card>
       <Card>
         <Chave
           chave="crew_select_aberto"

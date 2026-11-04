@@ -3,6 +3,9 @@ import { NextResponse, type NextRequest } from "next/server";
 
 /** Renova a sessão do Supabase a cada requisição. */
 export async function proxy(request: NextRequest) {
+  // Endereço da página, usado pelo modo manutenção no layout
+  request.headers.set("x-cc-path", request.nextUrl.pathname);
+  request.headers.set("x-cc-search", request.nextUrl.search);
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(

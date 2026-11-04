@@ -10,6 +10,7 @@ Site da comunidade Cabin Crew: Home e Fórum de Seleções de comissário de voo
 - **Cadastro direto** com nome, e-mail, WhatsApp, escola de aviação e senha, sem confirmação por e-mail; recuperação de senha por e-mail
 - **Crew Select** (`/crew-select`): jornada com os 13 módulos por fase da seleção, aulas em texto, vídeo (YouTube/Vimeo) ou material, progresso por aluno e "continuar de onde parei"
 - **Painel administrador** (`/admin`): visão geral, usuários (busca, WhatsApp, exportação em CSV, dar/remover acesso de admin), editor de módulos e aulas com pré-visualização, fórum (chave liga/desliga, seleções e moderação) e configurações
+- **Modo manutenção**: ligado, o público e os alunos veem só a página "Em breve", sem cadastro; administradores usam o site normalmente e entram por `/entrar?equipe`
 - **Fórum de Seleções**: relatos por companhia, processo e fase. **Desligado por padrão**; ligue em Administrador › Configurações
 - Segurança no banco (RLS): alunos só veem aulas publicadas e o próprio progresso; só administradores alteram conteúdo e configurações
 
@@ -18,7 +19,7 @@ Site da comunidade Cabin Crew: Home e Fórum de Seleções de comissário de voo
 ### 1. Supabase
 1. Crie um projeto em [supabase.com](https://supabase.com) (região São Paulo).
 2. Em **SQL Editor**, cole e rode todo o arquivo `supabase/migrations/0001_forum.sql`.
-3. Rode também `supabase/migrations/0002_cadastro.sql` (cadastro) e `supabase/migrations/0003_crew_select.sql` (painel e Crew Select).
+3. Rode também `supabase/migrations/0002_cadastro.sql` (cadastro) e `supabase/migrations/0003_crew_select.sql` (painel e Crew Select) e `supabase/migrations/0004_manutencao.sql` (modo manutenção, já ligado).
    (Opcional, para testar) rode `supabase/seed_exemplo.sql`, que cria três seleções de exemplo.
 4. Em **Authentication › Sign In / Providers › Email**, **desligue "Confirm email"**. Assim o cadastro entra direto, sem depender do e-mail.
 5. Em **Authentication › URL Configuration** (usado só na recuperação de senha):

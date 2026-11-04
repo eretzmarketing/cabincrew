@@ -4,7 +4,7 @@ import { getConfig } from "@/lib/config";
 import { getUser } from "@/lib/supabase/server";
 
 export default async function Header() {
-  const [{ user, profile }, { forum_ativo }] = await Promise.all([getUser(), getConfig()]);
+  const [{ user, profile }, { forum_ativo, manutencao }] = await Promise.all([getUser(), getConfig()]);
   const link = "text-navy hover:text-brand-strong";
 
   return (
@@ -33,7 +33,7 @@ export default async function Header() {
               </span>
               <span className="hidden sm:inline">Minha conta</span>
             </Link>
-          ) : (
+          ) : manutencao ? null : (
             <>
               <Link href="/entrar?modo=entrar" className="hidden px-2 py-3 text-[15px] font-semibold text-navy hover:text-brand-strong sm:inline">Entrar</Link>
               <Link

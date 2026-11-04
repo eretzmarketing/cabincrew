@@ -4,9 +4,10 @@ import { createClient } from "@/lib/supabase/server";
 export type Config = {
   forum_ativo: boolean;
   crew_select_aberto: boolean;
+  manutencao: boolean;
 };
 
-const PADRAO: Config = { forum_ativo: false, crew_select_aberto: true };
+const PADRAO: Config = { forum_ativo: false, crew_select_aberto: true, manutencao: false };
 
 /** Chaves liga/desliga do site, lidas uma vez por requisição. */
 export const getConfig = cache(async (): Promise<Config> => {

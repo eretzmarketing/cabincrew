@@ -124,7 +124,7 @@ export async function excluirAula(form: FormData) {
 export async function alterarConfig(form: FormData) {
   const { supabase } = await admin();
   const chave = String(form.get("chave"));
-  if (!["forum_ativo", "crew_select_aberto"].includes(chave)) return;
+  if (!["forum_ativo", "crew_select_aberto", "manutencao"].includes(chave)) return;
   await supabase
     .from("configuracoes")
     .update({ valor: form.get("valor") === "true", updated_at: new Date().toISOString() })

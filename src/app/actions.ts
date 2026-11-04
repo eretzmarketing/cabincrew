@@ -5,6 +5,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient, getUser } from "@/lib/supabase/server";
 import { slugify } from "@/lib/forum";
+import { getConfig } from "@/lib/config";
 
 export type FormState = { ok?: boolean; erro?: string; msg?: string } | undefined;
 
@@ -34,6 +35,7 @@ function normalizarWhatsapp(bruto: string) {
 }
 
 export async function cadastrar(_: FormState, form: FormData): Promise<FormState> {
+  if ((await getConfig()).manutencao) return { erro: "Os cadastros estão fechados no momento. Volte em breve." };
   const nome = String(form.get("nome") ?? "").trim().replace(/\s+/g, " ");
   const email = String(form.get("email") ?? "").trim().toLowerCase();
   const whatsapp = normalizarWhatsapp(String(form.get("whatsapp") ?? ""));

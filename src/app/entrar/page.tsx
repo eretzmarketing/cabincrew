@@ -4,21 +4,24 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { CadastroForm, EntrarForm, EsqueciForm } from "@/components/forms";
 import { getUser } from "@/lib/supabase/server";
+import { getConfig } from "@/lib/config";
 
 export const metadata: Metadata = { title: "Entrar ou criar conta", robots: { index: false } };
 
 export default async function EntrarPage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string; erro?: string; modo?: string }>;
+  searchParams: Promise<{ next?: string; erro?: string; modo?: string; equipe?: string }>;
 }) {
-  const { next, erro, modo } = await searchParams;
+  const { next, erro, modo, equipe } = await searchParams;
+  const { manutencao } = await getConfig();
+  const soEquipe = manutencao && equipe !== undefined; // em manutenção: só login da equipe, sem cadastro
   const destino = next && next.startsWith("/") && !next.startsWith("//") ? next : "/crew-select";
   const { user } = await getUser();
   if (user) redirect(destino);
 
-  const qs = (m: string) => `/entrar?modo=${m}${next ? `&next=${encodeURIComponent(destino)}` : ""}`;
-  const aba = modo === "entrar" || modo === "esqueci" ? modo : "cadastro";
+  const qs = (m: string) => `/entrar?modo=${m}${soEquipe ? "&equipe" : ""}${next ? `&next=${encodeURIComponent(destino)}` : ""}`;
+  const aba = soEquipe ? (modo === "esqueci" ? "esqueci" : "entrar") : modo === "entrar" || modo === "esqueci" ? modo : "cadastro";
   const tab = (ativo: boolean) =>
     `flex-1 min-h-12 inline-flex items-center justify-center rounded-full font-display text-[15px] font-bold ${
       ativo ? "bg-navy text-white" : "text-navy hover:bg-[#eceef3]"
@@ -44,7 +47,7 @@ export default async function EntrarPage({
             <>
               <div className="flex flex-col gap-2">
                 <h1 className="font-display text-[30px] font-extrabold tracking-[-0.01em]">
-                  {aba === "cadastro" ? "Crie sua conta grátis" : "Bem-vindo de volta"}
+                  {soEquipe ? "Acesso da equipe" : aba === "cadastro" ? "Crie sua conta grátis" : "Bem-vindo de volta"}
                 </h1>
                 <p className="text-base leading-relaxed text-ink-2">
                   {aba === "cadastro"
@@ -52,12 +55,12 @@ export default async function EntrarPage({
                     : "Entre com o e-mail e a senha do seu cadastro."}
                 </p>
               </div>
-              <nav aria-label="Entrar ou criar conta" className="flex gap-1 rounded-full bg-white p-1 shadow-[inset_0_0_0_1px_var(--color-line)]">
+              {!soEquipe && <nav aria-label="Entrar ou criar conta" className="flex gap-1 rounded-full bg-white p-1 shadow-[inset_0_0_0_1px_var(--color-line)]">
                 <Link href={qs("cadastro")} className={tab(aba === "cadastro")} aria-current={aba === "cadastro" ? "page" : undefined}>Criar conta</Link>
                 <Link href={qs("entrar")} className={tab(aba === "entrar")} aria-current={aba === "entrar" ? "page" : undefined}>Entrar</Link>
-              </nav>
+              </nav>}
               {erro && <p role="alert" className="rounded-xl bg-brand-soft px-4 py-3 text-[15px] text-brand-deep">O link expirou ou já foi usado. Peça um novo.</p>}
-              {aba === "cadastro" ? <CadastroForm next={destino} /> : <EntrarForm next={destino} />}
+              {aba === "cadastro" ? <CadastroForm next={destino} /> : <EntrarForm next={destino} esqueciHref={qs("esqueci")} />}
             </>
           )}
         </div>

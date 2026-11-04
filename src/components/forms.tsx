@@ -136,7 +136,7 @@ export function CadastroForm({ next }: { next: string }) {
 }
 
 /* ---------- Login ---------- */
-export function EntrarForm({ next }: { next: string }) {
+export function EntrarForm({ next, esqueciHref = "/entrar?modo=esqueci" }: { next: string; esqueciHref?: string }) {
   const [state, action] = useActionState(entrar, undefined);
   return (
     <form action={action} className="flex flex-col gap-4">
@@ -149,7 +149,7 @@ export function EntrarForm({ next }: { next: string }) {
         Senha
         <input name="senha" type="password" required autoComplete="current-password" className={input} />
       </label>
-      <Link href="/entrar?modo=esqueci" className="self-end text-sm font-semibold">Esqueci minha senha</Link>
+      <Link href={esqueciHref} className="self-end text-sm font-semibold">Esqueci minha senha</Link>
       <Aviso state={state} />
       <Enviar className="w-full">Entrar</Enviar>
     </form>
