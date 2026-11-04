@@ -2,10 +2,10 @@
 
 import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
-import ReactMarkdown from "react-markdown";
+import Conteudo from "@/components/Conteudo";
 import type { FormState } from "@/app/actions";
-import { salvarAula, salvarModulo } from "@/app/crew-actions";
-import type { Aula, Modulo } from "@/lib/crew";
+import { salvarAula, salvarModulo, salvarSimulado } from "@/app/crew-actions";
+import { BANCOS, type Aula, type Modulo, type Simulado } from "@/lib/crew";
 
 const input = "min-h-12 w-full rounded-xl border border-[#c9cedb] bg-white px-3.5 text-[15px] text-navy placeholder:text-muted";
 const label = "flex flex-col gap-2 text-sm font-semibold";
@@ -69,10 +69,11 @@ export function ModuloForm({ m, proximaOrdem = 0 }: { m?: Modulo; proximaOrdem?:
 }
 
 /* ---------- Aula ---------- */
-export function AulaForm({ a, modulos, moduloId, proximaOrdem = 1 }: { a?: Aula; modulos: Modulo[]; moduloId?: number; proximaOrdem?: number }) {
+export function AulaForm({ a, modulos, simulados = [], moduloId, proximaOrdem = 1 }: { a?: Aula; modulos: Modulo[]; simulados?: { id: number; titulo: string }[]; moduloId?: number; proximaOrdem?: number }) {
   const [state, action] = useActionState(salvarAula, undefined);
   const [conteudo, setConteudo] = useState(a?.conteudo ?? "");
   const [ver, setVer] = useState<"editar" | "previa">("editar");
+  const [tipo, setTipo] = useState<string>(a?.tipo ?? "texto");
 
   return (
     <form action={action} className="flex flex-col gap-5">
@@ -90,7 +91,7 @@ export function AulaForm({ a, modulos, moduloId, proximaOrdem = 1 }: { a?: Aula;
         </label>
         <label className={`${label} flex-[0_1_180px]`}>
           Tipo
-          <select name="tipo" defaultValue={a?.tipo ?? "texto"} className={input}>
+          <select name="tipo" value={tipo} onChange={(e) => setTipo(e.target.value)} className={input}>
             <option value="texto">Leitura</option>
             <option value="video">Vídeo</option>
             <option value="pdf">Material em PDF</option>
@@ -102,6 +103,16 @@ export function AulaForm({ a, modulos, moduloId, proximaOrdem = 1 }: { a?: Aula;
           <input name="duracao_min" type="number" min={1} max={600} defaultValue={a?.duracao_min ?? ""} className={input} />
         </label>
       </div>
+
+      {tipo === "simulado" && (
+        <label className={label}>
+          Simulado que esta aula abre
+          <select name="simulado_id" required defaultValue={a?.simulado_id ?? ""} className={input}>
+            <option value="" disabled>Escolha o simulado</option>
+            {simulados.map((s) => <option key={s.id} value={s.id}>{s.titulo}</option>)}
+          </select>
+        </label>
+      )}
 
       <label className={label}>
         Título da aula
@@ -152,7 +163,7 @@ export function AulaForm({ a, modulos, moduloId, proximaOrdem = 1 }: { a?: Aula;
         />
         {ver === "previa" && (
           <div className="aula-conteudo min-h-[200px] rounded-xl border border-line bg-white p-6">
-            {conteudo ? <ReactMarkdown>{conteudo}</ReactMarkdown> : <p className="text-muted">Nada escrito ainda.</p>}
+            {conteudo ? <Conteudo texto={conteudo} /> : <p className="text-muted">Nada escrito ainda.</p>}
           </div>
         )}
         <span className="text-xs text-muted">
@@ -163,6 +174,56 @@ export function AulaForm({ a, modulos, moduloId, proximaOrdem = 1 }: { a?: Aula;
       <Publicado inicial={a?.publicado ?? false} texto="Aula publicada (visível para os alunos)" />
       <Aviso state={state} />
       <div><Salvar>{a ? "Salvar aula" : "Criar aula"}</Salvar></div>
+    </form>
+  );
+}
+
+/* ---------- Simulado ---------- */
+export function SimuladoForm({ s }: { s?: Simulado }) {
+  const [state, action] = useActionState(salvarSimulado, undefined);
+  return (
+    <form action={action} className="flex flex-col gap-5">
+      {s && <input type="hidden" name="id" value={s.id} />}
+      <label className={label}>
+        Título
+        <input name="titulo" required maxLength={160} defaultValue={s?.titulo} className={input} />
+      </label>
+      <label className={label}>
+        Descrição <span className="font-normal text-muted">(opcional)</span>
+        <input name="descricao" maxLength={500} defaultValue={s?.descricao ?? ""} className={input} />
+      </label>
+      <fieldset className="flex flex-col gap-2">
+        <legend className="mb-2 text-sm font-semibold">Bancos de questões</legend>
+        <div className="flex flex-wrap gap-2">
+          {Object.entries(BANCOS).map(([k, v]) => (
+            <label key={k} className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border-2 border-[#d5d9e3] px-3 text-sm has-[:checked]:border-navy">
+              <input type="checkbox" name="bancos" value={k} defaultChecked={s?.bancos.includes(k)} className="h-4 w-4 accent-brand-strong" />
+              {v}
+            </label>
+          ))}
+        </div>
+        {s?.categorias?.length ? <span className="text-xs text-muted">Filtrado por tema: {s.categorias.join(", ")}</span> : null}
+      </fieldset>
+      <div className="flex flex-wrap gap-4">
+        <label className={`${label} flex-[1_1_160px]`}>
+          Questões por tentativa
+          <input name="qtd_questoes" type="number" min={1} max={200} required defaultValue={s?.qtd_questoes ?? 20} className={input} />
+        </label>
+        <label className={`${label} flex-[1_1_160px]`}>
+          Tempo (min) <span className="font-normal text-muted">vazio = sem limite</span>
+          <input name="tempo_min" type="number" min={1} max={300} defaultValue={s?.tempo_min ?? ""} className={input} />
+        </label>
+        <label className={`${label} flex-[1_1_160px]`}>
+          Nota mínima (%)
+          <input name="nota_minima" type="number" min={0} max={100} required defaultValue={s?.nota_minima ?? 70} className={input} />
+        </label>
+      </div>
+      <label className="flex min-h-11 cursor-pointer items-center gap-3 text-[15px]">
+        <input type="checkbox" name="mostrar_gabarito" defaultChecked={s?.mostrar_gabarito ?? true} className="h-5 w-5 accent-brand-strong" />
+        Mostrar o gabarito comentado depois da entrega
+      </label>
+      <Aviso state={state} />
+      <div><Salvar>{s ? "Salvar simulado" : "Criar simulado"}</Salvar></div>
     </form>
   );
 }

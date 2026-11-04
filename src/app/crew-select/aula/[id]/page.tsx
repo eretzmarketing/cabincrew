@@ -1,18 +1,19 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import ReactMarkdown from "react-markdown";
-import { alternarAulaConcluida } from "@/app/crew-actions";
+import Conteudo from "@/components/Conteudo";
+import { alternarAulaConcluida, iniciarSimulado } from "@/app/crew-actions";
 import { Arrow, Check } from "@/components/icons";
 import { exigirCrewSelect } from "@/lib/crew-gate";
-import { TIPO_AULA, duracao, numeroModulo, videoEmbed, type Aula, type Modulo } from "@/lib/crew";
+import { TIPO_AULA, duracao, numeroModulo, videoEmbed, type Aula, type Modulo, type Simulado, type Tentativa } from "@/lib/crew";
 
 export const metadata: Metadata = { title: "Aula · Crew Select", robots: { index: false } };
 
 const UUID = /^[0-9a-f-]{36}$/i;
 
-export default async function AulaPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function AulaPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ erro?: string }> }) {
   const { id } = await params;
+  const { erro } = await searchParams;
   const { supabase, user, profile, liberado } = await exigirCrewSelect(`/crew-select/aula/${id}`);
   if (!liberado) redirect("/crew-select");
   if (!UUID.test(id)) notFound();
@@ -21,11 +22,19 @@ export default async function AulaPage({ params }: { params: Promise<{ id: strin
   const aula = data as Aula | null;
   if (!aula || (!aula.publicado && !profile.is_admin)) notFound();
 
-  const [{ data: modulo }, { data: irmas }, { data: feita }] = await Promise.all([
+  const [{ data: modulo }, { data: irmas }, { data: feita }, simRes, tentRes] = await Promise.all([
     supabase.from("modulos").select("*").eq("id", aula.modulo_id).single(),
     supabase.from("aulas").select("id, ordem, titulo").eq("modulo_id", aula.modulo_id).eq("publicado", true).order("ordem"),
     supabase.from("progresso").select("aula_id").eq("user_id", user.id).eq("aula_id", aula.id).maybeSingle(),
+    aula.simulado_id
+      ? supabase.from("simulados").select("*").eq("id", aula.simulado_id).maybeSingle()
+      : Promise.resolve({ data: null }),
+    aula.simulado_id
+      ? supabase.from("tentativas").select("*").eq("user_id", user.id).eq("simulado_id", aula.simulado_id).order("iniciada_em", { ascending: false }).limit(10)
+      : Promise.resolve({ data: [] }),
   ]);
+  const simulado = simRes.data as Simulado | null;
+  const tentativas = (tentRes.data ?? []) as Tentativa[];
   const m = modulo as Modulo;
   const lista = irmas ?? [];
   const pos = lista.findIndex((a) => a.id === aula.id);
@@ -67,9 +76,13 @@ export default async function AulaPage({ params }: { params: Promise<{ id: strin
           <a href={aula.video_url} target="_blank" rel="noreferrer" className="rounded-2xl border border-line bg-white p-5 font-semibold">Assistir ao vídeo da aula ↗</a>
         ) : null}
 
+        {simulado && (
+          <CartaoSimulado simulado={simulado} tentativas={tentativas} aulaId={aula.id} erro={!!erro} />
+        )}
+
         {aula.conteudo && (
           <div className="aula-conteudo rounded-[20px] border border-line bg-white p-6 md:p-9">
-            <ReactMarkdown>{aula.conteudo}</ReactMarkdown>
+            <Conteudo texto={aula.conteudo} />
           </div>
         )}
 
@@ -105,5 +118,56 @@ export default async function AulaPage({ params }: { params: Promise<{ id: strin
         </div>
       </article>
     </main>
+  );
+}
+
+function CartaoSimulado({ simulado, tentativas, aulaId, erro }: { simulado: Simulado; tentativas: Tentativa[]; aulaId: string; erro: boolean }) {
+  const agora = new Date().toISOString();
+  const aberta = tentativas.find((t) => !t.finalizada_em && (!t.prazo || t.prazo > agora));
+  const feitas = tentativas.filter((t) => t.finalizada_em);
+  const melhor = feitas.reduce<number | null>((m, t) => (t.nota !== null && (m === null || t.nota > m) ? t.nota : m), null);
+  const aprovado = melhor !== null && melhor >= simulado.nota_minima;
+
+  return (
+    <section className="flex flex-col gap-5 rounded-[20px] border border-line bg-white p-6 md:p-8">
+      <div className="flex flex-wrap gap-3">
+        <span className="rounded-xl bg-soft px-4 py-3 text-[15px]"><strong className="font-display text-xl">{simulado.qtd_questoes}</strong> questões</span>
+        {simulado.tempo_min && <span className="rounded-xl bg-soft px-4 py-3 text-[15px]"><strong className="font-display text-xl">{duracao(simulado.tempo_min)}</strong> de prova</span>}
+        <span className="rounded-xl bg-soft px-4 py-3 text-[15px]">nota mínima <strong className="font-display text-xl">{simulado.nota_minima}%</strong></span>
+      </div>
+      <p className="text-[15px] leading-relaxed text-ink-2">
+        As questões são sorteadas a cada tentativa. {simulado.tempo_min ? "O cronômetro começa quando você inicia e a prova é entregue automaticamente quando o tempo acaba." : "Não há limite de tempo."} Suas respostas ficam salvas se a página fechar.
+      </p>
+      {erro && <p role="alert" className="rounded-xl bg-brand-soft px-4 py-3 text-[15px] text-brand-deep">Não foi possível iniciar o simulado agora. Tente de novo em instantes.</p>}
+      <form action={iniciarSimulado} className="flex flex-wrap items-center gap-4">
+        <input type="hidden" name="simulado_id" value={simulado.id} />
+        <input type="hidden" name="aula_id" value={aulaId} />
+        <button type="submit" className="inline-flex min-h-12 cursor-pointer items-center rounded-full bg-brand-strong px-7 font-display font-bold text-white hover:bg-brand-deep">
+          {aberta ? "Continuar simulado" : feitas.length ? "Fazer de novo" : "Começar simulado"}
+        </button>
+        {melhor !== null && (
+          <span className={`rounded-full px-3 py-1.5 text-sm font-semibold ${aprovado ? "bg-[#e5f6ec] text-[#0f6b3a]" : "bg-[#fff3e0] text-[#8a4b00]"}`}>
+            Sua melhor nota: {melhor}%{aprovado ? " · aprovado" : ""}
+          </span>
+        )}
+      </form>
+      {feitas.length > 0 && (
+        <div className="flex flex-col gap-2">
+          <strong className="text-sm">Suas tentativas</strong>
+          <ul className="flex flex-col divide-y divide-[#eceef3] rounded-xl border border-line">
+            {feitas.slice(0, 5).map((t) => (
+              <li key={t.id} className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 text-[15px]">
+                <span>{new Date(t.finalizada_em!).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Sao_Paulo" })}</span>
+                <span className="flex items-center gap-4">
+                  <strong>{t.nota}%</strong>
+                  <span className="text-muted">{t.acertos}/{t.total}</span>
+                  <Link href={`/crew-select/simulado/${t.id}/resultado?aula=${aulaId}`} className="text-sm font-semibold">Ver gabarito</Link>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </section>
   );
 }

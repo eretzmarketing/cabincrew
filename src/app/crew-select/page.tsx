@@ -83,7 +83,7 @@ export default async function CrewSelectPage() {
                       <span className="font-display text-[28px] leading-none font-extrabold text-brand">{numeroModulo(m.ordem)}</span>
                       {completo ? (
                         <span className="inline-flex items-center gap-1 rounded-full bg-[#e5f6ec] px-2.5 py-1 text-xs font-semibold text-[#0f6b3a]"><Check size={14} />Concluído</span>
-                      ) : p.total === 0 ? (
+                      ) : p.total === 0 && !m.recurso ? (
                         <span className="rounded-full bg-[#eef0f4] px-2.5 py-1 text-xs font-semibold text-ink-2">Em breve</span>
                       ) : null}
                     </div>

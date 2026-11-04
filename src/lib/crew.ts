@@ -5,6 +5,7 @@ export type Modulo = {
   descricao: string | null;
   fase: string | null;
   publicado: boolean;
+  recurso: string | null;
 };
 
 export type Aula = {
@@ -19,6 +20,56 @@ export type Aula = {
   arquivo_url: string | null;
   duracao_min: number | null;
   publicado: boolean;
+  simulado_id: number | null;
+};
+
+export type Simulado = {
+  id: number;
+  titulo: string;
+  descricao: string | null;
+  bancos: string[];
+  categorias: string[] | null;
+  qtd_questoes: number;
+  tempo_min: number | null;
+  nota_minima: number;
+  mostrar_gabarito: boolean;
+};
+
+export type Tentativa = {
+  id: string;
+  simulado_id: number;
+  total: number;
+  acertos: number | null;
+  nota: number | null;
+  iniciada_em: string;
+  prazo: string | null;
+  finalizada_em: string | null;
+};
+
+export type Alternativa = { letra: string; texto: string | null; imagem_url: string | null };
+
+export type QuestaoProva = {
+  ordem: number;
+  id: string;
+  categoria: string | null;
+  contexto: string | null;
+  enunciado: string;
+  imagem_url: string | null;
+  alternativas: Alternativa[];
+  resposta: string | null;
+};
+
+export type QuestaoGabarito = QuestaoProva & { correta: string | null; explicacao: string | null };
+
+export const BANCOS: Record<string, string> = {
+  anac: "Banca ANAC",
+  tecnico: "Técnicas",
+  portugues: "Português",
+  ingles: "Inglês",
+  logico: "Raciocínio lógico",
+  numerico: "Raciocínio numérico",
+  verbal: "Raciocínio verbal",
+  sjt: "Julgamento situacional (SJT)",
 };
 
 export const TIPO_AULA: Record<Aula["tipo"], string> = {

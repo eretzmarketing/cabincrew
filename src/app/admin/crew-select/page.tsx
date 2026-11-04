@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Card, Chave, Titulo, btnPrimario } from "@/components/admin-ui";
+import { Card, Chave, Titulo, btnPrimario, btnSecundario } from "@/components/admin-ui";
 import { ModuloForm } from "@/components/admin-forms";
 import { getConfig } from "@/lib/config";
 import { numeroModulo, type Modulo } from "@/lib/crew";
@@ -29,7 +29,11 @@ export default async function AdminCrewSelect() {
     <>
       <div className="flex flex-wrap items-end justify-between gap-4">
         <Titulo sub="Módulos e aulas que os alunos veem na área do Crew Select.">Crew Select</Titulo>
-        <Link href="/admin/crew-select/aula/nova" className={btnPrimario}>+ Nova aula</Link>
+        <div className="flex flex-wrap gap-2">
+          <Link href="/admin/crew-select/simulados" className={btnSecundario}>Simulados e questões</Link>
+          <Link href="/admin/crew-select/dinamicas" className={btnSecundario}>Dinâmicas</Link>
+          <Link href="/admin/crew-select/aula/nova" className={btnPrimario}>+ Nova aula</Link>
+        </div>
       </div>
 
       <Card>

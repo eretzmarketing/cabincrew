@@ -24,9 +24,10 @@ export default async function AdminAula({
   if (!nova && !UUID.test(id)) notFound();
 
   const { supabase } = await getUser();
-  const [{ data: modulos }, aulaRes] = await Promise.all([
+  const [{ data: modulos }, aulaRes, { data: sims }] = await Promise.all([
     supabase.from("modulos").select("*").order("ordem"),
     nova ? Promise.resolve({ data: null }) : supabase.from("aulas").select("*").eq("id", id).maybeSingle(),
+    supabase.from("simulados").select("id, titulo").order("titulo"),
   ]);
   const a = aulaRes.data as Aula | null;
   if (!nova && !a) notFound();
@@ -47,7 +48,7 @@ export default async function AdminAula({
       {sp.criada && <p role="status" className="rounded-xl bg-[#e5f6ec] px-4 py-3 text-[15px] text-[#0f6b3a]">Aula criada.</p>}
 
       <Card>
-        <AulaForm a={a ?? undefined} modulos={lista} moduloId={moduloId} proximaOrdem={Number(sp.ordem) || 1} />
+        <AulaForm a={a ?? undefined} modulos={lista} simulados={sims ?? []} moduloId={moduloId} proximaOrdem={Number(sp.ordem) || 1} />
       </Card>
 
       {a && (

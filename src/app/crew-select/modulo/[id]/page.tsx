@@ -33,11 +33,21 @@ export default async function ModuloPage({ params }: { params: Promise<{ id: str
           {m.descricao && <p className="text-[17px] leading-relaxed text-ink-2">{m.descricao}</p>}
         </div>
 
-        {lista.length === 0 ? (
+        {m.recurso === "dinamicas" && (
+          <Link href="/crew-select/dinamicas" className="flex items-center justify-between gap-4 rounded-[20px] bg-navy p-6 text-white hover:bg-navy-deep">
+            <span className="flex flex-col gap-1">
+              <strong className="font-display text-lg">Biblioteca de dinâmicas</strong>
+              <span className="text-[15px] text-[#d7dbe6]">As dinâmicas usadas nas seleções, com como se destacar em cada uma.</span>
+            </span>
+            <span aria-hidden="true" className="text-2xl">→</span>
+          </Link>
+        )}
+
+        {lista.length === 0 && m.recurso !== "dinamicas" ? (
           <p className="rounded-[20px] border border-dashed border-[#c9cedb] bg-white p-10 text-center text-ink-2">
             As aulas deste módulo estão sendo preparadas. Volte em breve.
           </p>
-        ) : (
+        ) : lista.length === 0 ? null : (
           <ol className="flex flex-col gap-3">
             {lista.map((a, i) => {
               const ok = concluidas.has(a.id);
