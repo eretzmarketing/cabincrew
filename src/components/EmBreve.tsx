@@ -41,7 +41,10 @@ export default function EmBreve({ logado }: { logado: boolean }) {
         </div>
       </div>
 
-      <footer className="px-6 pb-6 text-center text-sm text-muted md:text-right">© {new Date().getFullYear()} Cabin Crew</footer>
+      <footer className="flex justify-center gap-4 px-6 pb-6 text-sm text-muted md:justify-end">
+        <span>© {new Date().getFullYear()} Cabin Crew</span>
+        {!logado && <a href="/entrar?equipe&next=/admin" className="text-muted underline-offset-2 hover:underline">Acesso da equipe</a>}
+      </footer>
     </main>
   );
 }
