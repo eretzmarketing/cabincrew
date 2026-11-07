@@ -31,6 +31,15 @@ def img(v):
     return v if v.startswith("http") else HORSKY + ("" if v.startswith("/") else "/") + v
 
 
+def tema_logico(v):
+    t = (v or "").strip().lower()
+    for chave, nome in (("sequ", "Sequências"), ("silogismo", "Silogismos"), ("analogia", "Analogias"), ("problema", "Problemas lógicos"),
+                        ("raven", "Matrizes"), ("matriz", "Matrizes"), ("padr", "Padrões")):
+        if t.startswith(chave):
+            return nome
+    return (v or "").strip() or "Raciocínio lógico"
+
+
 def letra(v):
     v = (v or "").strip().upper()
     return v if v in "ABCDE" and v else None
@@ -82,10 +91,10 @@ lotes["anac"] = [montar("anac", r["id"], r["question_text"], abcd(r), r["correct
 outros = []
 outros += [montar("portugues", r["id"], r["question_text"], abcd(r), r["correct_answer"], "Português") for r in ler("portuguese_questions_export.csv")]
 outros += [montar("ingles", r["id"], r["question_text"], abcd(r), r["correct_answer"], "Inglês") for r in ler("english_questions_export.csv")]
-outros += [montar("tecnico", r["id"], r["question_text"], abcd(r), r["correct_answer"], limpo(r["block"]) or "Conhecimentos técnicos") for r in ler("technical_questions_export.csv")]
+outros += [montar("tecnico", r["id"], r["question_text"], abcd(r), r["correct_answer"], limpo(r["subject"]) or "Conhecimentos técnicos") for r in ler("technical_questions_export.csv")]
 for r in ler("logical_reasoning_questions_export.csv"):
     outros.append(montar("logico", r["id"], r["question_text"], abcd(r, letras="ABCDE", imgs=True), r["correct_answer"],
-                         limpo(r["category"]) or "Raciocínio lógico", imagem=r.get("matrix_image_url") or r.get("image_url"),
+                         tema_logico(r["category"]), imagem=r.get("matrix_image_url") or r.get("image_url"),
                          explicacao=r.get("explanation")))
 outros += [montar("numerico", r["id"], r["question_text"], abcd(r), r["correct_answer"], "Raciocínio numérico",
                   contexto=r.get("data_description"), imagem=r.get("data_image_url")) for r in ler("numerical_reasoning_questions_export.csv")]
