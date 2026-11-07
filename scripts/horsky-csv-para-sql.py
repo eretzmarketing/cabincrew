@@ -28,7 +28,9 @@ def img(v):
     v = limpo(v)
     if not v:
         return None
-    return v if v.startswith("http") else HORSKY + ("" if v.startswith("/") else "/") + v
+    if v.startswith("http") or v.startswith("/raven-questions/"):
+        return v  # figuras de Raven ficam em public/raven-questions
+    return HORSKY + ("" if v.startswith("/") else "/") + v
 
 
 def tema_logico(v):
