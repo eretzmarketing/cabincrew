@@ -28,6 +28,7 @@ export const metadata: Metadata = {
   description:
     "O preparatório que acompanha você em cada fase da seleção para comissário de voo.",
   openGraph: { siteName: "Cabin Crew", locale: "pt_BR", type: "website" },
+  twitter: { card: "summary_large_image" },
 };
 
 /** Em manutenção, só passam administradores, o login da equipe (/entrar?equipe) e o retorno do login. */
