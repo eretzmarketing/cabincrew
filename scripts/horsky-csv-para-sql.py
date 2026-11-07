@@ -77,7 +77,7 @@ def abcd(r, sufixo="", letras="ABCD", imgs=None):
 
 lotes = {}
 
-lotes["anac"] = [montar("anac", r["id"], r["question_text"], abcd(r), r["correct_answer"], categoria=limpo(r["block_name"])) for r in ler("anac_questions_export_1.csv")]
+lotes["anac"] = [montar("anac", r["id"], r["question_text"], abcd(r), r["correct_answer"], categoria=limpo(r["block_name"])) for r in ler("anac_questions_rows.csv")]
 
 outros = []
 outros += [montar("portugues", r["id"], r["question_text"], abcd(r), r["correct_answer"], "Português") for r in ler("portuguese_questions_export.csv")]
@@ -115,8 +115,13 @@ def sql_questoes(rows, titulo):
     return "\n".join(out) + "\n", len(rows)
 
 
-s, n1 = sql_questoes(lotes["anac"], "Questões da banca ANAC")
-(OUT / "0009_questoes_anac.sql").write_text(s)
+n1 = 0
+anac = lotes["anac"]
+partes = [anac[i:i + 1000] for i in range(0, len(anac), 1000)]
+for k, parte in enumerate(partes):
+    s, n = sql_questoes(parte, f"Questões da banca ANAC · parte {k + 1} de {len(partes)}")
+    (OUT / f"0009{'abcdefgh'[k]}_questoes_anac.sql").write_text(s)
+    n1 += n
 s, n2 = sql_questoes(lotes["outros"], "Questões de Português, Inglês, Técnicas, Lógico, Numérico, Verbal e SJT")
 (OUT / "0010_questoes_testes.sql").write_text(s)
 print("anac", n1, "outros", n2)
