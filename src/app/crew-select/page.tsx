@@ -67,6 +67,16 @@ export default async function CrewSelectPage() {
 
       <section className="px-6 py-12 pb-20">
         <div className="mx-auto flex max-w-[1200px] flex-col gap-5">
+          {lista.some((m) => m.recurso === "anac") && (
+            <Link href="/crew-select/anac" className="flex flex-wrap items-center justify-between gap-4 rounded-[22px] border-2 border-brand-line bg-white p-6 text-navy hover:border-brand">
+              <span className="flex flex-col gap-1">
+                <span className="self-start rounded-full bg-brand-soft px-3 py-1 font-display text-xs font-bold tracking-[.08em] text-brand-strong uppercase">Simulados ANAC</span>
+                <strong className="font-display text-xl font-extrabold">Treine para a prova da ANAC</strong>
+                <span className="text-[15px] text-ink-2">Estudo por bloco ou prova completa, com sua evolução e o gabarito comentado.</span>
+              </span>
+              <span className="inline-flex min-h-12 items-center gap-2 rounded-full bg-brand-strong px-6 font-display font-bold text-white">Abrir simulados <Arrow /></span>
+            </Link>
+          )}
           <h2 className="font-display text-2xl font-extrabold">Módulos</h2>
           <ol className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
             {lista.map((m) => {

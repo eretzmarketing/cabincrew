@@ -31,6 +31,9 @@ export default async function ResultadoPage({ params, searchParams }: { params: 
   const nota = tentativa.nota ?? 0;
   const aprovado = nota >= simulado.nota_minima;
   const emBranco = gabarito.filter((q) => !q.resposta).length;
+  // simulados da ANAC voltam para a página "Simulados ANAC"
+  const anac = (simulado as Simulado & { origem?: string | null }).origem?.startsWith("cc-anac");
+  const voltar = anac ? { href: "/crew-select/anac", texto: "Simulados ANAC" } : aulaId ? { href: `/crew-select/aula/${aulaId}`, texto: "Voltar para a aula" } : null;
 
   // desempenho por categoria (ex.: blocos da ANAC)
   const porCategoria = new Map<string, { certas: number; total: number }>();
@@ -45,7 +48,7 @@ export default async function ResultadoPage({ params, searchParams }: { params: 
   return (
     <main className="bg-soft px-4 py-8 pb-20 md:px-6">
       <div className="mx-auto flex max-w-[860px] flex-col gap-6">
-        {aulaId && <Link href={`/crew-select/aula/${aulaId}`} className="text-sm font-semibold text-muted hover:text-navy">← Voltar para a aula</Link>}
+        {voltar && <Link href={voltar.href} className="text-sm font-semibold text-muted hover:text-navy">← {voltar.texto}</Link>}
 
         <section className={`flex flex-col gap-4 rounded-[24px] p-6 md:p-8 ${aprovado ? "bg-[#0f6b3a] text-white" : "bg-navy text-white"}`}>
           <span className="text-sm font-semibold opacity-90">{simulado.titulo}</span>
@@ -64,9 +67,9 @@ export default async function ResultadoPage({ params, searchParams }: { params: 
               <input type="hidden" name="aula_id" value={aulaId} />
               <button className="min-h-12 cursor-pointer rounded-full bg-white px-6 font-display font-bold text-navy">Fazer de novo</button>
             </form>
-            {aulaId && (
-              <Link href={`/crew-select/aula/${aulaId}`} className="inline-flex min-h-12 items-center rounded-full border-2 border-white/60 px-6 font-semibold text-white">
-                Voltar para a aula
+            {voltar && (
+              <Link href={voltar.href} className="inline-flex min-h-12 items-center rounded-full border-2 border-white/60 px-6 font-semibold text-white">
+                {anac ? "Voltar aos Simulados ANAC" : voltar.texto}
               </Link>
             )}
           </div>

@@ -20,7 +20,8 @@ export default async function ModuloPage({ params }: { params: Promise<{ id: str
   ]);
   const m = modulo as Modulo | null;
   if (!m) notFound();
-  const lista = (aulas ?? []) as Aula[];
+  // no módulo com a página Simulados ANAC, os simulados ficam lá (não repetem na lista de aulas)
+  const lista = ((aulas ?? []) as Aula[]).filter((a) => !(m?.recurso === "anac" && a.tipo === "simulado"));
   const concluidas = new Set((feitas ?? []).map((f) => f.aula_id));
 
   return (
@@ -43,7 +44,17 @@ export default async function ModuloPage({ params }: { params: Promise<{ id: str
           </Link>
         )}
 
-        {lista.length === 0 && m.recurso !== "dinamicas" ? (
+        {m.recurso === "anac" && (
+          <Link href="/crew-select/anac" className="flex items-center justify-between gap-4 rounded-[20px] bg-navy p-6 text-white hover:bg-navy-deep">
+            <span className="flex flex-col gap-1">
+              <strong className="font-display text-lg">Simulados ANAC</strong>
+              <span className="text-[15px] text-[#d7dbe6]">Treine por bloco ou faça a prova completa, com seu histórico de notas.</span>
+            </span>
+            <span aria-hidden="true" className="text-2xl">→</span>
+          </Link>
+        )}
+
+        {lista.length === 0 && !m.recurso ? (
           <p className="rounded-[20px] border border-dashed border-[#c9cedb] bg-white p-10 text-center text-ink-2">
             As aulas deste módulo estão sendo preparadas. Volte em breve.
           </p>
