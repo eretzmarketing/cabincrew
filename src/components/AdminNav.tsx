@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 const ITENS = [
   { href: "/admin", label: "Visão geral", exato: true },
   { href: "/admin/usuarios", label: "Usuários" },
+  { href: "/admin/interessados", label: "Lista de interesse" },
   { href: "/admin/crew-select", label: "Crew Select" },
   { href: "/admin/forum", label: "Fórum de Seleções" },
   { href: "/admin/configuracoes", label: "Configurações" },

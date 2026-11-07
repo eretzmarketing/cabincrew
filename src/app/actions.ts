@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { createClient, getUser } from "@/lib/supabase/server";
 import { slugify } from "@/lib/forum";
 import { getConfig } from "@/lib/config";
+import { paisPorIso, telefoneInternacional } from "@/lib/paises";
 
 export type FormState = { ok?: boolean; erro?: string; msg?: string } | undefined;
 
@@ -17,6 +18,23 @@ export async function entrarListaEspera(_: FormState, form: FormData): Promise<F
   const { error } = await supabase.from("lista_espera").insert({ email });
   if (error && error.code !== "23505") return { erro: "Não foi possível salvar agora. Tente de novo." };
   return { ok: true, msg: "Pronto! Avisaremos você quando o Crew Select abrir." };
+}
+
+/* ---------- "Quero ser avisado(a)" da página Em breve ---------- */
+export async function queroSerAvisado(_: FormState, form: FormData): Promise<FormState> {
+  if (String(form.get("site") ?? "")) return { ok: true }; // campo invisível: só robôs preenchem
+  const nome = String(form.get("nome") ?? "").trim().replace(/\s+/g, " ");
+  const pais = paisPorIso(String(form.get("pais") ?? "BR")) ?? paisPorIso("BR")!;
+  if (nome.length < 3 || !nome.includes(" ")) return { erro: "Digite seu nome completo." };
+  const telefone = telefoneInternacional(pais, String(form.get("telefone") ?? ""));
+  if (!telefone) return { erro: "Confira o número do celular, com DDD." };
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("quero_ser_avisado", { p_nome: nome.slice(0, 120), p_telefone: telefone, p_pais: pais.iso });
+  if (error) {
+    console.error("[quero_ser_avisado]", error.message);
+    return { erro: "Não foi possível salvar agora. Tente de novo em instantes." };
+  }
+  return { ok: true, msg: nome.split(" ")[0] };
 }
 
 /* ---------- Cadastro e login (e-mail + senha, sem confirmação por e-mail) ---------- */

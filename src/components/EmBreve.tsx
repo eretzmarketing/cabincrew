@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { sair } from "@/app/actions";
+import AvisoForm from "@/components/AvisoForm";
 
 /** Página única exibida ao público enquanto o site está em manutenção. */
 export default function EmBreve({ logado }: { logado: boolean }) {
@@ -29,6 +30,7 @@ export default function EmBreve({ logado }: { logado: boolean }) {
             A nova Cabin Crew está chegando com o Crew Select, o preparatório que acompanha você em cada fase da seleção para
             comissário de voo.
           </p>
+          <AvisoForm />
           {logado && (
             <form action={sair}>
               <button type="submit" className="min-h-11 cursor-pointer rounded-full border-2 border-line bg-white px-5 text-sm font-semibold text-navy hover:border-navy">

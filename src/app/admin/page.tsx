@@ -15,7 +15,8 @@ export default async function AdminHome() {
     return supabase.from(t).select("*", { count: "exact", head: true });
   }
 
-  const [usuarios, hojeN, semanaN, aulasPub, conclusoes, relatos, cfg, ultimos] = await Promise.all([
+  const [interessados, usuarios, hojeN, semanaN, aulasPub, conclusoes, relatos, cfg, ultimos] = await Promise.all([
+    contar("interessados"),
     contar("profiles"),
     contar("profiles", (q) => q.gte("created_at", hoje)),
     contar("profiles", (q) => q.gte("created_at", semana)),
@@ -40,6 +41,9 @@ export default async function AdminHome() {
       </Card>
 
       <div className="flex flex-wrap gap-4">
+        <Link href="/admin/interessados" className="flex flex-[1_1_200px] text-navy hover:opacity-90">
+          <Numero rotulo="Lista de interesse" valor={interessados} detalhe="pedidos de aviso na página Em breve →" />
+        </Link>
         <Numero rotulo="Cadastros" valor={usuarios} detalhe={`${hojeN} hoje · ${semanaN} nos últimos 7 dias`} />
         <Numero rotulo="Aulas publicadas" valor={aulasPub} detalhe="no Crew Select" />
         <Numero rotulo="Aulas concluídas" valor={conclusoes} detalhe="somando todos os alunos" />

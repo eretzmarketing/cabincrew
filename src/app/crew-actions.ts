@@ -211,3 +211,12 @@ export async function alternarDinamica(form: FormData) {
   revalidatePath("/admin/crew-select/dinamicas");
   revalidatePath("/crew-select/dinamicas");
 }
+
+/* ---------- Lista de interesse (página Em breve) ---------- */
+export async function excluirInteressado(form: FormData) {
+  const { supabase } = await admin();
+  const id = String(form.get("id"));
+  if (!UUID.test(id)) return;
+  await supabase.from("interessados").delete().eq("id", id);
+  revalidatePath("/admin/interessados");
+}
