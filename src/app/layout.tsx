@@ -38,8 +38,11 @@ function liberadoNaManutencao(path: string, search: string) {
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const [{ manutencao }, { user, profile }, h] = await Promise.all([getConfig(), getUser(), headers()]);
-  const bloqueado =
-    manutencao && !profile?.is_admin && !liberadoNaManutencao(h.get("x-cc-path") ?? "/", h.get("x-cc-search") ?? "");
+  const path = h.get("x-cc-path") ?? "/";
+  const search = h.get("x-cc-search") ?? "";
+  // ?previa mostra ao administrador exatamente o que o público vê
+  const previa = manutencao && new URLSearchParams(search).has("previa");
+  const bloqueado = previa || (manutencao && !profile?.is_admin && !liberadoNaManutencao(path, search));
 
   return (
     <html lang="pt-BR" className={`${inter.variable} ${montserrat.variable}`}>
@@ -50,7 +53,8 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
           <>
         {manutencao && profile?.is_admin && (
           <div role="status" className="bg-brand-deep px-6 py-2.5 text-center text-sm font-semibold text-white">
-            Modo manutenção ligado: o público vê apenas a página “Em breve”.{" "}
+            Modo manutenção ligado: você vê o site porque é administrador. O público vê apenas a página “Em breve”.{" "}
+            <a href="/entrar?modo=entrar&previa" target="_blank" className="underline">Ver como o público vê</a>{" · "}
             <a href="/admin/configuracoes" className="underline">Desligar</a>
           </div>
         )}
