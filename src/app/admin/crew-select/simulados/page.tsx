@@ -34,16 +34,19 @@ export default async function AdminSimulados({ searchParams }: { searchParams: P
   return (
     <>
       <Link href="/admin/crew-select" className="text-sm font-semibold text-muted hover:text-navy">← Crew Select</Link>
-      <Titulo sub="Cada simulado sorteia questões dos bancos escolhidos. Ele aparece para o aluno pela aula do tipo Simulado.">Simulados e questões</Titulo>
+      <Titulo sub="Cada simulado sorteia questões dos bancos escolhidos. Ele aparece para o aluno pela aula do tipo Simulado.">Simulados</Titulo>
 
       <Card>
-        <h2 className="font-display text-xl font-bold">Bancos de questões</h2>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="font-display text-xl font-bold">Bancos de questões</h2>
+          <Link href="/admin/questoes" className="text-sm font-semibold">Ver e corrigir questões →</Link>
+        </div>
         <div className="flex flex-wrap gap-3">
           {Object.entries(BANCOS).map(([k, v]) => (
-            <div key={k} className="flex flex-[1_1_180px] flex-col rounded-xl border border-line px-4 py-3">
+            <Link key={k} href={`/admin/questoes?banco=${k}`} className="flex flex-[1_1_180px] flex-col rounded-xl border border-line px-4 py-3 text-navy hover:border-navy">
               <span className="text-[13px] text-muted">{v}</span>
               <strong className="font-display text-2xl">{(porBanco.get(k) ?? 0).toLocaleString("pt-BR")}</strong>
-            </div>
+            </Link>
           ))}
         </div>
       </Card>

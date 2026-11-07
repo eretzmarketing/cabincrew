@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getUser } from "@/lib/supabase/server";
 import type { FormState } from "@/app/actions";
+import { BANCOS } from "@/lib/crew";
 
 const UUID = /^[0-9a-f-]{36}$/i;
 
@@ -219,4 +220,67 @@ export async function excluirInteressado(form: FormData) {
   if (!UUID.test(id)) return;
   await supabase.from("interessados").delete().eq("id", id);
   revalidatePath("/admin/interessados");
+}
+
+/* ---------- Banco de questões (administrador) ---------- */
+const LETRAS = ["A", "B", "C", "D", "E"] as const;
+const urlOk = (v: string | null) => !v || /^https?:\/\/\S+$/i.test(v) || v.startsWith("/");
+
+export async function salvarQuestao(_: FormState, form: FormData): Promise<FormState> {
+  const { supabase } = await admin();
+  const id = String(form.get("id") ?? "");
+  const banco = String(form.get("banco") ?? "");
+  if (!(banco in BANCOS)) return { erro: "Escolha o banco da questão." };
+
+  const alternativas = LETRAS.map((letra) => ({
+    letra,
+    texto: txt(form, `alt_${letra}`, 2000),
+    imagem_url: txt(form, `alt_${letra}_img`, 500),
+  })).filter((a) => a.texto || a.imagem_url);
+  // Reorganiza as letras na ordem em que ficaram (sem buracos)
+  const letraAntiga = new Map<string, string>(alternativas.map((a, i) => [a.letra, LETRAS[i]]));
+  const correta = letraAntiga.get(String(form.get("correta") ?? "")) ?? null;
+  const dados = {
+    banco,
+    categoria: txt(form, "categoria", 120),
+    contexto: txt(form, "contexto", 6000),
+    enunciado: txt(form, "enunciado", 4000),
+    imagem_url: txt(form, "imagem_url", 500),
+    alternativas: alternativas.map((a, i) => ({ ...a, letra: LETRAS[i] })),
+    correta,
+    explicacao: txt(form, "explicacao", 4000),
+    ativo: form.get("ativo") === "on",
+  };
+  if (!dados.enunciado) return { erro: "Escreva o enunciado." };
+  if (alternativas.length < 2) return { erro: "Preencha pelo menos duas alternativas." };
+  if (!correta) return { erro: "Marque qual alternativa é a correta." };
+  if (![dados.imagem_url, ...alternativas.map((a) => a.imagem_url)].every(urlOk)) return { erro: "Confira os endereços de imagem (devem começar com https://)." };
+
+  if (UUID.test(id)) {
+    const { error } = await supabase.from("questoes").update(dados).eq("id", id);
+    if (error) return { erro: "Não foi possível salvar a questão." };
+    revalidatePath("/admin/questoes", "layout");
+    return { ok: true, msg: "Questão salva." };
+  }
+  const { data, error } = await supabase.from("questoes").insert(dados).select("id").single();
+  if (error || !data) return { erro: "Não foi possível criar a questão." };
+  revalidatePath("/admin/questoes", "layout");
+  redirect(`/admin/questoes/${data.id}?criada=1`);
+}
+
+export async function alternarQuestao(form: FormData) {
+  const { supabase } = await admin();
+  const id = String(form.get("id"));
+  if (!UUID.test(id)) return;
+  await supabase.from("questoes").update({ ativo: form.get("ativo") === "true" }).eq("id", id);
+  revalidatePath("/admin/questoes", "layout");
+}
+
+export async function excluirQuestao(form: FormData) {
+  const { supabase } = await admin();
+  const id = String(form.get("id"));
+  const voltar = String(form.get("voltar") ?? "/admin/questoes");
+  if (UUID.test(id)) await supabase.from("questoes").delete().eq("id", id);
+  revalidatePath("/admin/questoes", "layout");
+  redirect(voltar.startsWith("/admin/questoes") ? voltar : "/admin/questoes");
 }

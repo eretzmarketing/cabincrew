@@ -30,7 +30,8 @@ export default async function AdminCrewSelect() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <Titulo sub="Módulos e aulas que os alunos veem na área do Crew Select.">Crew Select</Titulo>
         <div className="flex flex-wrap gap-2">
-          <Link href="/admin/crew-select/simulados" className={btnSecundario}>Simulados e questões</Link>
+          <Link href="/admin/crew-select/simulados" className={btnSecundario}>Simulados</Link>
+          <Link href="/admin/questoes" className={btnSecundario}>Banco de questões</Link>
           <Link href="/admin/crew-select/dinamicas" className={btnSecundario}>Dinâmicas</Link>
           <Link href="/admin/crew-select/aula/nova" className={btnPrimario}>+ Nova aula</Link>
         </div>

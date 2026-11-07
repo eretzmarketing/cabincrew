@@ -59,6 +59,8 @@ def montar(banco, origem, enunciado, alts, correta, categoria=None, contexto=Non
         and correta
         and len(alts) >= 3
         and not any(a[2] for a in alts)
+        and not imagem  # a figura costuma rotular as opções (A, B, C…)
+        and not any(t.strip().upper().rstrip(").") in ("A", "B", "C", "D", "E") for t in textos)
         and not any(FIXAS.search(t) for t in textos)
         and not re.search(r"alternativa\s+[a-e]\b|\bletra\s+[a-e]\b|\(\s*[a-e]\s*\)", enunciado or "", re.I)
     )
