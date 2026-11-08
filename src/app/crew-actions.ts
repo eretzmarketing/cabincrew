@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { getUser } from "@/lib/supabase/server";
 import type { FormState } from "@/app/actions";
 import { BANCOS } from "@/lib/crew";
+import { LETRAS, chaveEnunciado, type QuestaoImportada } from "@/lib/importar-questoes";
 
 const UUID = /^[0-9a-f-]{36}$/i;
 
@@ -223,7 +224,6 @@ export async function excluirInteressado(form: FormData) {
 }
 
 /* ---------- Banco de questões (administrador) ---------- */
-const LETRAS = ["A", "B", "C", "D", "E"] as const;
 const urlOk = (v: string | null) => !v || /^https?:\/\/\S+$/i.test(v) || v.startsWith("/");
 
 export async function salvarQuestao(_: FormState, form: FormData): Promise<FormState> {
@@ -323,4 +323,65 @@ export async function excluirUsuario(form: FormData) {
     if (error) msg = error.message.includes("administrador") || error.message.includes("própria") ? error.message : "Não foi possível excluir.";
   }
   voltarAnac(form, msg);
+}
+
+/* ---------- Importar questões em massa (planilha CSV) ---------- */
+export type ResultadoImportacao = { inseridas: number; atualizadas: number; repetidas: number; invalidas: number; erro?: string };
+
+export async function importarQuestoes(banco: string, linhas: QuestaoImportada[], pularRepetidas: boolean): Promise<ResultadoImportacao> {
+  const { supabase } = await admin();
+  const r: ResultadoImportacao = { inseridas: 0, atualizadas: 0, repetidas: 0, invalidas: 0 };
+  if (!(banco in BANCOS)) return { ...r, erro: "Banco inválido." };
+  if (!Array.isArray(linhas) || linhas.length > 500) return { ...r, erro: "Envie no máximo 500 questões por vez." };
+
+  const s = (v: unknown, max: number) => (typeof v === "string" && v.trim() ? v.trim().slice(0, max) : null);
+  const url = (v: string | null) => !v || /^https?:\/\/\S+$/i.test(v) || v.startsWith("/");
+  const validas: (QuestaoImportada & { chave: string })[] = [];
+  for (const q of linhas) {
+    const enunciado = s(q?.enunciado, 4000);
+    const alts = (Array.isArray(q?.alternativas) ? q.alternativas : []).slice(0, 5).map((a, i) => ({
+      letra: LETRAS[i], texto: s(a?.texto, 2000), imagem_url: s(a?.imagem_url, 500),
+    })).filter((a) => a.texto || a.imagem_url);
+    const correta = typeof q?.correta === "string" ? q.correta : "";
+    if (!enunciado || alts.length < 2 || !alts.some((a) => a.letra === correta) || !url(s(q?.imagem_url, 500)) || !alts.every((a) => url(a.imagem_url))) {
+      r.invalidas += 1;
+      continue;
+    }
+    validas.push({
+      id: typeof q.id === "string" && UUID.test(q.id) ? q.id : null,
+      categoria: s(q.categoria, 120), contexto: s(q.contexto, 6000), enunciado,
+      imagem_url: s(q.imagem_url, 500), alternativas: alts, correta, explicacao: s(q.explicacao, 4000),
+      ativo: q.ativo !== false, chave: chaveEnunciado(enunciado),
+    });
+  }
+
+  // o que já existe neste banco (para atualizar pelo id ou pular repetidas)
+  const existentes = new Map<string, string>();
+  const ids = new Set<string>();
+  for (let de = 0; ; de += 1000) {
+    const { data } = await supabase.from("questoes").select("id, enunciado").eq("banco", banco).range(de, de + 999);
+    if (!data?.length) break;
+    for (const e of data) { existentes.set(chaveEnunciado(e.enunciado), e.id); ids.add(e.id); }
+    if (data.length < 1000) break;
+  }
+
+  const novas: Record<string, unknown>[] = [];
+  for (const { chave, id, ...q } of validas) {
+    const dados = { banco, ...q };
+    if (id && ids.has(id)) {
+      const { error } = await supabase.from("questoes").update(dados).eq("id", id);
+      if (error) r.invalidas += 1; else r.atualizadas += 1;
+      continue;
+    }
+    if (pularRepetidas && existentes.has(chave)) { r.repetidas += 1; continue; }
+    existentes.set(chave, "nova");
+    novas.push(dados);
+  }
+  for (let i = 0; i < novas.length; i += 200) {
+    const { error } = await supabase.from("questoes").insert(novas.slice(i, i + 200));
+    if (error) return { ...r, erro: "Não foi possível gravar parte das questões. Tente de novo." };
+    r.inseridas += Math.min(200, novas.length - i);
+  }
+  revalidatePath("/admin/questoes", "layout");
+  return r;
 }

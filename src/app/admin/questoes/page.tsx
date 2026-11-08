@@ -64,6 +64,7 @@ export default async function AdminQuestoes({ searchParams }: { searchParams: Pr
       <div className="flex flex-wrap items-end justify-between gap-4">
         <Titulo sub="Corrija enunciados, alternativas, gabarito e explicações. As mudanças valem para os próximos simulados.">Banco de questões</Titulo>
         <div className="flex flex-wrap gap-2">
+          <Link href={`/admin/questoes/importar?banco=${banco}`} className={btnSecundario}>Importar planilha</Link>
           <a href={`/admin/questoes/csv?banco=${banco}`} className={btnSecundario}>Exportar CSV</a>
           <Link href={`/admin/questoes/nova?banco=${banco}`} className={btnPrimario}>+ Nova questão</Link>
         </div>
