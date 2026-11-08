@@ -27,6 +27,21 @@ const duracao = (min: number | null) => (!min ? "sem limite de tempo" : min >= 6
 const mmss = (s: number) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, "0")}`;
 const dataCurta = (iso: string) => new Date(iso).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
 
+function SemAcesso() {
+  return (
+    <main className="flex min-h-[70vh] items-center justify-center bg-soft px-6 py-16">
+      <div className="flex max-w-[560px] flex-col items-center gap-4 rounded-[24px] border border-line bg-white p-8 text-center">
+        <span aria-hidden="true" className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-brand-soft text-2xl">✈︎</span>
+        <h1 className="font-display text-2xl font-extrabold">Simulados ANAC</h1>
+        <p className="text-[16px] leading-relaxed text-ink-2">
+          Os simulados da ANAC ainda não foram liberados para a sua conta. Fale com a equipe da Cabin Crew para ter acesso.
+        </p>
+        <Link href="/crew-select" className="inline-flex min-h-12 items-center rounded-full bg-navy px-6 font-semibold text-white">Voltar ao Crew Select</Link>
+      </div>
+    </main>
+  );
+}
+
 function Card({ titulo, valor, destaque }: { titulo: string; valor: string; destaque?: boolean }) {
   return (
     <div className="flex flex-[1_1_150px] flex-col items-center gap-1 rounded-2xl border border-line bg-white px-4 py-5 text-center">
@@ -66,6 +81,10 @@ function Grafico({ pontos, minima }: { pontos: { nota: number; data: string }[];
 export default async function SimuladosAnac() {
   const { supabase, user, liberado } = await exigirCrewSelect("/crew-select/anac");
   if (!liberado) redirect("/crew-select");
+
+  // acesso aos Simulados ANAC: liberado aluno a aluno no painel (ou para todos)
+  const { data: acesso, error: semFuncao } = await supabase.rpc("anac_liberado");
+  if (!semFuncao && !acesso) return <SemAcesso />;
 
   const origens = [...BLOCOS.map((b) => b.origem), COMPLETA];
   const { data: sims } = await supabase.from("simulados").select("id, origem, titulo, qtd_questoes, tempo_min, nota_minima").in("origem", origens);

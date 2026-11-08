@@ -5,9 +5,10 @@ export type Config = {
   forum_ativo: boolean;
   crew_select_aberto: boolean;
   manutencao: boolean;
+  anac_para_todos: boolean;
 };
 
-const PADRAO: Config = { forum_ativo: false, crew_select_aberto: true, manutencao: false };
+const PADRAO: Config = { forum_ativo: false, crew_select_aberto: true, manutencao: false, anac_para_todos: false };
 
 /** Chaves liga/desliga do site, lidas uma vez por requisição (funciona também para visitantes). */
 export const getConfig = cache(async (): Promise<Config> => {

@@ -127,7 +127,7 @@ export async function excluirAula(form: FormData) {
 export async function alterarConfig(form: FormData) {
   const { supabase } = await admin();
   const chave = String(form.get("chave"));
-  if (!["forum_ativo", "crew_select_aberto", "manutencao"].includes(chave)) return;
+  if (!["forum_ativo", "crew_select_aberto", "manutencao", "anac_para_todos"].includes(chave)) return;
   await supabase
     .from("configuracoes")
     .update({ valor: form.get("valor") === "true", updated_at: new Date().toISOString() })
@@ -283,4 +283,44 @@ export async function excluirQuestao(form: FormData) {
   if (UUID.test(id)) await supabase.from("questoes").delete().eq("id", id);
   revalidatePath("/admin/questoes", "layout");
   redirect(voltar.startsWith("/admin/questoes") ? voltar : "/admin/questoes");
+}
+
+/* ---------- Painel Simulado ANAC: acesso, bloqueio e exclusão de alunos ---------- */
+function voltarAnac(form: FormData, msg: string) {
+  const v = String(form.get("voltar") ?? "");
+  const base = v.startsWith("/admin/anac") ? v : "/admin/anac";
+  revalidatePath("/admin/anac");
+  redirect(`${base}${base.includes("?") ? "&" : "?"}ok=${encodeURIComponent(msg)}#alunos`);
+}
+
+export async function liberarAnac(form: FormData) {
+  const { supabase } = await admin();
+  const id = String(form.get("id"));
+  const liberar = form.get("liberar") === "true";
+  if (UUID.test(id)) await supabase.rpc("admin_liberar_anac", { p_user: id, p_liberar: liberar });
+  voltarAnac(form, liberar ? "Acesso liberado." : "Acesso removido.");
+}
+
+export async function bloquearUsuario(form: FormData) {
+  const { supabase } = await admin();
+  const id = String(form.get("id"));
+  const bloquear = form.get("bloquear") === "true";
+  let msg = bloquear ? "Aluno bloqueado." : "Aluno desbloqueado.";
+  if (UUID.test(id)) {
+    const { error } = await supabase.rpc("admin_bloquear_usuario", { p_user: id, p_bloquear: bloquear });
+    if (error) msg = error.message.includes("administrador") || error.message.includes("própria") ? error.message : "Não foi possível alterar o bloqueio.";
+  }
+  voltarAnac(form, msg);
+}
+
+export async function excluirUsuario(form: FormData) {
+  const { supabase } = await admin();
+  const id = String(form.get("id"));
+  let msg = "Aluno excluído da plataforma.";
+  if (form.get("confirmo") !== "on") msg = "Marque a confirmação para excluir.";
+  else if (UUID.test(id)) {
+    const { error } = await supabase.rpc("admin_excluir_usuario", { p_user: id });
+    if (error) msg = error.message.includes("administrador") || error.message.includes("própria") ? error.message : "Não foi possível excluir.";
+  }
+  voltarAnac(form, msg);
 }

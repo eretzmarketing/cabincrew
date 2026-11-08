@@ -12,11 +12,13 @@ export default async function CrewSelectPage() {
 
   if (!liberado) return <EmBreve nome={profile.nome ?? profile.apelido} />;
 
-  const [{ data: modulos }, { data: aulas }, { data: feitas }] = await Promise.all([
+  const [{ data: modulos }, { data: aulas }, { data: feitas }, anac] = await Promise.all([
     supabase.from("modulos").select("*").eq("publicado", true).order("ordem"),
     supabase.from("aulas").select("id, modulo_id, ordem, titulo").eq("publicado", true).order("ordem"),
     supabase.from("progresso").select("aula_id").eq("user_id", user.id),
+    supabase.rpc("anac_liberado"),
   ]);
+  const temAnac = anac.error ? true : anac.data === true;
 
   const concluidas = new Set((feitas ?? []).map((f) => f.aula_id));
   const porModulo = new Map<number, { total: number; feitas: number; proxima?: string }>();
@@ -67,7 +69,7 @@ export default async function CrewSelectPage() {
 
       <section className="px-6 py-12 pb-20">
         <div className="mx-auto flex max-w-[1200px] flex-col gap-5">
-          {lista.some((m) => m.recurso === "anac") && (
+          {temAnac && lista.some((m) => m.recurso === "anac") && (
             <Link href="/crew-select/anac" className="flex flex-wrap items-center justify-between gap-4 rounded-[22px] border-2 border-brand-line bg-white p-6 text-navy hover:border-brand">
               <span className="flex flex-col gap-1">
                 <span className="self-start rounded-full bg-brand-soft px-3 py-1 font-display text-xs font-bold tracking-[.08em] text-brand-strong uppercase">Simulados ANAC</span>
