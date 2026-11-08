@@ -195,11 +195,6 @@ export function PerfilForm({ p }: { p: { apelido: string; nome: string | null; w
         Nome completo
         <input name="nome" required maxLength={80} defaultValue={p.nome ?? ""} className={input} />
       </label>
-      <label className={label}>
-        Apelido público
-        <input name="apelido" required maxLength={40} defaultValue={p.apelido} className={input} />
-        <span className="text-sm font-normal text-muted">Aparece apenas nos relatos que você não publicar como anônimo.</span>
-      </label>
       <CampoWhatsapp inicial={p.whatsapp ?? ""} />
       <CampoEscola inicial={p.escola ?? ""} />
       <Aviso state={state} />

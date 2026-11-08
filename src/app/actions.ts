@@ -127,12 +127,10 @@ export async function sair() {
 }
 
 export async function salvarPerfil(_: FormState, form: FormData): Promise<FormState> {
-  const apelido = String(form.get("apelido") ?? "").trim();
   const nome = String(form.get("nome") ?? "").trim().replace(/\s+/g, " ");
   const whatsapp = normalizarWhatsapp(String(form.get("whatsapp") ?? ""));
   const escolaSel = String(form.get("escola") ?? "");
   const escola = (escolaSel === "__outra" ? String(form.get("escola_outra") ?? "") : escolaSel).trim();
-  if (apelido.length < 2 || apelido.length > 40) return { erro: "O apelido precisa ter entre 2 e 40 caracteres." };
   if (nome.length < 2 || nome.length > 80) return { erro: "Informe seu nome." };
   if (!whatsapp) return { erro: "WhatsApp inválido. Use o DDD, por exemplo (11) 98765-4321." };
   if (escola.length < 2) return { erro: "Informe sua escola de aviação." };
@@ -140,7 +138,7 @@ export async function salvarPerfil(_: FormState, form: FormData): Promise<FormSt
   if (!user) redirect("/entrar?modo=entrar");
   const { error } = await supabase
     .from("profiles")
-    .update({ apelido, nome, whatsapp, escola: escola.slice(0, 120) })
+    .update({ nome, whatsapp, escola: escola.slice(0, 120) })
     .eq("id", user.id);
   if (error) return { erro: "Não foi possível salvar." };
   revalidatePath("/", "layout");
