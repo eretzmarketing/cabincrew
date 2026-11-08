@@ -45,7 +45,27 @@ export default async function EntrevistaInglesPage() {
           ))}
         </section>
 
-        <section id="partes" aria-labelledby="titulo-partes" className="flex scroll-mt-6 flex-col gap-5">
+        <section aria-labelledby="como-e" className="flex flex-col gap-4 rounded-[22px] border border-line bg-white p-6 md:p-8">
+          <h2 id="como-e" className="font-display text-2xl font-extrabold">Como é a entrevista em inglês</h2>
+          <ul className="grid gap-4 md:grid-cols-2">
+            {[
+              ["Ela avalia sua fluência", "Muitas companhias fazem a entrevista em inglês logo no começo da seleção. Entre dezenas de candidatos com a mesma formação, um bom inglês pode ser o seu diferencial."],
+              ["Primeiro, o quebra-gelo", "O entrevistador começa com perguntas pessoais para conhecer você. Quanto mais você falar, melhor: conte experiências, viagens, livros que leu, e mostre que é uma pessoa sociável e educada."],
+              ["Depois, carreira e mundo", "Em seguida vêm vida profissional, idiomas e viagens. O entrevistador quer ver o quanto você já está perto do estilo de vida de um tripulante."],
+              ["Por fim, temperamento e situações", "Perguntas sobre personalidade e casos a bordo. Seja sincero(a) e lembre sempre das prioridades da profissão: segurança, conforto e bem-estar dos passageiros e da tripulação."],
+            ].map(([t, d], i) => (
+              <li key={t} className="flex gap-3">
+                <span aria-hidden="true" className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-navy font-display text-sm font-bold text-white">{i + 1}</span>
+                <span className="flex flex-col gap-1"><strong className="font-display">{t}</strong><span className="text-[15px] leading-relaxed text-ink-2">{d}</span></span>
+              </li>
+            ))}
+          </ul>
+          <p className="rounded-xl bg-brand-soft px-4 py-3 text-[15px] text-brand-deep">
+            <strong>Dica de ouro:</strong> seu vocabulário em inglês deve ser tão cuidadoso quanto o seu português. Frases completas, educadas e sem gírias.
+          </p>
+        </section>
+
+        <section id="partes"aria-labelledby="titulo-partes" className="flex scroll-mt-6 flex-col gap-5">
           <h2 id="titulo-partes" className="font-display text-2xl font-extrabold">As 8 partes da entrevista</h2>
           <ol className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {PARTES.map((p) => (
