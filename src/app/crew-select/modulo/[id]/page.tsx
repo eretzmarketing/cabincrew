@@ -44,6 +44,16 @@ export default async function ModuloPage({ params }: { params: Promise<{ id: str
           </Link>
         )}
 
+        {m.ordem === 8 && (
+          <Link href="/crew-select/entrevista-ingles" className="flex items-center justify-between gap-4 rounded-[20px] bg-navy p-6 text-white hover:bg-navy-deep">
+            <span className="flex flex-col gap-1">
+              <strong className="font-display text-lg">Entrevista em inglês</strong>
+              <span className="text-[15px] text-[#d7dbe6]">Perguntas reais com áudio, respostas-modelo e simulação com gravação.</span>
+            </span>
+            <span aria-hidden="true" className="text-2xl">→</span>
+          </Link>
+        )}
+
         {m.recurso === "anac" && (
           <Link href="/crew-select/anac" className="flex items-center justify-between gap-4 rounded-[20px] bg-navy p-6 text-white hover:bg-navy-deep">
             <span className="flex flex-col gap-1">
@@ -54,7 +64,7 @@ export default async function ModuloPage({ params }: { params: Promise<{ id: str
           </Link>
         )}
 
-        {lista.length === 0 && !m.recurso ? (
+        {lista.length === 0 && !m.recurso && m.ordem !== 8 ? (
           <p className="rounded-[20px] border border-dashed border-[#c9cedb] bg-white p-10 text-center text-ink-2">
             As aulas deste módulo estão sendo preparadas. Volte em breve.
           </p>
