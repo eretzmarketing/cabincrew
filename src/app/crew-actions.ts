@@ -385,3 +385,117 @@ export async function importarQuestoes(banco: string, linhas: QuestaoImportada[]
   revalidatePath("/admin/questoes", "layout");
   return r;
 }
+
+/* ---------- Entrevista em inglês (painel) ---------- */
+function revalidarEntrevista() {
+  revalidatePath("/admin/entrevista", "layout");
+  revalidatePath("/crew-select/entrevista-ingles", "layout");
+}
+
+export async function salvarParteEntrevista(_: FormState, form: FormData): Promise<FormState> {
+  const { supabase } = await admin();
+  const id = Number(form.get("id")) || null;
+  const titulo = txt(form, "titulo", 120);
+  if (!titulo) return { erro: "Dê um título para a parte." };
+  const slugBase = (txt(form, "slug", 60) ?? titulo).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60) || "parte";
+  const foto = txt(form, "foto", 300);
+  if (foto && !(foto.startsWith("/") || /^https:\/\/\S+$/.test(foto))) return { erro: "A foto precisa ser um endereço https:// ou uma foto do banco de fotos." };
+  const dados = {
+    titulo,
+    titulo_en: txt(form, "titulo_en", 120),
+    resumo: txt(form, "resumo", 600),
+    foto,
+    foto_alt: txt(form, "foto_alt", 200),
+    numero: Math.max(1, Math.min(99, Number(form.get("numero")) || 1)),
+    publicado: form.get("publicado") === "on",
+  };
+  if (id) {
+    const { error } = await supabase.from("entrevista_partes").update({ ...dados, slug: slugBase }).eq("id", id);
+    if (error) return { erro: error.code === "23505" ? "Já existe outra parte com esse endereço. Mude o título ou o endereço." : "Não foi possível salvar a parte." };
+    revalidarEntrevista();
+    return { ok: true, msg: "Parte salva." };
+  }
+  const { data, error } = await supabase.from("entrevista_partes").insert({ ...dados, slug: slugBase }).select("id").single();
+  if (error || !data) return { erro: error?.code === "23505" ? "Já existe uma parte com esse título. Use outro." : "Não foi possível criar a parte." };
+  revalidarEntrevista();
+  redirect(`/admin/entrevista/${data.id}?criada=1`);
+}
+
+export async function alternarParteEntrevista(form: FormData) {
+  const { supabase } = await admin();
+  const id = Number(form.get("id"));
+  if (id) await supabase.from("entrevista_partes").update({ publicado: form.get("publicado") === "true" }).eq("id", id);
+  revalidarEntrevista();
+}
+
+export async function excluirParteEntrevista(form: FormData) {
+  const { supabase } = await admin();
+  const id = Number(form.get("id"));
+  if (id && form.get("confirmo") === "on") await supabase.from("entrevista_partes").delete().eq("id", id);
+  revalidarEntrevista();
+  redirect("/admin/entrevista");
+}
+
+export async function salvarPerguntaEntrevista(_: FormState, form: FormData): Promise<FormState> {
+  const { supabase } = await admin();
+  const id = String(form.get("id") ?? "");
+  const parteId = Number(form.get("parte_id"));
+  const en = txt(form, "en", 600);
+  if (!parteId) return { erro: "Escolha a parte." };
+  if (!en) return { erro: "Escreva a pergunta em inglês." };
+  const variantes = String(form.get("variantes") ?? "").split(/\r?\n/).map((v) => v.trim()).filter(Boolean).slice(0, 12).map((v) => v.slice(0, 300));
+  const dados = {
+    parte_id: parteId,
+    en,
+    pt: txt(form, "pt", 600),
+    variantes,
+    modelo: txt(form, "modelo", 2000),
+    dica: txt(form, "dica", 600),
+    ativo: form.get("ativo") === "on",
+    updated_at: new Date().toISOString(),
+  };
+  if (UUID.test(id)) {
+    const { error } = await supabase.from("entrevista_perguntas").update(dados).eq("id", id);
+    if (error) return { erro: "Não foi possível salvar a pergunta." };
+    revalidarEntrevista();
+    return { ok: true, msg: "Pergunta salva." };
+  }
+  const { data: ultima } = await supabase.from("entrevista_perguntas").select("ordem").eq("parte_id", parteId).order("ordem", { ascending: false }).limit(1).maybeSingle();
+  const { data, error } = await supabase.from("entrevista_perguntas").insert({ ...dados, ordem: (ultima?.ordem ?? 0) + 1 }).select("id").single();
+  if (error || !data) return { erro: "Não foi possível criar a pergunta." };
+  revalidarEntrevista();
+  redirect(`/admin/entrevista/pergunta/${data.id}?criada=1`);
+}
+
+export async function alternarPerguntaEntrevista(form: FormData) {
+  const { supabase } = await admin();
+  const id = String(form.get("id"));
+  if (UUID.test(id)) await supabase.from("entrevista_perguntas").update({ ativo: form.get("ativo") === "true" }).eq("id", id);
+  revalidarEntrevista();
+}
+
+/** Sobe ou desce a pergunta uma posição dentro da parte (renumera a parte inteira). */
+export async function moverPerguntaEntrevista(form: FormData) {
+  const { supabase } = await admin();
+  const id = String(form.get("id"));
+  const parteId = Number(form.get("parte_id"));
+  const dir = form.get("dir") === "cima" ? -1 : 1;
+  if (!UUID.test(id) || !parteId) return;
+  const { data } = await supabase.from("entrevista_perguntas").select("id").eq("parte_id", parteId).order("ordem").order("id");
+  const ids = (data ?? []).map((q) => q.id as string);
+  const i = ids.indexOf(id);
+  const j = i + dir;
+  if (i < 0 || j < 0 || j >= ids.length) return;
+  [ids[i], ids[j]] = [ids[j], ids[i]];
+  await Promise.all(ids.map((qid, k) => supabase.from("entrevista_perguntas").update({ ordem: k + 1 }).eq("id", qid)));
+  revalidarEntrevista();
+}
+
+export async function excluirPerguntaEntrevista(form: FormData) {
+  const { supabase } = await admin();
+  const id = String(form.get("id"));
+  const parteId = Number(form.get("parte_id"));
+  if (UUID.test(id)) await supabase.from("entrevista_perguntas").delete().eq("id", id);
+  revalidarEntrevista();
+  redirect(parteId ? `/admin/entrevista/${parteId}` : "/admin/entrevista");
+}

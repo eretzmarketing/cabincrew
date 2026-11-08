@@ -2,16 +2,17 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Treino } from "@/components/EntrevistaIngles";
-import { PARTES, parteDe } from "@/lib/entrevista-ingles";
+import { carregarEntrevista } from "@/lib/entrevista-dados";
 import { exigirCrewSelect } from "@/lib/crew-gate";
 
 export const metadata: Metadata = { title: "Simulação de entrevista em inglês · Crew Select", robots: { index: false } };
 
 export default async function TreinoEntrevista({ searchParams }: { searchParams: Promise<{ parte?: string }> }) {
   const { parte: slug } = await searchParams;
-  const { liberado } = await exigirCrewSelect("/crew-select/entrevista-ingles/treino");
+  const { supabase, liberado } = await exigirCrewSelect("/crew-select/entrevista-ingles/treino");
   if (!liberado) redirect("/crew-select");
-  const parte = slug ? parteDe(slug) : undefined;
+  const { partes: PARTES } = await carregarEntrevista(supabase);
+  const parte = slug ? PARTES.find((p) => p.slug === slug) : undefined;
   const partes = parte ? [parte] : PARTES;
 
   return (

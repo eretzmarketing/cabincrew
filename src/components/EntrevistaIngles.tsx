@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import type { Parte, Pergunta } from "@/lib/entrevista-ingles";
+import { chavePergunta, type Parte, type Pergunta } from "@/lib/entrevista-ingles";
 
 /* ---------- progresso (só neste navegador) ---------- */
 const CHAVE = "cc-entrevista-praticadas";
@@ -126,14 +126,14 @@ function Cartao({ p, id, n, voz, feita, onFeita }: { p: Pergunta; id: string; n:
 export function ListaPerguntas({ parte }: { parte: Parte }) {
   const voz = useVoz();
   const { praticadas, alternar } = usePraticadas();
-  const ids = parte.perguntas.map((_, i) => `${parte.slug}:${i}`);
+  const ids = parte.perguntas.map((_, i) => chavePergunta(parte, i));
   const feitas = ids.filter((id) => praticadas.has(id)).length;
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-line bg-white px-5 py-4">
         <div className="flex min-w-[220px] flex-1 flex-col gap-1.5">
           <span className="text-[15px] font-semibold">{feitas} de {ids.length} perguntas praticadas</span>
-          <span className="h-2.5 rounded-full bg-[#eceef3]" aria-hidden="true"><span className="block h-2.5 rounded-full bg-[#2e9d5b] transition-all" style={{ width: `${(feitas / ids.length) * 100}%` }} /></span>
+          <span className="h-2.5 rounded-full bg-[#eceef3]" aria-hidden="true"><span className="block h-2.5 rounded-full bg-[#2e9d5b] transition-all" style={{ width: `${(feitas / Math.max(1, ids.length)) * 100}%` }} /></span>
         </div>
         <Link href={`/crew-select/entrevista-ingles/treino?parte=${parte.slug}`} className="inline-flex min-h-12 items-center gap-2 rounded-full bg-brand-strong px-6 font-display font-bold text-white hover:bg-brand-deep">
           🎙 Treinar esta parte
@@ -149,13 +149,14 @@ export function ListaPerguntas({ parte }: { parte: Parte }) {
 }
 
 /** Barrinha de progresso de cada parte (na página inicial). */
-export function ProgressoParte({ slug, total }: { slug: string; total: number }) {
+export function ProgressoParte({ ids }: { ids: string[] }) {
   const { praticadas } = usePraticadas();
-  const feitas = Array.from({ length: total }, (_, i) => `${slug}:${i}`).filter((id) => praticadas.has(id)).length;
+  const total = Math.max(1, ids.length);
+  const feitas = ids.filter((id) => praticadas.has(id)).length;
   return (
     <span className="flex items-center gap-2 text-[13px] text-muted">
       <span className="h-1.5 flex-1 rounded-full bg-[#eceef3]" aria-hidden="true"><span className="block h-1.5 rounded-full bg-[#2e9d5b]" style={{ width: `${(feitas / total) * 100}%` }} /></span>
-      {feitas}/{total}
+      {feitas}/{ids.length}
     </span>
   );
 }
@@ -176,7 +177,7 @@ export function Treino({ partes, rotulo }: { partes: Parte[]; rotulo: string }) 
   const [erroMic, setErroMic] = useState("");
   const gravador = useRef<MediaRecorder | null>(null);
 
-  const todas = useMemo<Item[]>(() => partes.flatMap((pt) => pt.perguntas.map((p, k) => ({ p, id: `${pt.slug}:${k}`, parte: pt.titulo }))), [partes]);
+  const todas = useMemo<Item[]>(() => partes.flatMap((pt) => pt.perguntas.map((p, k) => ({ p, id: chavePergunta(pt, k), parte: pt.titulo }))), [partes]);
 
   // cronômetro da resposta
   useEffect(() => {

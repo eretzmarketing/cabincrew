@@ -3,14 +3,17 @@ import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ProgressoParte } from "@/components/EntrevistaIngles";
-import { PARTES, TOTAL_PERGUNTAS } from "@/lib/entrevista-ingles";
+import { chavePergunta } from "@/lib/entrevista-ingles";
+import { carregarEntrevista } from "@/lib/entrevista-dados";
 import { exigirCrewSelect } from "@/lib/crew-gate";
 
 export const metadata: Metadata = { title: "Entrevista em inglês · Crew Select", robots: { index: false } };
 
 export default async function EntrevistaInglesPage() {
-  const { liberado } = await exigirCrewSelect("/crew-select/entrevista-ingles");
+  const { supabase, liberado } = await exigirCrewSelect("/crew-select/entrevista-ingles");
   if (!liberado) redirect("/crew-select");
+  const { partes: PARTES } = await carregarEntrevista(supabase);
+  const TOTAL_PERGUNTAS = PARTES.reduce((s, p) => s + p.perguntas.length, 0);
 
   return (
     <main className="bg-soft pb-20">
@@ -22,7 +25,7 @@ export default async function EntrevistaInglesPage() {
           <h1 className="font-display text-[34px] leading-tight font-extrabold md:text-[48px]">Entrevista em <span className="text-[#ff5a7a]">inglês</span></h1>
           <p className="max-w-[680px] text-[17px] leading-relaxed text-[#e3e6ee]">
             A entrevista em inglês costuma acontecer logo no começo da seleção, e falar não basta: é preciso falar bem.
-            Aqui você treina {TOTAL_PERGUNTAS} perguntas reais, em 8 partes, com áudio, tradução e respostas-modelo revisadas.
+            Aqui você treina {TOTAL_PERGUNTAS} perguntas reais, em {PARTES.length} partes, com áudio, tradução e respostas-modelo revisadas.
           </p>
           <div className="flex flex-wrap gap-2 pt-2">
             <Link href="/crew-select/entrevista-ingles/treino" className="inline-flex min-h-12 items-center gap-2 rounded-full bg-brand-strong px-6 font-display font-bold text-white hover:bg-brand-deep">🎙 Simular uma entrevista</Link>
@@ -66,7 +69,7 @@ export default async function EntrevistaInglesPage() {
         </section>
 
         <section id="partes"aria-labelledby="titulo-partes" className="flex scroll-mt-6 flex-col gap-5">
-          <h2 id="titulo-partes" className="font-display text-2xl font-extrabold">As 8 partes da entrevista</h2>
+          <h2 id="titulo-partes" className="font-display text-2xl font-extrabold">As {PARTES.length} partes da entrevista</h2>
           <ol className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {PARTES.map((p) => (
               <li key={p.slug}>
@@ -79,7 +82,7 @@ export default async function EntrevistaInglesPage() {
                     <strong className="font-display text-lg leading-tight">{p.titulo}</strong>
                     <span lang="en" className="text-[13px] font-semibold text-muted">{p.tituloEn}</span>
                     <span className="text-[14px] leading-relaxed text-ink-2">{p.resumo}</span>
-                    <span className="mt-auto pt-2"><ProgressoParte slug={p.slug} total={p.perguntas.length} /></span>
+                    <span className="mt-auto pt-2"><ProgressoParte ids={p.perguntas.map((_, i) => chavePergunta(p, i))} /></span>
                   </span>
                 </Link>
               </li>

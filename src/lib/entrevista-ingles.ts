@@ -4,6 +4,7 @@
  */
 
 export type Pergunta = {
+  id?: string; // vem do banco (painel); sem id = conteúdo embutido no código
   en: string;
   pt: string;
   variantes?: string[]; // outras formas de fazer a mesma pergunta
@@ -12,6 +13,8 @@ export type Pergunta = {
 };
 
 export type Parte = {
+  id?: number;
+  publicado?: boolean;
   slug: string;
   numero: number;
   titulo: string;
@@ -281,3 +284,6 @@ export const PARTES: Parte[] = [
 
 export const TOTAL_PERGUNTAS = PARTES.reduce((s, p) => s + p.perguntas.length, 0);
 export const parteDe = (slug: string) => PARTES.find((p) => p.slug === slug);
+
+/** Chave do progresso de uma pergunta (o id do banco ou, no conteúdo embutido, parte:posição). */
+export const chavePergunta = (parte: Parte, i: number) => parte.perguntas[i]?.id ?? `${parte.slug}:${i}`;

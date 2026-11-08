@@ -3,21 +3,18 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ListaPerguntas } from "@/components/EntrevistaIngles";
-import { PARTES, parteDe } from "@/lib/entrevista-ingles";
+import { carregarEntrevista } from "@/lib/entrevista-dados";
 import { exigirCrewSelect } from "@/lib/crew-gate";
 
 export const metadata: Metadata = { title: "Entrevista em inglês · Crew Select", robots: { index: false } };
 
-export function generateStaticParams() {
-  return PARTES.map((p) => ({ parte: p.slug }));
-}
-
 export default async function ParteEntrevista({ params }: { params: Promise<{ parte: string }> }) {
   const { parte: slug } = await params;
-  const parte = parteDe(slug);
-  if (!parte) notFound();
-  const { liberado } = await exigirCrewSelect(`/crew-select/entrevista-ingles/${slug}`);
+  const { supabase, liberado } = await exigirCrewSelect(`/crew-select/entrevista-ingles/${slug}`);
   if (!liberado) redirect("/crew-select");
+  const { partes: PARTES } = await carregarEntrevista(supabase);
+  const parte = PARTES.find((p) => p.slug === slug);
+  if (!parte) notFound();
   const anterior = PARTES[parte.numero - 2];
   const proxima = PARTES[parte.numero];
 

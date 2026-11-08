@@ -10,6 +10,7 @@ const ITENS = [
   { href: "/admin/crew-select", label: "Crew Select" },
   { href: "/admin/anac", label: "Simulado ANAC" },
   { href: "/admin/questoes", label: "Banco de questões" },
+  { href: "/admin/entrevista", label: "Entrevista em inglês" },
   { href: "/admin/forum", label: "Fórum de Seleções" },
   { href: "/admin/configuracoes", label: "Configurações" },
 ];
