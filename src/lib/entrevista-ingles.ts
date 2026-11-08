@@ -58,8 +58,8 @@ export const PARTES: Parte[] = [
     titulo: "Hobbies, família e rotina",
     tituloEn: "Hobbies, family and routine",
     resumo: "Agora o entrevistador quer conhecer seu dia a dia: o que você gosta de fazer, como é sua família e se você é pontual e independente.",
-    foto: "/img/entrevista/rotina.jpg",
-    fotoAlt: "Comissária de uniforme vermelho olhando pela janela do aeroporto",
+    foto: "/img/banco/familia-praia.jpg",
+    fotoAlt: "Família sorrindo e brincando na praia",
     perguntas: [
       { en: "What's your hobby?", pt: "Qual é o seu hobby?", variantes: ["What do you like to do?", "What do you like doing?"], modelo: "I love traveling and trying new food. I also like going to the gym." },
       { en: "What don't you like to do? Why?", pt: "O que você não gosta de fazer? Por quê?", modelo: "I don't like staying at home all weekend. I prefer being active and meeting people." },
@@ -179,8 +179,8 @@ export const PARTES: Parte[] = [
     titulo: "Infância, desejos e hipóteses",
     tituloEn: "Childhood, wishes and hypotheses",
     resumo: "Lembranças de infância e perguntas com “I wish” e “If”: o entrevistador testa sua gramática e como você pensa no futuro.",
-    foto: "/img/entrevista/mala.jpg",
-    fotoAlt: "Comissária caminhando com a mala de bordo no aeroporto",
+    foto: "/img/banco/criancas-brincando.jpg",
+    fotoAlt: "Crianças brincando de patinete e patins numa estrada arborizada",
     perguntas: [
       { en: "What was your childhood like?", pt: "Como foi sua infância?", variantes: ["How was your childhood?", "Tell me about your childhood."], modelo: "I had a very happy childhood. I grew up in a big family and spent a lot of time playing outside." },
       { en: "What did you like to do when you were a child?", pt: "O que você gostava de fazer quando era criança?", variantes: ["What did you use to do when you were a kid?"], modelo: "I used to play with my cousins and pretend I was flying a plane.", dica: "“Used to” é ótimo para falar de hábitos do passado." },

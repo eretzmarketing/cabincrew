@@ -21,6 +21,8 @@ export const FOTOS = {
   "aviao-visto-de-baixo-2": { alt: "Avião visto de baixo contra o céu escuro", formato: "retrato", uso: [] },
   "comissaria-painel-voos": { alt: "Comissária de costas olhando o painel de voos do aeroporto", formato: "paisagem larga", uso: ["Entrevista em inglês · parte 3"] },
   "patio-avioes-anoitecer": { alt: "Aviões estacionados no pátio ao anoitecer", formato: "paisagem larga", uso: [] },
+  "familia-praia": { alt: "Família sorrindo e brincando na praia", formato: "paisagem", uso: ["Entrevista em inglês · parte 2"] },
+  "criancas-brincando": { alt: "Crianças brincando de patinete e patins numa estrada arborizada", formato: "paisagem", uso: ["Entrevista em inglês · parte 6"] },
 } as const;
 
 export type NomeFoto = keyof typeof FOTOS;
