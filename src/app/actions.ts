@@ -277,3 +277,27 @@ function seguro(caminho: string) {
   return caminho.startsWith("/") && !caminho.startsWith("//") ? caminho 
  : "/crew-select";
 }
+
+/* ---------- Foto de perfil (avatar) ---------- */
+export async function enviarAvatar(_: FormState, form: FormData): Promise<FormState> {
+  const { supabase, user } = await getUser();
+  if (!user) redirect("/entrar?modo=entrar&next=/conta");
+  const foto = form.get("foto");
+  if (!(foto instanceof File) || foto.size === 0) return { erro: "Escolha uma foto." };
+  if (foto.type !== "image/webp" || foto.size > 600 * 1024) return { erro: "Não foi possível preparar a foto. Tente outra imagem." };
+
+  const { error } = await supabase.storage
+    .from("avatares")
+    .upload(`${user.id}/avatar.webp`, foto, { upsert: true, contentType: "image/webp", cacheControl: "3600" });
+  if (error) {
+    console.error("[avatar] upload", error.message);
+    return { erro: "Não foi possível enviar a foto agora. Tente de novo em instantes." };
+  }
+  const { error: e2 } = await supabase.rpc("confirmar_avatar");
+  if (e2) {
+    console.error("[avatar] confirmar", e2.message);
+    return { erro: "A foto foi enviada, mas não conseguimos salvar no seu perfil. Tente de novo." };
+  }
+  revalidatePath("/", "layout");
+  return { ok: true, msg: "Foto salva." };
+}

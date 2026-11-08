@@ -37,6 +37,7 @@ export type Perfil = {
   whatsapp: string | null;
   escola: string | null;
   bloqueado?: boolean;
+  avatar_em?: string | null;
 };
 
 /** Usuário logado (ou null) e o perfil dele — uma consulta por requisição. */
@@ -47,8 +48,9 @@ export const getUser = cache(async function getUser() {
   } = await supabase.auth.getUser();
   if (!user) return { supabase, user: null, profile: null };
   const campos = "apelido, is_admin, pontos, nome, whatsapp, escola";
-  let { data: profile } = await supabase.from("profiles").select(`${campos}, bloqueado`).eq("id", user.id).single<Perfil>();
-  // reserva: banco ainda sem a coluna "bloqueado" (antes de rodar o SQL 0016)
+  let { data: profile } = await supabase.from("profiles").select(`${campos}, bloqueado, avatar_em`).eq("id", user.id).single<Perfil>();
+  // reservas: banco ainda sem as colunas novas (antes de rodar os SQL 0016 e 0018)
+  if (!profile) ({ data: profile } = await supabase.from("profiles").select(`${campos}, bloqueado`).eq("id", user.id).single<Perfil>());
   if (!profile) ({ data: profile } = await supabase.from("profiles").select(campos).eq("id", user.id).single<Perfil>());
   return { supabase, user, profile };
 });
@@ -60,4 +62,10 @@ export async function exigirLogin(destino: string, admin = false) {
   if (ctx.profile.bloqueado && !ctx.profile.is_admin) redirect("/bloqueado");
   if (admin && !ctx.profile.is_admin) redirect("/crew-select");
   return { ...ctx, user: ctx.user, profile: ctx.profile };
+}
+
+/** Endereço público da foto de perfil (ou null se o aluno ainda não enviou). */
+export function avatarUrl(id: string, avatarEm?: string | null) {
+  if (!avatarEm) return null;
+  return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/avatares/${id}/avatar.webp?v=${Date.parse(avatarEm) || 0}`;
 }

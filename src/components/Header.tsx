@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { getConfig } from "@/lib/config";
-import { getUser } from "@/lib/supabase/server";
+import { avatarUrl, getUser } from "@/lib/supabase/server";
 
 export default async function Header() {
   const [{ user, profile }, { forum_ativo, manutencao }] = await Promise.all([getUser(), getConfig()]);
@@ -28,9 +28,14 @@ export default async function Header() {
               href="/conta"
               className="inline-flex min-h-11 items-center gap-2 rounded-full border-2 border-line px-4 text-[15px] font-semibold text-navy hover:border-navy"
             >
-              <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-navy text-xs font-bold uppercase text-white" aria-hidden="true">
-                {profile?.apelido?.slice(0, 2) ?? "CC"}
-              </span>
+              {user && avatarUrl(user.id, profile?.avatar_em) ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={avatarUrl(user.id, profile?.avatar_em)!} alt="" width={28} height={28} className="h-7 w-7 rounded-full object-cover" />
+              ) : (
+                <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-navy text-xs font-bold uppercase text-white" aria-hidden="true">
+                  {profile?.apelido?.slice(0, 2) ?? "CC"}
+                </span>
+              )}
               <span className="hidden sm:inline">Minha conta</span>
             </Link>
           ) : manutencao ? null : (
