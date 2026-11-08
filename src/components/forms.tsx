@@ -1,5 +1,6 @@
 "use client";
 
+import { CampoTelefone } from "@/components/TelefoneInternacional";
 import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
 import Link from "next/link";
@@ -87,24 +88,6 @@ function CampoEscola({ inicial = "" }: { inicial?: string }) {
 }
 
 /** Formata enquanto digita: (11) 98765-4321 */
-function formatarWhatsapp(v: string) {
-  const d = v.replace(/\D/g, "").replace(/^55(?=\d{10,11}$)/, "").slice(0, 11);
-  if (d.length <= 2) return d.length ? `(${d}` : "";
-  if (d.length <= 6) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
-  if (d.length <= 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
-  return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
-}
-
-function CampoWhatsapp({ inicial = "" }: { inicial?: string }) {
-  const [v, setV] = useState(formatarWhatsapp(inicial));
-  return (
-    <label className={label}>
-      WhatsApp
-      <input name="whatsapp" type="tel" inputMode="tel" autoComplete="tel-national" required value={v} onChange={(e) => setV(formatarWhatsapp(e.target.value))} placeholder="(11) 98765-4321" className={input} />
-    </label>
-  );
-}
-
 /* ---------- Cadastro ---------- */
 export function CadastroForm({ next }: { next: string }) {
   const [state, action] = useActionState(cadastrar, undefined);
@@ -119,7 +102,7 @@ export function CadastroForm({ next }: { next: string }) {
         E-mail
         <input name="email" type="email" required autoComplete="email" placeholder="voce@email.com" className={input} />
       </label>
-      <CampoWhatsapp />
+      <CampoTelefone />
       <CampoEscola />
       <label className={label}>
         Crie uma senha
@@ -195,7 +178,7 @@ export function PerfilForm({ p }: { p: { apelido: string; nome: string | null; w
         Nome completo
         <input name="nome" required maxLength={80} defaultValue={p.nome ?? ""} className={input} />
       </label>
-      <CampoWhatsapp inicial={p.whatsapp ?? ""} />
+      <CampoTelefone inicial={p.whatsapp} />
       <CampoEscola inicial={p.escola ?? ""} />
       <Aviso state={state} />
       <Enviar className="self-start">Salvar</Enviar>

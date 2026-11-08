@@ -62,3 +62,10 @@ export function telefoneInternacional(p: Pais, bruto: string) {
 }
 
 export const exemploTelefone = (p: Pais) => p.mascara.replace(/#/g, "0").replace(/^\(00\) 00000-0000$/, "(11) 98765-4321");
+
+/** Nome do país a partir do telefone internacional (+5511…) — o DDI mais longo que bater. */
+export function separarTelefoneServidor(internacional: string) {
+  const d = internacional.replace(/\D/g, "");
+  const p = [...PAISES].sort((a, b) => b.ddi.length - a.ddi.length).find((x) => d.startsWith(x.ddi) && x.iso !== "CA");
+  return p?.nome ?? "";
+}

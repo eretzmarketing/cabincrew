@@ -70,7 +70,7 @@ export default async function AdminHome() {
           <h2 className="font-display text-xl font-bold">Atalhos</h2>
           <div className="flex flex-col gap-2">
             <Link href="/admin/crew-select" className={btnSecundario}>Editar módulos e aulas</Link>
-            <a href="/admin/usuarios/csv" className={btnSecundario}>Baixar cadastros (CSV)</a>
+            <a href="/admin/usuarios/csv" className={btnSecundario}>Exportar todos os usuários (CSV)</a>
             <Link href="/admin/configuracoes" className={btnSecundario}>Ligar ou desligar recursos</Link>
           </div>
         </Card>

@@ -34,7 +34,7 @@ export default async function UsuariosPage({ searchParams }: { searchParams: Pro
     <>
       <div className="flex flex-wrap items-end justify-between gap-4">
         <Titulo sub={`${total} ${total === 1 ? "cadastro" : "cadastros"}${busca ? ` encontrados para “${busca}”` : ""}.`}>Usuários</Titulo>
-        <a href="/admin/usuarios/csv" className={btnSecundario}>Baixar todos em CSV</a>
+        <a href="/admin/usuarios/csv" className={btnSecundario}>⬇ Exportar todos os usuários (CSV)</a>
       </div>
 
       <form className="flex flex-wrap gap-2" role="search">

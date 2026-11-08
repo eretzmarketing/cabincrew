@@ -45,25 +45,29 @@ function destinoSeguro(form: FormData) {
 }
 
 /** Aceita (11) 98765-4321, 11987654321, +55 11 98765-4321… e devolve +5511987654321 */
-function normalizarWhatsapp(bruto: string) {
-  let d = bruto.replace(/\D/g, "");
-  if (d.startsWith("55") && d.length >= 12) d = d.slice(2);
-  if (d.length !== 10 && d.length !== 11) return null;
-  return `+55${d}`;
+/** WhatsApp no formato internacional (+5511987654321), validado pela máscara do país escolhido. */
+function normalizarWhatsapp(form: FormData) {
+  const bruto = String(form.get("whatsapp") ?? "");
+  const pais = paisPorIso(String(form.get("whatsapp_pais") ?? ""));
+  const d = bruto.replace(/\D/g, "");
+  if (pais) return d.startsWith(pais.ddi) ? telefoneInternacional(pais, d.slice(pais.ddi.length)) : null;
+  // formulários antigos (só Brasil, sem o país)
+  const local = d.startsWith("55") && d.length >= 12 ? d.slice(2) : d;
+  return local.length === 10 || local.length === 11 ? `+55${local}` : null;
 }
 
 export async function cadastrar(_: FormState, form: FormData): Promise<FormState> {
   if ((await getConfig()).manutencao) return { erro: "Os cadastros estão fechados no momento. Volte em breve." };
   const nome = String(form.get("nome") ?? "").trim().replace(/\s+/g, " ");
   const email = String(form.get("email") ?? "").trim().toLowerCase();
-  const whatsapp = normalizarWhatsapp(String(form.get("whatsapp") ?? ""));
+  const whatsapp = normalizarWhatsapp(form);
   const escolaSel = String(form.get("escola") ?? "");
   const escola = (escolaSel === "__outra" ? String(form.get("escola_outra") ?? "") : escolaSel).trim();
   const senha = String(form.get("senha") ?? "");
 
   if (nome.length < 2 || nome.length > 80) return { erro: "Informe seu nome." };
   if (!EMAIL_RE.test(email)) return { erro: "Digite um e-mail válido." };
-  if (!whatsapp) return { erro: "Digite um WhatsApp válido com DDD, por exemplo (11) 98765-4321." };
+  if (!whatsapp) return { erro: "Digite um WhatsApp válido, com o DDD (ou o código de área do país)." };
   if (escola.length < 2) return { erro: "Informe sua escola de aviação." };
   if (senha.length < 8) return { erro: "A senha precisa ter pelo menos 8 caracteres." };
   if (form.get("aceite") !== "on") return { erro: "Aceite as regras do fórum e a política de privacidade." };
@@ -128,11 +132,11 @@ export async function sair() {
 
 export async function salvarPerfil(_: FormState, form: FormData): Promise<FormState> {
   const nome = String(form.get("nome") ?? "").trim().replace(/\s+/g, " ");
-  const whatsapp = normalizarWhatsapp(String(form.get("whatsapp") ?? ""));
+  const whatsapp = normalizarWhatsapp(form);
   const escolaSel = String(form.get("escola") ?? "");
   const escola = (escolaSel === "__outra" ? String(form.get("escola_outra") ?? "") : escolaSel).trim();
   if (nome.length < 2 || nome.length > 80) return { erro: "Informe seu nome." };
-  if (!whatsapp) return { erro: "WhatsApp inválido. Use o DDD, por exemplo (11) 98765-4321." };
+  if (!whatsapp) return { erro: "WhatsApp inválido. Confira o país e o número com DDD." };
   if (escola.length < 2) return { erro: "Informe sua escola de aviação." };
   const { supabase, user } = await getUser();
   if (!user) redirect("/entrar?modo=entrar");
