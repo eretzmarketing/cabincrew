@@ -1,0 +1,153 @@
+INGLÊS A BORDO · ÁUDIOS DO MÓDULO 1 NO ELEVENLABS
+=================================================
+
+PASSO 1 · CRIE AS 6 VOZES (uma vez só, vale para o curso inteiro)
+-----------------------------------------------------------------
+Menu Voices → Add a new voice → Voice Design.
+Cole a descrição (em inglês, funciona melhor), gere, ouça as opções e salve
+com o nome do personagem. Use sempre a mesma voz em todas as aulas.
+Se uma voz sair "de locutor", gere de novo: queremos gente conversando, não comercial.
+
+ANA
+A Brazilian woman in her mid-twenties speaking fluent English with a light, natural
+Brazilian Portuguese accent. Warm, friendly and slightly eager, like a new flight
+attendant meeting her colleagues. Natural conversational pace, clear diction,
+recorded in a quiet room, no reverb.
+
+TOM
+A British man in his early thirties from London, standard Southern English accent.
+Relaxed, friendly and confident, with a light sense of humour. An experienced flight
+attendant chatting with colleagues. Natural conversational pace, clean studio recording.
+
+GRACE
+An American woman in her mid-forties, neutral General American accent. Calm, warm and
+naturally authoritative, like a cabin manager leading a team. Speaks clearly and at a
+steady pace, never rushed. Clean studio recording.
+
+LEILA
+An Australian woman in her late twenties with a clear, natural Australian accent.
+Upbeat, cheerful and sociable, smiling as she speaks. Natural conversational pace,
+clean studio recording.
+
+CAPTAIN
+An American man in his early fifties with a deep, calm, reassuring voice and a neutral
+General American accent. An airline captain: confident, unhurried, friendly but
+professional. Clean studio recording.
+
+MARCO
+An Italian man in his late twenties speaking fluent English with a light, natural
+Italian accent. Warm, expressive and charming. Natural conversational pace, clean
+studio recording.
+
+
+PASSO 2 · GERE CADA AULA
+------------------------
+Modelo: Eleven v3 (ou o mais novo que aparecer, como v4). As tags entre [colchetes],
+como [warmly] ou [laughs softly], só funcionam no v3/v4. Elas NÃO são lidas em voz alta.
+
+Opção A (se a tela de Text to Speech tiver modo diálogo / "add speaker"):
+  crie um bloco por fala, escolha a voz do personagem e cole o texto da fala.
+
+Opção B (Studio, funciona sempre):
+  Studio → New project → cole o roteiro da aula SEM os nomes antes dos dois-pontos,
+  um parágrafo por fala. Selecione cada parágrafo e escolha a voz do personagem
+  (o nome está indicado em cada linha deste arquivo). Gere e exporte em MP3.
+
+Ajustes:
+  • Stability: "Natural" (ou entre 40% e 50%). Mais baixo fica expressivo demais.
+  • Se uma fala sair estranha, gere só ela de novo.
+  • Deixe uma pausa curta entre as falas (o Studio já faz isso).
+
+Salve cada arquivo com o nome indicado (1.1.mp3, 1.2.mp3…) e arraste todos
+juntos na galeria de Mídia do painel. Eles entram nas aulas sozinhos.
+
+Números já estão escritos por extenso, do jeito que devem ser falados.
+Não troque por algarismos: a voz pode ler "23C" de um jeito estranho.
+
+
+=====================================================================
+ARQUIVO: 1.1.mp3 · Introducing yourself · ambiente: sala da tripulação
+Vozes: Tom, Ana, Grace
+=====================================================================
+Tom: [friendly] Hi there! Are you working on the Lisbon flight?
+Ana: [warmly] Yes, I am. Hi, I'm Ana... Ana Souza.
+Tom: Nice to meet you, Ana. I'm Tom Hughes.
+Ana: Nice to meet you too, Tom. Is this your first time on this route?
+Tom: [casually] No, I've flown to Lisbon a few times. How about you?
+Ana: It's my second time. I joined the company in March.
+Grace: [brightly] Good morning, everyone! I'm Grace, your purser for today.
+Ana: Good morning, Grace. I'm Ana, and this is Tom.
+Grace: Lovely to meet you both. The briefing starts in ten minutes, in room four.
+Tom: Great, thank you. See you there.
+
+
+=====================================================================
+ARQUIVO: 1.2.mp3 · Small talk with the crew · ambiente: ônibus da tripulação
+Vozes: Leila, Ana, Marco
+=====================================================================
+Leila: [cheerfully] So, Ana, where are you based?
+Ana: I'm based in São Paulo, but I'm originally from Recife.
+Marco: [impressed] Recife! I've heard the beaches are beautiful.
+Ana: [laughs softly] They are. How long have you been flying, Marco?
+Marco: About six years now. I started with a small airline in Italy.
+Leila: And this is my third year. Do you have any plans for the layover?
+Ana: Not yet. Do you know any good places to eat in Lisbon?
+Marco: [enthusiastic] There's a great seafood restaurant near the hotel. We could go together.
+Ana: [happily] That sounds lovely. Count me in!
+
+
+=====================================================================
+ARQUIVO: 1.3.mp3 · Crew roles and positions · ambiente: avião, antes do embarque
+Vozes: Grace, Tom, Ana
+=====================================================================
+Grace: Okay, let's go through the positions. Tom, you're at L one with me, in business class.
+Tom: Sounds good.
+Grace: Ana, you're at R two. You'll work in the forward economy cabin and the mid galley.
+Ana: [carefully] Sorry... R two is the second door on the right, is that correct?
+Grace: That's right. And you're also responsible for the duty-free trolley today.
+Ana: No problem. Who's the galley operator in the rear?
+Grace: Leila. She's at L four. If you need anything, just ask her, or call me on the interphone.
+Ana: Perfect. Thanks, Grace.
+
+
+=====================================================================
+ARQUIVO: 1.4.mp3 · The pre-flight briefing · ambiente: sala de briefing
+Vozes: Grace, Captain, Ana
+=====================================================================
+Grace: [clearly] Good morning, everyone. This is flight A-U two-one-four to Lisbon. Departure is at eleven forty-five.
+Grace: We have two hundred and sixteen passengers: eighteen in business, and one hundred and ninety-eight in economy.
+Grace: There are two wheelchair passengers, one unaccompanied minor in seat twenty-three C, and a family with an infant in row thirty.
+Captain: [calm, friendly] Good morning, I'm David Reyes, your captain. Flight time is nine hours and ten minutes.
+Captain: We're expecting some turbulence about two hours after take-off, so please secure the galleys early.
+Grace: Thank you, Captain. Now, a safety question. Ana, where is the nearest fire extinguisher to your door?
+Ana: [confidently] It's in the overhead locker above row twelve, on the right-hand side.
+Grace: Excellent. Any questions? ... No? Then let's go and have a great flight.
+
+
+=====================================================================
+ARQUIVO: 1.5.mp3 · Checking and clarifying · ambiente: galley barulhenta
+Vozes: Tom, Ana
+(dica: se quiser, adicione um leve ruído de galley ao fundo; mantenha baixo)
+=====================================================================
+Tom: [a bit rushed] Ana, quick update. We have two more passengers, and one of them needs a vegetarian meal.
+Ana: Sorry, could you say that again? It's a bit noisy in here.
+Tom: [slower, clearly] Of course. Two extra passengers. One vegetarian meal, for seat seventeen A.
+Ana: Did you say seventeen A, or seventy A?
+Tom: One-seven A. Seventeen.
+Ana: Got it. So, let me check: one vegetarian meal for seventeen A, and boarding starts at eleven?
+Tom: Not quite. Boarding has been moved to eleven fifteen.
+Ana: Eleven fifteen. Thanks for letting me know.
+
+
+=====================================================================
+ARQUIVO: 1.6.mp3 · Wrapping up and review · ambiente: saindo do avião
+Vozes: Grace, Ana, Tom
+=====================================================================
+Grace: [warmly] Well done, everyone. That was a long flight, but the service went really smoothly.
+Ana: Thank you, Grace. You were a great help during the turbulence.
+Grace: And you handled the duty-free brilliantly. Your first time on the trolley, right?
+Ana: [laughs softly] Yes, it was. I was a bit nervous, but Tom gave me some good tips.
+Tom: Happy to help. So... are we still on for dinner tonight?
+Ana: Definitely. Shall we meet in the hotel lobby at seven?
+Tom: Seven it is. Get some rest first!
+Grace: Enjoy your layover, everyone. See you on the flight back.
