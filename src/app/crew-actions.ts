@@ -499,3 +499,32 @@ export async function excluirPerguntaEntrevista(form: FormData) {
   revalidarEntrevista();
   redirect(parteId ? `/admin/entrevista/${parteId}` : "/admin/entrevista");
 }
+
+/* ---------- Biblioteca de mídia ---------- */
+export async function salvarMidia(form: FormData) {
+  const { supabase } = await admin();
+  const id = String(form.get("id"));
+  if (!UUID.test(id)) return;
+  await supabase.from("midias").update({
+    titulo: txt(form, "titulo", 120),
+    descricao: txt(form, "descricao", 500),
+    pasta: txt(form, "pasta", 60),
+  }).eq("id", id);
+  revalidatePath("/admin/midia");
+}
+
+export async function excluirMidia(form: FormData) {
+  const { supabase } = await admin();
+  const id = String(form.get("id"));
+  if (!UUID.test(id)) return;
+  const { data } = await supabase.from("midias").select("arquivo, miniatura").eq("id", id).maybeSingle();
+  if (!data) return;
+  const { rm } = await import("node:fs/promises");
+  const { caminhoSeguro } = await import("@/lib/midia");
+  for (const rel of [data.arquivo, data.miniatura]) {
+    const alvo = rel ? caminhoSeguro(rel) : null;
+    if (alvo) await rm(alvo, { force: true });
+  }
+  await supabase.from("midias").delete().eq("id", id);
+  revalidatePath("/admin/midia");
+}

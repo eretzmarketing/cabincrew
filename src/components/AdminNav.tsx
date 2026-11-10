@@ -11,6 +11,7 @@ const ITENS = [
   { href: "/admin/anac", label: "Simulado ANAC" },
   { href: "/admin/questoes", label: "Banco de questões" },
   { href: "/admin/entrevista", label: "Entrevista em inglês" },
+  { href: "/admin/midia", label: "Mídia" },
   { href: "/admin/forum", label: "Fórum de Seleções" },
   { href: "/admin/configuracoes", label: "Configurações" },
 ];

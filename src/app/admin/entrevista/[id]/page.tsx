@@ -17,6 +17,9 @@ export default async function AdminParteEntrevista({ params, searchParams }: { p
   const nova = id === "nova";
   if (!nova && !/^\d+$/.test(id)) notFound();
   const { supabase } = await getUser();
+  // fotos enviadas na biblioteca de mídia também podem ser usadas
+  const { data: midias } = await supabase.from("midias").select("arquivo, descricao, titulo").eq("tipo", "imagem").order("created_at", { ascending: false }).limit(60);
+  const fotos = [...(midias ?? []).map((m) => ({ src: `/midia/${m.arquivo}`, alt: m.descricao ?? m.titulo ?? "" })), ...BANCO_FOTOS];
 
   let p: ParteEdicao;
   let perguntas: { id: string; en: string; pt: string | null; modelo: string | null; ativo: boolean }[] = [];
@@ -42,7 +45,7 @@ export default async function AdminParteEntrevista({ params, searchParams }: { p
       </div>
       {criada && <p role="status" className="rounded-xl bg-[#e5f6ec] px-4 py-3 text-[15px] text-[#0f6b3a]">Parte criada. Agora adicione as perguntas.</p>}
 
-      <Card><ParteForm p={p} fotos={BANCO_FOTOS} /></Card>
+      <Card><ParteForm p={p} fotos={fotos} /></Card>
 
       {!nova && (
         <>
