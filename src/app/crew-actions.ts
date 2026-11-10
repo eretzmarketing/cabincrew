@@ -564,3 +564,18 @@ export async function renomearMidia(id: string, titulo: string) {
   await supabase.from("midias").update({ titulo: titulo.trim().slice(0, 120) || null }).eq("id", id);
   revalidatePath("/admin/midia");
 }
+
+/* ---------- Inglês a bordo ---------- */
+export async function salvarQuizIngles(aula: string, nota: number): Promise<{ ok: boolean; concluida: boolean; melhor: number }> {
+  const { supabase, user } = await getUser();
+  const n = Math.max(0, Math.min(100, Math.round(Number(nota) || 0)));
+  if (!user || !/^\d{1,2}\.\d{1,2}$/.test(aula)) return { ok: false, concluida: false, melhor: n };
+  const { data: atual } = await supabase.from("ingles_progresso").select("nota").eq("user_id", user.id).eq("aula", aula).maybeSingle();
+  const melhor = Math.max(n, atual?.nota ?? 0);
+  const concluida = melhor >= 70;
+  const { error } = await supabase
+    .from("ingles_progresso")
+    .upsert({ user_id: user.id, aula, nota: melhor, concluida, updated_at: new Date().toISOString() }, { onConflict: "user_id,aula" });
+  revalidatePath("/crew-select/ingles-a-bordo", "layout");
+  return { ok: !error, concluida, melhor };
+}

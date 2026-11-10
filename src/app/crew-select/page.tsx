@@ -79,6 +79,15 @@ export default async function CrewSelectPage() {
               <span className="inline-flex min-h-12 items-center gap-2 rounded-full bg-brand-strong px-6 font-display font-bold text-white">Abrir simulados <Arrow /></span>
             </Link>
           )}
+          <Link href="/crew-select/ingles-a-bordo" className="group relative flex flex-wrap items-center justify-between gap-4 overflow-hidden rounded-[22px] bg-navy p-6 text-white">
+            <Image src="/img/ingles/cena-01.jpg" alt="" fill sizes="1200px" className="object-cover opacity-25 transition duration-500 group-hover:scale-[1.02]" />
+            <span className="relative flex flex-col gap-1">
+              <span className="self-start rounded-full bg-white/15 px-3 py-1 font-display text-xs font-bold tracking-[.08em] uppercase">Novo · Curso</span>
+              <strong className="font-display text-xl font-extrabold">Inglês a bordo</strong>
+              <span className="text-[15px] text-[#d7dbe6]">O inglês do dia a dia do comissário, com diálogos, exercícios de fala e quiz em cada aula.</span>
+            </span>
+            <span className="relative inline-flex min-h-12 items-center gap-2 rounded-full bg-brand-strong px-6 font-display font-bold text-white">Abrir o curso <Arrow /></span>
+          </Link>
           <h2 className="font-display text-2xl font-extrabold">Módulos</h2>
           <ol className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
             {lista.map((m) => {
