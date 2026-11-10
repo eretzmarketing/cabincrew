@@ -528,3 +528,39 @@ export async function excluirMidia(form: FormData) {
   await supabase.from("midias").delete().eq("id", id);
   revalidatePath("/admin/midia");
 }
+
+/** Exclui vários arquivos de uma vez (seleção na biblioteca). */
+export async function excluirMidias(ids: string[]) {
+  const { supabase } = await admin();
+  const validos = (Array.isArray(ids) ? ids : []).filter((i) => UUID.test(i)).slice(0, 500);
+  if (!validos.length) return 0;
+  const { data } = await supabase.from("midias").select("id, arquivo, miniatura").in("id", validos);
+  const { rm } = await import("node:fs/promises");
+  const { caminhoSeguro } = await import("@/lib/midia");
+  for (const m of data ?? []) {
+    for (const rel of [m.arquivo, m.miniatura]) {
+      const alvo = rel ? caminhoSeguro(rel) : null;
+      if (alvo) await rm(alvo, { force: true });
+    }
+  }
+  await supabase.from("midias").delete().in("id", validos);
+  revalidatePath("/admin/midia");
+  return (data ?? []).length;
+}
+
+/** Move vários arquivos para uma pasta (vazio = sem pasta). */
+export async function moverMidias(ids: string[], pasta: string) {
+  const { supabase } = await admin();
+  const validos = (Array.isArray(ids) ? ids : []).filter((i) => UUID.test(i)).slice(0, 500);
+  if (!validos.length) return;
+  await supabase.from("midias").update({ pasta: pasta.trim().slice(0, 60) || null }).in("id", validos);
+  revalidatePath("/admin/midia");
+}
+
+/** Renomeia (título) direto na grade. */
+export async function renomearMidia(id: string, titulo: string) {
+  const { supabase } = await admin();
+  if (!UUID.test(id)) return;
+  await supabase.from("midias").update({ titulo: titulo.trim().slice(0, 120) || null }).eq("id", id);
+  revalidatePath("/admin/midia");
+}

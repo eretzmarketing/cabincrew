@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState, useTransition } from "react";
-import { excluirMidia, salvarMidia } from "@/app/crew-actions";
+import { excluirMidia, excluirMidias, moverMidias, renomearMidia, salvarMidia } from "@/app/crew-actions";
 import { FORMATOS, extensao, tamanhoLegivel, urlMidia, type TipoMidia } from "@/lib/midia-comum";
 
 export type Midia = {
@@ -49,6 +49,11 @@ export default function BibliotecaMidia({ inicial }: { inicial: Midia[] }) {
   const [arrastando, setArrastando] = useState(false);
   const [aberta, setAberta] = useState<Midia | null>(null);
   const [copiado, setCopiado] = useState(false);
+  const [selecao, setSelecao] = useState<Set<string>>(new Set());
+  const [modoSelecao, setModoSelecao] = useState(false);
+  const [destino, setDestino] = useState("");
+  const [renomeando, setRenomeando] = useState<string | null>(null);
+  const [aviso, setAviso] = useState("");
   const [, startTransition] = useTransition();
   const input = useRef<HTMLInputElement>(null);
 
@@ -80,6 +85,39 @@ export default function BibliotecaMidia({ inicial }: { inicial: Midia[] }) {
       }
     }
     if (input.current) input.current.value = "";
+  }
+
+  const alternar = (id: string) => setSelecao((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+  const todosVisiveisMarcados = visiveis.length > 0 && visiveis.every((m) => selecao.has(m.id));
+  const sairSelecao = () => { setModoSelecao(false); setSelecao(new Set()); };
+  const avisar = (t: string) => { setAviso(t); setTimeout(() => setAviso(""), 3000); };
+
+  function excluirSelecionados() {
+    const ids = [...selecao];
+    if (!ids.length || !window.confirm(`Excluir ${ids.length} ${ids.length === 1 ? "arquivo" : "arquivos"} do servidor? Onde estiverem sendo usados, vão parar de aparecer.`)) return;
+    startTransition(async () => {
+      const n = await excluirMidias(ids);
+      setItens((it) => it.filter((x) => !selecao.has(x.id)));
+      sairSelecao();
+      avisar(`${n} ${n === 1 ? "arquivo excluído" : "arquivos excluídos"}.`);
+    });
+  }
+  function moverSelecionados() {
+    const ids = [...selecao];
+    if (!ids.length) return;
+    startTransition(async () => {
+      await moverMidias(ids, destino);
+      setItens((it) => it.map((x) => (selecao.has(x.id) ? { ...x, pasta: destino.trim() || null } : x)));
+      sairSelecao();
+      avisar(destino.trim() ? `Movidos para a pasta “${destino.trim()}”.` : "Arquivos tirados da pasta.");
+      setDestino("");
+    });
+  }
+  function renomear(m: Midia, titulo: string) {
+    setRenomeando(null);
+    if ((m.titulo ?? "") === titulo.trim()) return;
+    setItens((it) => it.map((x) => (x.id === m.id ? { ...x, titulo: titulo.trim() || null } : x)));
+    startTransition(() => renomearMidia(m.id, titulo));
   }
 
   async function copiar(m: Midia) {
@@ -144,12 +182,42 @@ export default function BibliotecaMidia({ inicial }: { inicial: Midia[] }) {
         <span className="ml-auto text-[13px] text-muted">{tamanhoLegivel(total)} usados no servidor</span>
       </div>
 
+      {/* seleção em massa */}
+      <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-line bg-white px-4 py-3">
+        {!modoSelecao ? (
+          <>
+            <button type="button" onClick={() => setModoSelecao(true)} disabled={!visiveis.length} className="min-h-10 cursor-pointer rounded-full border-2 border-navy px-4 text-sm font-semibold text-navy hover:bg-soft disabled:opacity-40">☑ Selecionar vários</button>
+            <span className="text-[13px] text-muted">Para excluir ou mover vários de uma vez. Para renomear, clique no ✎ ao lado do nome.</span>
+          </>
+        ) : (
+          <>
+            <label className="flex min-h-10 cursor-pointer items-center gap-2 text-sm font-semibold">
+              <input type="checkbox" checked={todosVisiveisMarcados} onChange={() => setSelecao(todosVisiveisMarcados ? new Set() : new Set(visiveis.map((m) => m.id)))} className="h-5 w-5 accent-brand-strong" />
+              Marcar todos ({visiveis.length})
+            </label>
+            <span className="text-sm text-muted">{selecao.size} {selecao.size === 1 ? "selecionado" : "selecionados"}</span>
+            <span className="ml-auto flex flex-wrap items-center gap-2">
+              <input list="pastas-midia" value={destino} onChange={(e) => setDestino(e.target.value)} placeholder="Pasta de destino" aria-label="Pasta de destino" className="min-h-10 w-44 rounded-xl border border-[#c9cedb] px-3 text-[14px]" />
+              <button type="button" onClick={moverSelecionados} disabled={!selecao.size} className="min-h-10 cursor-pointer rounded-full bg-navy px-4 text-sm font-semibold text-white disabled:opacity-40">Mover</button>
+              <button type="button" onClick={excluirSelecionados} disabled={!selecao.size} className="min-h-10 cursor-pointer rounded-full bg-brand-deep px-4 text-sm font-semibold text-white disabled:opacity-40">Excluir selecionados</button>
+              <button type="button" onClick={sairSelecao} className="min-h-10 cursor-pointer rounded-full px-3 text-sm font-semibold text-muted hover:bg-soft">Cancelar</button>
+            </span>
+          </>
+        )}
+      </div>
+      {aviso && <p role="status" className="rounded-xl bg-[#e5f6ec] px-4 py-3 text-[15px] text-[#0f6b3a]">{aviso}</p>}
+
       {/* grade */}
       {visiveis.length ? (
         <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
           {visiveis.map((m) => (
-            <li key={m.id}>
-              <button type="button" onClick={() => setAberta(m)} className="group flex w-full cursor-pointer flex-col overflow-hidden rounded-2xl border border-line bg-white text-left hover:border-navy">
+            <li key={m.id} className={`relative flex flex-col overflow-hidden rounded-2xl border bg-white hover:border-navy ${selecao.has(m.id) ? "border-brand-strong ring-2 ring-brand-strong" : "border-line"}`}>
+              {modoSelecao && (
+                <input type="checkbox" checked={selecao.has(m.id)} onChange={() => alternar(m.id)} aria-label={`Selecionar ${m.titulo || m.nome}`}
+                  className="absolute top-2 right-2 z-10 h-6 w-6 cursor-pointer accent-brand-strong" />
+              )}
+              <button type="button" onClick={() => (modoSelecao ? alternar(m.id) : setAberta(m))}
+                className="group flex w-full cursor-pointer flex-col text-left">
                 <span className="relative flex aspect-[4/3] items-center justify-center overflow-hidden bg-soft">
                   {m.tipo === "imagem" ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -164,11 +232,28 @@ export default function BibliotecaMidia({ inicial }: { inicial: Midia[] }) {
                   )}
                   {m.pasta && <span className="absolute top-2 left-2 rounded-full bg-white/95 px-2 py-0.5 text-[11px] font-semibold text-navy">{m.pasta}</span>}
                 </span>
-                <span className="flex flex-col gap-0.5 px-3 py-2.5">
-                  <span className="truncate text-[14px] font-semibold text-navy">{m.titulo || m.nome}</span>
+                <span className="flex flex-col gap-0.5 px-3 pt-2.5 pb-1">
                   <span className="text-[12px] text-muted">{tamanhoLegivel(Number(m.tamanho))}{m.largura ? ` · ${m.largura}×${m.altura}` : ""}</span>
                 </span>
               </button>
+              <div className="flex items-center gap-1 px-3 pb-2.5">
+                {renomeando === m.id ? (
+                  <input
+                    autoFocus
+                    defaultValue={m.titulo || m.nome}
+                    aria-label="Novo nome"
+                    maxLength={120}
+                    onBlur={(e) => renomear(m, e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); if (e.key === "Escape") setRenomeando(null); }}
+                    className="min-h-9 w-full rounded-lg border border-navy px-2 text-[14px]"
+                  />
+                ) : (
+                  <>
+                    <span className="min-w-0 flex-1 truncate text-[14px] font-semibold text-navy" title={m.titulo || m.nome}>{m.titulo || m.nome}</span>
+                    <button type="button" onClick={() => setRenomeando(m.id)} aria-label={`Renomear ${m.titulo || m.nome}`} className="inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full text-muted hover:bg-soft hover:text-navy">✎</button>
+                  </>
+                )}
+              </div>
             </li>
           ))}
         </ul>
