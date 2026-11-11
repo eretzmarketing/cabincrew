@@ -6,6 +6,7 @@ import { getUser } from "@/lib/supabase/server";
 import type { FormState } from "@/app/actions";
 import { BANCOS } from "@/lib/crew";
 import { LETRAS, chaveEnunciado, type QuestaoImportada } from "@/lib/importar-questoes";
+import type { PerfilOpq } from "@/lib/opq";
 
 const UUID = /^[0-9a-f-]{36}$/i;
 
@@ -578,4 +579,33 @@ export async function salvarQuizIngles(aula: string, nota: number): Promise<{ ok
     .upsert({ user_id: user.id, aula, nota: melhor, concluida, updated_at: new Date().toISOString() }, { onConflict: "user_id,aula" });
   revalidatePath("/crew-select/ingles-a-bordo", "layout");
   return { ok: !error, concluida, melhor };
+}
+
+/* ---------- Perfil comportamental (OPQ) ---------- */
+export async function registrarOpq(respostas: { id: string; v: number }[]): Promise<{ perfil?: PerfilOpq; erro?: string }> {
+  const { supabase, user } = await getUser();
+  if (!user) return { erro: "Faça login para salvar seu resultado." };
+  const limpas = respostas.filter((r) => /^[0-9a-f-]{36}$/i.test(r.id) && Number.isInteger(r.v) && r.v >= 1 && r.v <= 5).slice(0, 80);
+  const { data, error } = await supabase.rpc("opq_registrar", { p_respostas: limpas });
+  if (error) return { erro: error.message.includes("10 afirma") ? "Responda pelo menos 10 afirmações." : "Não foi possível calcular agora. Tente de novo." };
+  revalidatePath("/crew-select/perfil-comportamental");
+  return { perfil: data as PerfilOpq };
+}
+
+export async function salvarAfirmacaoOpq(_: unknown, form: FormData): Promise<{ erro?: string; msg?: string }> {
+  const { supabase, profile } = await getUser();
+  if (!profile?.is_admin) return { erro: "Acesso restrito." };
+  const id = String(form.get("id") ?? "");
+  const texto = String(form.get("texto") ?? "").trim();
+  const traco = String(form.get("traco") ?? "");
+  const direcao = Number(form.get("direcao")) === -1 ? -1 : 1;
+  const ativo = form.get("ativo") === "on";
+  if (texto.length < 8) return { erro: "Escreva a afirmação." };
+  const dados = { texto, traco, direcao, ativo };
+  const { error } = id
+    ? await supabase.from("opq_afirmacoes").update(dados).eq("id", id)
+    : await supabase.from("opq_afirmacoes").insert({ ...dados, codigo: `ADM-${Date.now().toString(36)}`, origem: "admin" });
+  if (error) return { erro: "Não foi possível salvar." };
+  revalidatePath("/admin/opq");
+  return { msg: id ? "Salvo." : "Afirmação criada." };
 }

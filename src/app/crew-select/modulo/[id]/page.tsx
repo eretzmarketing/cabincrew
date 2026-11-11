@@ -44,6 +44,16 @@ export default async function ModuloPage({ params }: { params: Promise<{ id: str
           </Link>
         )}
 
+        {m.ordem === 6 && (
+          <Link href="/crew-select/perfil-comportamental" className="flex items-center justify-between gap-4 rounded-[20px] bg-navy p-6 text-white hover:bg-navy-deep">
+            <span className="flex flex-col gap-1">
+              <strong className="font-display text-lg">Perfil comportamental (OPQ / SHL)</strong>
+              <span className="text-[15px] text-[#d7dbe6]">Treine o teste de personalidade e veja seu perfil em 11 traços, com alerta de respostas incoerentes.</span>
+            </span>
+            <span aria-hidden="true" className="text-2xl">→</span>
+          </Link>
+        )}
+
         {m.ordem === 8 && (
           <Link href="/crew-select/entrevista-ingles" className="flex items-center justify-between gap-4 rounded-[20px] bg-navy p-6 text-white hover:bg-navy-deep">
             <span className="flex flex-col gap-1">
