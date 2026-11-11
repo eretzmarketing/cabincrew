@@ -609,3 +609,45 @@ export async function salvarAfirmacaoOpq(_: unknown, form: FormData): Promise<{ 
   revalidatePath("/admin/opq");
   return { msg: id ? "Salvo." : "Afirmação criada." };
 }
+
+/* ---------- Jornada ---------- */
+export async function iniciarTreino(form: FormData) {
+  const { supabase, user } = await getUser();
+  const banco = String(form.get("banco") ?? "");
+  if (!user) redirect("/entrar?modo=entrar&next=/crew-select");
+  if (!/^[a-z]{3,12}$/.test(banco)) redirect("/crew-select");
+  const { data, error } = await supabase.rpc("iniciar_treino", { p_banco: banco });
+  if (error || !data) redirect("/crew-select?erro=treino");
+  redirect(`/crew-select/simulado/${data}`);
+}
+
+export async function salvarCheckin(_: unknown, form: FormData): Promise<{ erro?: string }> {
+  const { supabase, user } = await getUser();
+  if (!user) return { erro: "Faça login." };
+  const principal = String(form.get("principal") ?? "");
+  const outras = form.getAll("tambem").map(String).filter((c) => c !== principal);
+  const lista = [principal, ...outras].filter((c) => ["latam", "gol", "azul"].includes(c));
+  if (!lista.length) return { erro: "Escolha sua companhia principal." };
+  const data = String(form.get("data_meta") ?? "");
+  const { error } = await supabase.rpc("salvar_checkin", { p_companhias: lista, p_data: /^\d{4}-\d{2}-\d{2}$/.test(data) ? data : null });
+  if (error) return { erro: "Não foi possível salvar agora. Tente de novo." };
+  revalidatePath("/crew-select", "layout");
+  redirect("/crew-select#jornada");
+}
+
+export async function conferirQuestao(tentativa: string, questao: string): Promise<{ correta: string; explicacao: string | null } | null> {
+  if (!UUID.test(tentativa) || !UUID.test(questao)) return null;
+  const { supabase, user } = await getUser();
+  if (!user) return null;
+  const { data } = await supabase.rpc("conferir_questao", { p_tentativa: tentativa, p_questao: questao });
+  const r = (data ?? [])[0] as { correta: string; explicacao: string | null } | undefined;
+  return r ?? null;
+}
+
+export async function registrarSaidaAba(tentativa: string): Promise<number> {
+  if (!UUID.test(tentativa)) return 0;
+  const { supabase, user } = await getUser();
+  if (!user) return 0;
+  const { data } = await supabase.rpc("registrar_saida_aba", { p_tentativa: tentativa });
+  return typeof data === "number" ? data : 0;
+}

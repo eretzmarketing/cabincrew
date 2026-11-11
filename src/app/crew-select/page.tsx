@@ -2,21 +2,25 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { Arrow, Check } from "@/components/icons";
+import JornadaPainel from "@/components/JornadaPainel";
 import { exigirCrewSelect } from "@/lib/crew-gate";
+import { carregarJornada } from "@/lib/jornada-dados";
 import { numeroModulo, type Modulo } from "@/lib/crew";
 
 export const metadata: Metadata = { title: "Crew Select", robots: { index: false } };
 
-export default async function CrewSelectPage() {
+export default async function CrewSelectPage({ searchParams }: { searchParams: Promise<{ erro?: string }> }) {
+  const { erro } = await searchParams;
   const { supabase, user, profile, liberado } = await exigirCrewSelect("/crew-select");
 
   if (!liberado) return <EmBreve nome={profile.nome ?? profile.apelido} />;
 
-  const [{ data: modulos }, { data: aulas }, { data: feitas }, anac] = await Promise.all([
+  const [{ data: modulos }, { data: aulas }, { data: feitas }, anac, { dados, dataMeta, jornada }] = await Promise.all([
     supabase.from("modulos").select("*").eq("publicado", true).order("ordem"),
     supabase.from("aulas").select("id, modulo_id, ordem, titulo").eq("publicado", true).order("ordem"),
     supabase.from("progresso").select("aula_id").eq("user_id", user.id),
     supabase.rpc("anac_liberado"),
+    carregarJornada(supabase, user.id),
   ]);
   const temAnac = anac.error ? true : anac.data === true;
 
@@ -31,7 +35,6 @@ export default async function CrewSelectPage() {
   }
   const total = aulas?.length ?? 0;
   const feitasTotal = (aulas ?? []).filter((a) => concluidas.has(a.id)).length;
-  const pct = total ? Math.round((feitasTotal / total) * 100) : 0;
 
   const lista = (modulos ?? []) as Modulo[];
   const continuar = lista.find((m) => porModulo.get(m.id)?.proxima);
@@ -46,18 +49,18 @@ export default async function CrewSelectPage() {
             <span className="self-start rounded-full bg-brand px-3 py-1.5 font-display text-xs font-bold tracking-[.08em] uppercase">Crew Select</span>
             <h1 className="font-display text-[30px] leading-tight font-extrabold md:text-[38px]">Olá, {primeiroNome}! Seu plano de voo até a aprovação.</h1>
             <p className="text-[17px] leading-relaxed text-[#d7dbe6]">
-              Os módulos seguem as fases reais da seleção. Avance no seu ritmo e volte direto para a fase em que você está.
+              Sua jornada segue a ordem real do processo seletivo. Cumpra a missão do dia e avance etapa por etapa.
             </p>
           </div>
           <div className="flex w-full max-w-[340px] flex-col gap-3 rounded-[20px] bg-white/10 p-6">
             <div className="flex items-end justify-between">
-              <span className="text-sm text-[#d7dbe6]">Seu progresso</span>
-              <span className="font-display text-3xl font-extrabold">{pct}%</span>
+              <span className="text-sm text-[#d7dbe6]">Sua jornada</span>
+              <span className="font-display text-3xl font-extrabold">{jornada.pctGeral}%</span>
             </div>
             <div className="h-2.5 rounded-full bg-white/20" aria-hidden="true">
-              <div className="h-2.5 rounded-full bg-brand" style={{ width: `${pct}%` }} />
+              <div className="h-2.5 rounded-full bg-brand" style={{ width: `${jornada.pctGeral}%` }} />
             </div>
-            <span className="text-sm text-[#d7dbe6]">{feitasTotal} de {total} {total === 1 ? "aula concluída" : "aulas concluídas"}</span>
+            <span className="text-sm text-[#d7dbe6]">Etapa {jornada.atual + 1} de {jornada.etapas.length}: {jornada.etapas[jornada.atual]?.titulo} · 🔥 {jornada.sequencia.dias} {jornada.sequencia.dias === 1 ? "dia" : "dias"} · {feitasTotal} de {total} aulas</span>
             {continuarAula && (
               <Link href={`/crew-select/aula/${continuarAula}`} className="mt-1 inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-brand-strong px-5 font-display font-bold text-white hover:bg-brand-deep">
                 {feitasTotal ? "Continuar de onde parei" : "Começar agora"} <Arrow />
@@ -69,6 +72,11 @@ export default async function CrewSelectPage() {
 
       <section className="px-6 py-12 pb-20">
         <div className="mx-auto flex max-w-[1200px] flex-col gap-5">
+          {erro === "treino" && (
+            <p role="alert" className="rounded-2xl bg-brand-soft px-5 py-4 text-brand-deep">Não foi possível começar o treino agora. Se o problema continuar, fale com a equipe Cabin Crew.</p>
+          )}
+          <JornadaPainel j={jornada} temCheckin={dados.companhias.length > 0} dataMeta={dataMeta} hoje={dados.hoje} />
+          <h2 className="pt-6 font-display text-2xl font-extrabold">Atalhos</h2>
           {temAnac && lista.some((m) => m.recurso === "anac") && (
             <Link href="/crew-select/anac" className="flex flex-wrap items-center justify-between gap-4 rounded-[22px] border-2 border-brand-line bg-white p-6 text-navy hover:border-brand">
               <span className="flex flex-col gap-1">
@@ -88,7 +96,7 @@ export default async function CrewSelectPage() {
             </span>
             <span className="relative inline-flex min-h-12 items-center gap-2 rounded-full bg-brand-strong px-6 font-display font-bold text-white">Abrir o curso <Arrow /></span>
           </Link>
-          <h2 className="font-display text-2xl font-extrabold">Módulos</h2>
+          <h2 id="modulos" className="scroll-mt-6 pt-4 font-display text-2xl font-extrabold">Todos os módulos</h2>
           <ol className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
             {lista.map((m) => {
               const p = porModulo.get(m.id) ?? { total: 0, feitas: 0 };

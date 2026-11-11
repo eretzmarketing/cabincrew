@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { finalizarSimulado, responderQuestao } from "@/app/crew-actions";
+import { conferirQuestao, finalizarSimulado, registrarSaidaAba, responderQuestao } from "@/app/crew-actions";
 import type { QuestaoProva, Simulado } from "@/lib/crew";
 
 function relogio(ms: number) {
@@ -18,13 +18,22 @@ export default function Prova({
   simulado,
   prazo,
   questoes,
+  modo = "prova",
+  saidasIniciais = 0,
 }: {
   tentativaId: string;
   aulaId: string;
   simulado: Simulado;
   prazo: string | null;
   questoes: QuestaoProva[];
+  modo?: "prova" | "treino";
+  saidasIniciais?: number;
 }) {
+  const treino = modo === "treino";
+  const provaReal = !treino && !!prazo;
+  const [correcao, setCorrecao] = useState<Record<string, { correta: string; explicacao: string | null }>>({});
+  const [saidas, setSaidas] = useState(saidasIniciais);
+  const [telaCheia, setTelaCheia] = useState(false);
   const [atual, setAtual] = useState(0);
   const [respostas, setRespostas] = useState<Record<string, string>>(() =>
     Object.fromEntries(questoes.filter((q) => q.resposta).map((q) => [q.id, q.resposta as string])),
@@ -53,14 +62,47 @@ export default function Prova({
     return () => clearInterval(t);
   }, [prazo]);
 
+  // Prova real: registra cada vez que o aluno sai da aba (como na JobCoach)
+  useEffect(() => {
+    if (!provaReal) return;
+    const sair = () => {
+      if (document.visibilityState === "hidden" && !entregue.current) {
+        registrarSaidaAba(tentativaId).then((n) => setSaidas((s) => Math.max(s + 1, n)));
+      }
+    };
+    const cheia = () => setTelaCheia(!!document.fullscreenElement);
+    document.addEventListener("visibilitychange", sair);
+    document.addEventListener("fullscreenchange", cheia);
+    return () => { document.removeEventListener("visibilitychange", sair); document.removeEventListener("fullscreenchange", cheia); };
+  }, [provaReal, tentativaId]);
+
+  // Treino: ao voltar para a página, mostra a correção das questões já respondidas
+  useEffect(() => {
+    if (!treino) return;
+    let vivo = true;
+    (async () => {
+      for (const x of questoes.filter((z) => z.resposta)) {
+        const r = await conferirQuestao(tentativaId, x.id);
+        if (vivo && r) setCorrecao((c) => ({ ...c, [x.id]: r }));
+      }
+    })();
+    return () => { vivo = false; };
+  }, [treino, questoes, tentativaId]);
+
   const q = questoes[atual];
   const respondidas = Object.keys(respostas).length;
 
   function escolher(letra: string) {
-    setRespostas((r) => ({ ...r, [q.id]: letra }));
+    if (treino && (correcao[q.id] || respostas[q.id])) return;
+    const id = q.id;
+    setRespostas((r) => ({ ...r, [id]: letra }));
     startTransition(async () => {
-      const ok = await responderQuestao(tentativaId, q.id, letra);
+      const ok = await responderQuestao(tentativaId, id, letra);
       setFalhou(!ok);
+      if (ok && treino) {
+        const r = await conferirQuestao(tentativaId, id);
+        if (r) setCorrecao((c) => ({ ...c, [id]: r }));
+      }
     });
   }
 
@@ -75,7 +117,7 @@ export default function Prova({
       <div className="flex min-w-0 flex-1 flex-col gap-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-col">
-            <span className="text-sm font-semibold text-[#b0002a]">{simulado.titulo}</span>
+            <span className="text-sm font-semibold text-[#b0002a]">{treino ? "Treino · correção na hora" : provaReal ? "Prova real" : "Simulado"} · {simulado.titulo}</span>
             <h1 className="font-display text-2xl font-extrabold">Questão {atual + 1} de {questoes.length}</h1>
           </div>
           {restante !== null && (
@@ -88,6 +130,20 @@ export default function Prova({
             </span>
           )}
         </div>
+
+        {provaReal && (
+          <div role="status" className={`flex flex-wrap items-center justify-between gap-3 rounded-2xl px-4 py-3 text-[14px] ${saidas ? "bg-brand-soft text-brand-deep" : "bg-navy text-white"}`}>
+            <span>
+              {saidas
+                ? <><strong>Você saiu da prova {saidas} {saidas === 1 ? "vez" : "vezes"}.</strong> Na prova real (JobCoach) a troca de aba é bloqueada e pode eliminar.</>
+                : <><strong>Modo Prova real:</strong> sem consulta e sem sair desta aba, como na prova da companhia.</>}
+            </span>
+            {!telaCheia && (
+              <button type="button" onClick={() => document.documentElement.requestFullscreen?.().catch(() => {})}
+                className={`min-h-10 cursor-pointer rounded-full px-4 font-semibold ${saidas ? "bg-white text-brand-deep" : "bg-white/15 text-white hover:bg-white/25"}`}>⛶ Tela cheia</button>
+            )}
+          </div>
+        )}
 
         <article className="flex flex-col gap-5 rounded-[20px] border border-line bg-white p-5 md:p-8">
           {q.categoria && <span className="text-[13px] font-semibold text-muted">{q.categoria}</span>}
@@ -104,19 +160,23 @@ export default function Prova({
             <legend className="sr-only">Alternativas</legend>
             {q.alternativas.map((a) => {
               const marcada = respostas[q.id] === a.letra;
+              const c = correcao[q.id];
+              const certa = !!c && c.correta === a.letra;
+              const errada = !!c && marcada && !certa;
+              const travada = treino && !!respostas[q.id];
               return (
                 <label
                   key={a.letra}
-                  className={`flex min-h-14 cursor-pointer items-start gap-4 rounded-2xl border-2 px-4 py-3.5 text-[16px] leading-relaxed transition ${
-                    marcada ? "border-navy bg-navy/5" : "border-line hover:border-[#9aa1b3]"
+                  className={`flex min-h-14 items-start gap-4 rounded-2xl border-2 px-4 py-3.5 text-[16px] leading-relaxed transition ${travada ? "cursor-default" : "cursor-pointer"} ${
+                    certa ? "border-[#2e9e62] bg-[#e5f6ec]" : errada ? "border-brand bg-brand-soft" : marcada ? "border-navy bg-navy/5" : travada ? "border-line opacity-70" : "border-line hover:border-[#9aa1b3]"
                   }`}
                 >
-                  <input type="radio" name={`q-${q.id}`} value={a.letra} checked={marcada} onChange={() => escolher(a.letra)} className="sr-only" />
+                  <input type="radio" name={`q-${q.id}`} value={a.letra} checked={marcada} disabled={travada && !marcada} onChange={() => escolher(a.letra)} className="sr-only" />
                   <span
-                    className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-display font-bold ${marcada ? "bg-navy text-white" : "bg-soft text-navy"}`}
+                    className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-display font-bold ${certa ? "bg-[#2e9e62] text-white" : errada ? "bg-brand text-white" : marcada ? "bg-navy text-white" : "bg-soft text-navy"}`}
                     aria-hidden="true"
                   >
-                    {a.letra}
+                    {certa ? "✓" : errada ? "✗" : a.letra}
                   </span>
                   <span className="flex flex-col gap-2 pt-0.5">
                     {a.texto}
@@ -129,6 +189,12 @@ export default function Prova({
               );
             })}
           </fieldset>
+          {treino && correcao[q.id] && (
+            <div role="status" className={`rounded-xl px-4 py-3 text-[15px] leading-relaxed ${correcao[q.id].correta === respostas[q.id] ? "bg-[#e5f6ec] text-[#0f6b3a]" : "bg-brand-soft text-brand-deep"}`}>
+              <strong>{correcao[q.id].correta === respostas[q.id] ? "Acertou! " : `Resposta certa: ${correcao[q.id].correta}. `}</strong>
+              {correcao[q.id].explicacao}
+            </div>
+          )}
           {falhou && <p role="alert" className="text-sm text-brand-deep">Não conseguimos salvar sua última resposta. Verifique a internet e marque de novo.</p>}
         </article>
 
@@ -151,7 +217,7 @@ export default function Prova({
             </button>
           ) : (
             <button type="button" onClick={() => setConfirmar(true)} className="min-h-12 cursor-pointer rounded-full bg-brand-strong px-7 font-display font-bold text-white hover:bg-brand-deep">
-              Entregar simulado
+              {treino ? "Ver resultado" : "Entregar simulado"}
             </button>
           )}
         </div>
@@ -190,7 +256,7 @@ export default function Prova({
               <span className="text-sm text-ink-2">
                 {respondidas < questoes.length
                   ? `Você ainda tem ${questoes.length - respondidas} ${questoes.length - respondidas === 1 ? "questão" : "questões"} sem resposta. Entregar mesmo assim?`
-                  : "Entregar o simulado e ver o resultado?"}
+                  : treino ? "Terminar o treino e ver o resultado?" : "Entregar o simulado e ver o resultado?"}
               </span>
               <div className="flex gap-2">
                 <button type="submit" className="min-h-11 flex-1 cursor-pointer rounded-full bg-brand-strong px-4 font-semibold text-white">Entregar</button>
@@ -199,7 +265,7 @@ export default function Prova({
             </div>
           ) : (
             <button type="button" onClick={() => setConfirmar(true)} className="min-h-11 cursor-pointer rounded-full border-2 border-brand-strong px-4 font-semibold text-brand-strong hover:bg-brand-soft">
-              Entregar simulado
+              {treino ? "Terminar treino" : "Entregar simulado"}
             </button>
           )}
         </form>

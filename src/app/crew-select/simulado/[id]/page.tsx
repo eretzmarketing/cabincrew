@@ -40,6 +40,8 @@ export default async function SimuladoPage({ params, searchParams }: { params: P
         simulado={sim as Simulado}
         prazo={tentativa.prazo}
         questoes={(questoes ?? []) as QuestaoProva[]}
+        modo={(tentativa as Tentativa & { modo?: string }).modo === "treino" ? "treino" : "prova"}
+        saidasIniciais={(tentativa as Tentativa & { saidas_aba?: number }).saidas_aba ?? 0}
       />
     </main>
   );

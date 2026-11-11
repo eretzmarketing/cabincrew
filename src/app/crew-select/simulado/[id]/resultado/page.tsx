@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { iniciarSimulado } from "@/app/crew-actions";
+import { iniciarSimulado, iniciarTreino } from "@/app/crew-actions";
 import { Check } from "@/components/icons";
 import { exigirCrewSelect } from "@/lib/crew-gate";
 import type { QuestaoGabarito, Simulado, Tentativa } from "@/lib/crew";
@@ -32,8 +32,11 @@ export default async function ResultadoPage({ params, searchParams }: { params: 
   const aprovado = nota >= simulado.nota_minima;
   const emBranco = gabarito.filter((q) => !q.resposta).length;
   // simulados da ANAC voltam para a página "Simulados ANAC"
-  const anac = (simulado as Simulado & { origem?: string | null }).origem?.startsWith("cc-anac");
-  const voltar = anac ? { href: "/crew-select/anac", texto: "Simulados ANAC" } : aulaId ? { href: `/crew-select/aula/${aulaId}`, texto: "Voltar para a aula" } : null;
+  const origem = (simulado as Simulado & { origem?: string | null }).origem ?? "";
+  const anac = origem.startsWith("cc-anac");
+  const treino = origem.startsWith("cc-treino-") ? origem.slice("cc-treino-".length) : null;
+  const saidas = (tentativa as Tentativa & { saidas_aba?: number }).saidas_aba ?? 0;
+  const voltar = treino ? { href: "/crew-select#jornada", texto: "Voltar à jornada" } : anac ? { href: "/crew-select/anac", texto: "Simulados ANAC" } : aulaId ? { href: `/crew-select/aula/${aulaId}`, texto: "Voltar para a aula" } : null;
 
   // desempenho por categoria (ex.: blocos da ANAC)
   const porCategoria = new Map<string, { certas: number; total: number }>();
@@ -61,15 +64,27 @@ export default async function ResultadoPage({ params, searchParams }: { params: 
               ? `Aprovado! Você passou da nota mínima de ${simulado.nota_minima}%. Continue treinando para chegar com folga no dia.`
               : `A nota mínima é ${simulado.nota_minima}%. Revise o gabarito abaixo, principalmente os temas com menos acertos, e tente de novo.`}
           </p>
+          {saidas > 0 && (
+            <p className="rounded-xl bg-white/15 px-4 py-2.5 text-[15px]">
+              ⚠️ Você saiu da aba {saidas} {saidas === 1 ? "vez" : "vezes"} durante a prova. Na prova real da companhia isso é bloqueado e pode eliminar.
+            </p>
+          )}
           <div className="flex flex-wrap gap-3">
-            <form action={iniciarSimulado}>
-              <input type="hidden" name="simulado_id" value={simulado.id} />
-              <input type="hidden" name="aula_id" value={aulaId} />
-              <button className="min-h-12 cursor-pointer rounded-full bg-white px-6 font-display font-bold text-navy">Fazer de novo</button>
-            </form>
+            {treino ? (
+              <form action={iniciarTreino}>
+                <input type="hidden" name="banco" value={treino} />
+                <button className="min-h-12 cursor-pointer rounded-full bg-white px-6 font-display font-bold text-navy">Mais 10 questões</button>
+              </form>
+            ) : (
+              <form action={iniciarSimulado}>
+                <input type="hidden" name="simulado_id" value={simulado.id} />
+                <input type="hidden" name="aula_id" value={aulaId} />
+                <button className="min-h-12 cursor-pointer rounded-full bg-white px-6 font-display font-bold text-navy">Fazer de novo</button>
+              </form>
+            )}
             {voltar && (
               <Link href={voltar.href} className="inline-flex min-h-12 items-center rounded-full border-2 border-white/60 px-6 font-semibold text-white">
-                {anac ? "Voltar aos Simulados ANAC" : voltar.texto}
+                {treino ? "Voltar à jornada" : anac ? "Voltar aos Simulados ANAC" : voltar.texto}
               </Link>
             )}
           </div>
