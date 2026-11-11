@@ -19,7 +19,7 @@ update aulas set conteudo = '<p>Entenda a estrutura completa dos processos selet
 <tr><td>6. Exames e admissão</td><td>Exames médicos, documentos e proposta.</td><td>Pendência médica ou documental, informações falsas.</td></tr>
 </tbody>
 </table>
-<p>A ordem muda de uma companhia para outra. Na GOL, por exemplo, a dinâmica vem antes das provas; na Azul, o teste de perfil vem logo depois da inscrição. A sua jornada no Crew Select segue a ordem da companhia que você escolheu no check-in.</p>
+<p>A ordem muda de uma companhia para outra. Na GOL, por exemplo, a dinâmica vem antes das provas; na Azul, o teste de perfil vem logo depois da inscrição. A sua jornada no Head Hunter segue a ordem da companhia que você escolheu no check-in.</p>
 
 <h3>Os motivos de eliminação mais comuns</h3>
 <ul>
@@ -219,7 +219,7 @@ update aulas set conteudo = '<p>Textos instrucionais e regulatórios são base f
 
 <blockquote><p>A forma como você fala revela o quanto se preparou. Recrutadores percebem na hora quem praticou a comunicação formal e quem apenas decorou respostas.</p></blockquote>', updated_at = now() where origem = 'horsky-hh-e64413dd-e538-44f9-a8f9-10da3898c259';
 
-update aulas set conteudo = '<p>O inglês da aviação tem um repertório próprio de palavras e frases que todo comissário precisa dominar, organizadas na sequência real do voo, do embarque ao pouso. Para treinar a pronúncia, use o curso <strong>Inglês a bordo</strong> e a <strong>Entrevista em inglês</strong> do Crew Select.</p>
+update aulas set conteudo = '<p>O inglês da aviação tem um repertório próprio de palavras e frases que todo comissário precisa dominar, organizadas na sequência real do voo, do embarque ao pouso. Para treinar a pronúncia, use o curso <strong>Inglês a bordo</strong> e a <strong>Entrevista em inglês</strong> do Head Hunter.</p>
 
 <h3>Vocabulário essencial</h3>
 <table>
@@ -431,7 +431,7 @@ update aulas set conteudo = '<p>A SHL é uma das maiores fornecedoras de testes 
 <li>No teste de perfil, responda com sinceridade e coerência. Respostas "perfeitas" demais chamam atenção.</li>
 </ul>
 
-<h3>Treine no Crew Select</h3>
+<h3>Treine no Head Hunter</h3>
 <ul>
 <li>Treinos rápidos de raciocínio lógico, numérico, verbal e SJT, com correção na hora.</li>
 <li>Simulados no modo Prova real, com tempo e sem consulta.</li>

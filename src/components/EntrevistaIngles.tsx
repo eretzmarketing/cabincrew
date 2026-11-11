@@ -135,7 +135,7 @@ export function ListaPerguntas({ parte }: { parte: Parte }) {
           <span className="text-[15px] font-semibold">{feitas} de {ids.length} perguntas praticadas</span>
           <span className="h-2.5 rounded-full bg-[#eceef3]" aria-hidden="true"><span className="block h-2.5 rounded-full bg-[#2e9d5b] transition-all" style={{ width: `${(feitas / Math.max(1, ids.length)) * 100}%` }} /></span>
         </div>
-        <Link href={`/crew-select/entrevista-ingles/treino?parte=${parte.slug}`} className="inline-flex min-h-12 items-center gap-2 rounded-full bg-brand-strong px-6 font-display font-bold text-white hover:bg-brand-deep">
+        <Link href={`/head-hunter/entrevista-ingles/treino?parte=${parte.slug}`} className="inline-flex min-h-12 items-center gap-2 rounded-full bg-brand-strong px-6 font-display font-bold text-white hover:bg-brand-deep">
           🎙 Treinar esta parte
         </Link>
       </div>
@@ -259,7 +259,7 @@ export function Treino({ partes, rotulo }: { partes: Parte[]; rotulo: string }) 
         <p className="max-w-[520px] text-[16px] text-ink-2">Você respondeu {fila.length} perguntas. Repita o treino até as respostas saírem naturais, sem decorar palavra por palavra.</p>
         <div className="flex flex-wrap justify-center gap-2">
           <button type="button" onClick={comecar} className="min-h-12 cursor-pointer rounded-full bg-brand-strong px-6 font-display font-bold text-white hover:bg-brand-deep">Treinar de novo</button>
-          <Link href="/crew-select/entrevista-ingles" className="inline-flex min-h-12 items-center rounded-full border-2 border-navy px-6 font-semibold text-navy hover:bg-white">Voltar às partes</Link>
+          <Link href="/head-hunter/entrevista-ingles" className="inline-flex min-h-12 items-center rounded-full border-2 border-navy px-6 font-semibold text-navy hover:bg-white">Voltar às partes</Link>
         </div>
       </div>
     );

@@ -25,7 +25,7 @@ AULAS["72ccb73e-33d7-4645-b820-1b7abad47a15"] = """
 <tr><td>6. Exames e admissão</td><td>Exames médicos, documentos e proposta.</td><td>Pendência médica ou documental, informações falsas.</td></tr>
 </tbody>
 </table>
-<p>A ordem muda de uma companhia para outra. Na GOL, por exemplo, a dinâmica vem antes das provas; na Azul, o teste de perfil vem logo depois da inscrição. A sua jornada no Crew Select segue a ordem da companhia que você escolheu no check-in.</p>
+<p>A ordem muda de uma companhia para outra. Na GOL, por exemplo, a dinâmica vem antes das provas; na Azul, o teste de perfil vem logo depois da inscrição. A sua jornada no Head Hunter segue a ordem da companhia que você escolheu no check-in.</p>
 
 <h3>Os motivos de eliminação mais comuns</h3>
 <ul>
@@ -233,7 +233,7 @@ AULAS["e64413dd-e538-44f9-a8f9-10da3898c259"] = """
 """
 
 AULAS["13bd7dd9-16c8-486c-bcb8-6b01e3cc8557"] = """
-<p>O inglês da aviação tem um repertório próprio de palavras e frases que todo comissário precisa dominar, organizadas na sequência real do voo, do embarque ao pouso. Para treinar a pronúncia, use o curso <strong>Inglês a bordo</strong> e a <strong>Entrevista em inglês</strong> do Crew Select.</p>
+<p>O inglês da aviação tem um repertório próprio de palavras e frases que todo comissário precisa dominar, organizadas na sequência real do voo, do embarque ao pouso. Para treinar a pronúncia, use o curso <strong>Inglês a bordo</strong> e a <strong>Entrevista em inglês</strong> do Head Hunter.</p>
 
 <h3>Vocabulário essencial</h3>
 <table>
@@ -451,7 +451,7 @@ AULAS["680306e1-33e0-466a-b7a9-3b077c0f7eac"] = """
 <li>No teste de perfil, responda com sinceridade e coerência. Respostas "perfeitas" demais chamam atenção.</li>
 </ul>
 
-<h3>Treine no Crew Select</h3>
+<h3>Treine no Head Hunter</h3>
 <ul>
 <li>Treinos rápidos de raciocínio lógico, numérico, verbal e SJT, com correção na hora.</li>
 <li>Simulados no modo Prova real, com tempo e sem consulta.</li>

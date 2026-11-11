@@ -3,7 +3,7 @@ import { getConfig } from "@/lib/config";
 import { exigirLogin } from "@/lib/supabase/server";
 
 /**
- * Crew Select: exige login, o acesso liberado no painel e a foto de perfil.
+ * Head Hunter: exige login, o acesso liberado no painel e a foto de perfil.
  * Administradores sempre entram. A foto só é cobrada depois que o SQL 0018 foi rodado.
  */
 export async function exigirCrewSelect(destino: string) {

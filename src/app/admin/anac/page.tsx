@@ -115,7 +115,7 @@ export default async function AdminAnac({ searchParams }: { searchParams: Promis
           ligado={p.para_todos}
           titulo="Liberar para todos os alunos"
           descricao={p.para_todos
-            ? "Ligado: qualquer aluno do Crew Select faz os Simulados ANAC (menos os bloqueados)."
+            ? "Ligado: qualquer aluno do Head Hunter faz os Simulados ANAC (menos os bloqueados)."
             : `Desligado: só os ${p.com_acesso} ${p.com_acesso === 1 ? "aluno adicionado" : "alunos adicionados"} por você fazem os Simulados ANAC.`}
         />
       </Card>

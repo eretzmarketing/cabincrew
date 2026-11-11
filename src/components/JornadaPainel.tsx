@@ -103,7 +103,7 @@ export default function JornadaPainel({ j, temCheckin, dataMeta, hoje }: { j: Jo
   return (
     <div id="jornada" className="flex scroll-mt-6 flex-col gap-8">
       {!temCheckin && (
-        <Link href="/crew-select/checkin" className="flex flex-wrap items-center justify-between gap-4 rounded-[22px] bg-brand-strong p-6 text-white hover:bg-brand-deep">
+        <Link href="/head-hunter/checkin" className="flex flex-wrap items-center justify-between gap-4 rounded-[22px] bg-brand-strong p-6 text-white hover:bg-brand-deep">
           <span className="flex flex-col gap-1">
             <strong className="font-display text-xl font-extrabold">Faça seu check-in ✈︎</strong>
             <span className="text-[15px] text-white/90">Escolha sua companhia-alvo e a sua jornada passa a seguir a ordem do processo seletivo dela.</span>
@@ -143,7 +143,7 @@ export default function JornadaPainel({ j, temCheckin, dataMeta, hoje }: { j: Jo
             <h2 id="titulo-jornada" className="font-display text-2xl font-extrabold">Sua jornada {nomeCia ? `até a ${nomeCia}` : ""}</h2>
             <p className="text-[15px] text-ink-2">
               Etapas na ordem do processo seletivo. Uma etapa fica concluída quando você atinge {META}% nos treinos e termina as aulas dela.
-              {temCheckin && <> <Link href="/crew-select/checkin" className="font-semibold text-brand-strong underline">Mudar companhia</Link></>}
+              {temCheckin && <> <Link href="/head-hunter/checkin" className="font-semibold text-brand-strong underline">Mudar companhia</Link></>}
             </p>
           </div>
           {faltam !== null && faltam >= 0 && (

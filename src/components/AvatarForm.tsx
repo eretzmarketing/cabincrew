@@ -93,7 +93,7 @@ export default function AvatarForm({ atual, iniciais, obrigatoria }: { atual: st
     <div className="flex flex-col gap-5">
       {obrigatoria && !state?.ok && (
         <p role="alert" className="rounded-xl border border-brand-line bg-brand-soft px-4 py-3 text-[15px] text-brand-deep">
-          <strong>Falta só a sua foto.</strong> Para acessar o Crew Select e os simulados, adicione uma foto de perfil.
+          <strong>Falta só a sua foto.</strong> Para acessar o Head Hunter e os simulados, adicione uma foto de perfil.
         </p>
       )}
 

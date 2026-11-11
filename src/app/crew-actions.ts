@@ -14,18 +14,18 @@ const UUID = /^[0-9a-f-]{36}$/i;
 export async function alternarAulaConcluida(form: FormData) {
   const { supabase, user } = await getUser();
   const aulaId = String(form.get("aula_id"));
-  if (!user) redirect(`/entrar?modo=entrar&next=/crew-select/aula/${aulaId}`);
+  if (!user) redirect(`/entrar?modo=entrar&next=/head-hunter/aula/${aulaId}`);
   if (!UUID.test(aulaId)) return;
 
   if (form.get("concluida") === "true") {
     await supabase.from("progresso").delete().eq("aula_id", aulaId).eq("user_id", user.id);
-    revalidatePath(`/crew-select/aula/${aulaId}`);
+    revalidatePath(`/head-hunter/aula/${aulaId}`);
     return;
   }
   await supabase.from("progresso").upsert({ aula_id: aulaId, user_id: user.id }, { ignoreDuplicates: true });
-  revalidatePath("/crew-select", "layout");
+  revalidatePath("/head-hunter", "layout");
   const proxima = String(form.get("proxima") ?? "");
-  if (UUID.test(proxima)) redirect(`/crew-select/aula/${proxima}`);
+  if (UUID.test(proxima)) redirect(`/head-hunter/aula/${proxima}`);
 }
 
 /* ---------- Administrador ---------- */
@@ -66,7 +66,7 @@ export async function salvarModulo(_: FormState, form: FormData): Promise<FormSt
     : await supabase.from("modulos").insert(dados);
   if (error) return { erro: "Não foi possível salvar o módulo." };
   revalidatePath("/", "layout");
-  if (!id) redirect("/admin/crew-select");
+  if (!id) redirect("/admin/head-hunter");
   return { ok: true, msg: "Módulo salvo." };
 }
 
@@ -74,7 +74,7 @@ export async function excluirModulo(form: FormData) {
   const { supabase } = await admin();
   await supabase.from("modulos").delete().eq("id", Number(form.get("id")));
   revalidatePath("/", "layout");
-  redirect("/admin/crew-select");
+  redirect("/admin/head-hunter");
 }
 
 export async function salvarAula(_: FormState, form: FormData): Promise<FormState> {
@@ -113,7 +113,7 @@ export async function salvarAula(_: FormState, form: FormData): Promise<FormStat
   const { data, error } = await supabase.from("aulas").insert(dados).select("id").single();
   if (error || !data) return { erro: "Não foi possível criar a aula." };
   revalidatePath("/", "layout");
-  redirect(`/admin/crew-select/aula/${data.id}?criada=1`);
+  redirect(`/admin/head-hunter/aula/${data.id}?criada=1`);
 }
 
 export async function excluirAula(form: FormData) {
@@ -122,7 +122,7 @@ export async function excluirAula(form: FormData) {
   const modulo = String(form.get("modulo_id"));
   await supabase.from("aulas").delete().eq("id", id);
   revalidatePath("/", "layout");
-  redirect(`/admin/crew-select/modulo/${modulo}`);
+  redirect(`/admin/head-hunter/modulo/${modulo}`);
 }
 
 /* ---------- Configurações e usuários ---------- */
@@ -150,10 +150,10 @@ export async function iniciarSimulado(form: FormData) {
   const { supabase, user } = await getUser();
   const simulado = Number(form.get("simulado_id"));
   const aula = String(form.get("aula_id") ?? "");
-  if (!user) redirect(`/entrar?modo=entrar&next=/crew-select/aula/${aula}`);
+  if (!user) redirect(`/entrar?modo=entrar&next=/head-hunter/aula/${aula}`);
   const { data, error } = await supabase.rpc("iniciar_simulado", { p_simulado: simulado });
-  if (error || !data) redirect(`/crew-select/aula/${aula}?erro=simulado`);
-  redirect(`/crew-select/simulado/${data}?aula=${aula}`);
+  if (error || !data) redirect(`/head-hunter/aula/${aula}?erro=simulado`);
+  redirect(`/head-hunter/simulado/${data}?aula=${aula}`);
 }
 
 /** Salva uma resposta; chamado a cada clique durante a prova. */
@@ -169,14 +169,14 @@ export async function finalizarSimulado(form: FormData) {
   const { supabase, user } = await getUser();
   const tentativa = String(form.get("tentativa_id"));
   const aula = String(form.get("aula_id") ?? "");
-  if (!user || !UUID.test(tentativa)) redirect("/crew-select");
+  if (!user || !UUID.test(tentativa)) redirect("/head-hunter");
   await supabase.rpc("finalizar_tentativa", { p_tentativa: tentativa });
   // concluir o simulado marca a aula como feita
   if (UUID.test(aula)) {
     await supabase.from("progresso").upsert({ aula_id: aula, user_id: user.id }, { ignoreDuplicates: true });
   }
-  revalidatePath("/crew-select", "layout");
-  redirect(`/crew-select/simulado/${tentativa}/resultado${UUID.test(aula) ? `?aula=${aula}` : ""}`);
+  revalidatePath("/head-hunter", "layout");
+  redirect(`/head-hunter/simulado/${tentativa}/resultado${UUID.test(aula) ? `?aula=${aula}` : ""}`);
 }
 
 /* ---------- Simulados (administrador) ---------- */
@@ -201,8 +201,8 @@ export async function salvarSimulado(_: FormState, form: FormData): Promise<Form
     ? await supabase.from("simulados").update(dados).eq("id", id)
     : await supabase.from("simulados").insert(dados);
   if (error) return { erro: "Não foi possível salvar o simulado." };
-  revalidatePath("/admin/crew-select", "layout");
-  if (!id) redirect("/admin/crew-select/simulados");
+  revalidatePath("/admin/head-hunter", "layout");
+  if (!id) redirect("/admin/head-hunter/simulados");
   return { ok: true, msg: "Simulado salvo." };
 }
 
@@ -211,8 +211,8 @@ export async function alternarDinamica(form: FormData) {
   const id = String(form.get("id"));
   if (!UUID.test(id)) return;
   await supabase.from("dinamicas").update({ ativo: form.get("ativo") === "true" }).eq("id", id);
-  revalidatePath("/admin/crew-select/dinamicas");
-  revalidatePath("/crew-select/dinamicas");
+  revalidatePath("/admin/head-hunter/dinamicas");
+  revalidatePath("/head-hunter/dinamicas");
 }
 
 /* ---------- Lista de interesse (página Em breve) ---------- */
@@ -390,7 +390,7 @@ export async function importarQuestoes(banco: string, linhas: QuestaoImportada[]
 /* ---------- Entrevista em inglês (painel) ---------- */
 function revalidarEntrevista() {
   revalidatePath("/admin/entrevista", "layout");
-  revalidatePath("/crew-select/entrevista-ingles", "layout");
+  revalidatePath("/head-hunter/entrevista-ingles", "layout");
 }
 
 export async function salvarParteEntrevista(_: FormState, form: FormData): Promise<FormState> {
@@ -577,7 +577,7 @@ export async function salvarQuizIngles(aula: string, nota: number): Promise<{ ok
   const { error } = await supabase
     .from("ingles_progresso")
     .upsert({ user_id: user.id, aula, nota: melhor, concluida, updated_at: new Date().toISOString() }, { onConflict: "user_id,aula" });
-  revalidatePath("/crew-select/ingles-a-bordo", "layout");
+  revalidatePath("/head-hunter/ingles-a-bordo", "layout");
   return { ok: !error, concluida, melhor };
 }
 
@@ -588,7 +588,7 @@ export async function registrarOpq(respostas: { id: string; v: number }[]): Prom
   const limpas = respostas.filter((r) => /^[0-9a-f-]{36}$/i.test(r.id) && Number.isInteger(r.v) && r.v >= 1 && r.v <= 5).slice(0, 80);
   const { data, error } = await supabase.rpc("opq_registrar", { p_respostas: limpas });
   if (error) return { erro: error.message.includes("10 afirma") ? "Responda pelo menos 10 afirmações." : "Não foi possível calcular agora. Tente de novo." };
-  revalidatePath("/crew-select/perfil-comportamental");
+  revalidatePath("/head-hunter/perfil-comportamental");
   return { perfil: data as PerfilOpq };
 }
 
@@ -614,11 +614,11 @@ export async function salvarAfirmacaoOpq(_: unknown, form: FormData): Promise<{ 
 export async function iniciarTreino(form: FormData) {
   const { supabase, user } = await getUser();
   const banco = String(form.get("banco") ?? "");
-  if (!user) redirect("/entrar?modo=entrar&next=/crew-select");
-  if (!/^[a-z]{3,12}$/.test(banco)) redirect("/crew-select");
+  if (!user) redirect("/entrar?modo=entrar&next=/head-hunter");
+  if (!/^[a-z]{3,12}$/.test(banco)) redirect("/head-hunter");
   const { data, error } = await supabase.rpc("iniciar_treino", { p_banco: banco });
-  if (error || !data) redirect("/crew-select?erro=treino");
-  redirect(`/crew-select/simulado/${data}`);
+  if (error || !data) redirect("/head-hunter?erro=treino");
+  redirect(`/head-hunter/simulado/${data}`);
 }
 
 export async function salvarCheckin(_: unknown, form: FormData): Promise<{ erro?: string }> {
@@ -631,8 +631,8 @@ export async function salvarCheckin(_: unknown, form: FormData): Promise<{ erro?
   const data = String(form.get("data_meta") ?? "");
   const { error } = await supabase.rpc("salvar_checkin", { p_companhias: lista, p_data: /^\d{4}-\d{2}-\d{2}$/.test(data) ? data : null });
   if (error) return { erro: "Não foi possível salvar agora. Tente de novo." };
-  revalidatePath("/crew-select", "layout");
-  redirect("/crew-select#jornada");
+  revalidatePath("/head-hunter", "layout");
+  redirect("/head-hunter#jornada");
 }
 
 export async function conferirQuestao(tentativa: string, questao: string): Promise<{ correta: string; explicacao: string | null } | null> {

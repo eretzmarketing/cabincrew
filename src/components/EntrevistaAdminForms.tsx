@@ -52,7 +52,7 @@ export function ParteForm({ p, fotos }: { p: ParteEdicao; fotos: { src: string; 
         <textarea name="resumo" rows={3} maxLength={600} defaultValue={p.resumo ?? ""} className={area} />
       </label>
       {p.id && (
-        <label className={rotulo}>Endereço da página <span className={dicaCampo}>(/crew-select/entrevista-ingles/…)</span>
+        <label className={rotulo}>Endereço da página <span className={dicaCampo}>(/head-hunter/entrevista-ingles/…)</span>
           <input name="slug" maxLength={60} defaultValue={p.slug} className={input} />
         </label>
       )}

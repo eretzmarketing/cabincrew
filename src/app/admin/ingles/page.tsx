@@ -32,9 +32,9 @@ export default async function AdminIngles() {
   return (
     <>
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <Titulo sub="Curso de inglês operacional do Crew Select. Veja o andamento dos alunos e gere os áudios das aulas.">Inglês a bordo</Titulo>
+        <Titulo sub="Curso de inglês operacional do Head Hunter. Veja o andamento dos alunos e gere os áudios das aulas.">Inglês a bordo</Titulo>
         <div className="flex flex-wrap gap-2">
-          <Link href="/crew-select/ingles-a-bordo" target="_blank" className={btnSecundario}>Ver como aluno ↗</Link>
+          <Link href="/head-hunter/ingles-a-bordo" target="_blank" className={btnSecundario}>Ver como aluno ↗</Link>
           <a href="/admin/ingles/roteiro" className={btnPrimario}>⬇ Baixar roteiro dos áudios</a>
         </div>
       </div>
@@ -89,7 +89,7 @@ export default async function AdminIngles() {
                         {audios.has(k) ? `🎧 ${audios.get(k)}` : `Sem MP3 · subir ${k}.mp3`}
                       </span>
                       <span className="text-[13px] text-muted">{st ? `${st.feitas} ${st.feitas === 1 ? "concluiu" : "concluíram"} · média ${Math.round(st.soma / st.n)}%` : "ninguém fez ainda"}</span>
-                      <Link href={`/crew-select/ingles-a-bordo/${m.numero}/${a.numero}`} target="_blank" className="text-[14px] font-semibold text-brand-strong">Abrir ↗</Link>
+                      <Link href={`/head-hunter/ingles-a-bordo/${m.numero}/${a.numero}`} target="_blank" className="text-[14px] font-semibold text-brand-strong">Abrir ↗</Link>
                     </div>
                     <details className="rounded-xl bg-soft px-4 py-2">
                       <summary className="min-h-9 cursor-pointer py-1.5 text-[14px] font-semibold">Roteiro do áudio ({a.dialogo.falas.length} falas)</summary>

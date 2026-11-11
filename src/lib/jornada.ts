@@ -2,6 +2,7 @@
  * Jornada da seleção: etapas na ordem do processo de cada companhia, tarefas com critério de conclusão
  * calculado a partir do que o aluno já fez, Missão do dia e sequência de dias de estudo.
  */
+import { BANCOS } from "@/lib/crew";
 import { TODAS_AULAS, chaveAula } from "@/lib/ingles-a-bordo";
 import type { PerfilOpq } from "@/lib/opq";
 
@@ -42,7 +43,7 @@ const ETAPAS: Record<string, EtapaBase> = {
     id: "tecnica", titulo: "Prova técnica (ANAC)", resumo: "Conhecimentos da banca ANAC: segurança, legislação, primeiros socorros e técnicos.",
     tarefas: [
       { tipo: "treino", banco: "anac", titulo: "Treinos da banca ANAC" },
-      { tipo: "simulado", origem: "cc-anac-completo", titulo: "Simulado completo da ANAC no modo Prova real", href: "/crew-select/anac" },
+      { tipo: "simulado", origem: "cc-anac-completo", titulo: "Simulado completo da ANAC no modo Prova real", href: "/head-hunter/anac" },
       { tipo: "treino", banco: "tecnico", titulo: "Questões técnicas extras" },
     ],
     dica: {
@@ -131,14 +132,14 @@ export function avaliar(t: Tarefa, d: DadosJornada): StatusTarefa {
   switch (t.tipo) {
     case "checkin": {
       const ok = d.companhias.length > 0;
-      return { titulo: t.titulo, feito: ok, progresso: ok ? 1 : 0, detalhe: ok ? d.companhias.map((c) => COMPANHIAS.find((x) => x.slug === c)?.nome).join(", ") : "Leva 1 minuto", href: "/crew-select/checkin" };
+      return { titulo: t.titulo, feito: ok, progresso: ok ? 1 : 0, detalhe: ok ? d.companhias.map((c) => COMPANHIAS.find((x) => x.slug === c)?.nome).join(", ") : "Leva 1 minuto", href: "/head-hunter/checkin" };
     }
     case "modulo": {
       const m = d.modulos.find((x) => x.ordem === t.ordem);
       const aulas = m ? d.aulas.filter((a) => a.modulo_id === m.id) : [];
       if (!m || !aulas.length) return { titulo: t.titulo ?? m?.titulo ?? "", feito: false, progresso: 0, detalhe: "", oculta: true };
       const f = aulas.filter((a) => d.concluidas.has(a.id)).length;
-      return { titulo: t.titulo ?? m.titulo, feito: f === aulas.length, progresso: f / aulas.length, detalhe: `${f} de ${aulas.length} aulas`, href: `/crew-select/modulo/${m.id}` };
+      return { titulo: t.titulo ?? m.titulo, feito: f === aulas.length, progresso: f / aulas.length, detalhe: `${f} de ${aulas.length} aulas`, href: `/head-hunter/modulo/${m.id}` };
     }
     case "treino": {
       if (t.banco === "anac" && !d.anacLiberado) return { titulo: t.titulo, feito: false, progresso: 0, detalhe: "", bloqueada: "Liberado pela equipe Cabin Crew" };
@@ -163,7 +164,7 @@ export function avaliar(t: Tarefa, d: DadosJornada): StatusTarefa {
       const coerente = !!ult && ult.perfil.incoerentes.length === 0 && ult.perfil.extremos < 70;
       const ok = d.opq.length >= 2 && coerente;
       return {
-        titulo: t.titulo, href: "/crew-select/perfil-comportamental", feito: ok,
+        titulo: t.titulo, href: "/head-hunter/perfil-comportamental", feito: ok,
         progresso: ok ? 1 : Math.min(d.opq.length, 2) / 2 * (coerente ? 1 : 0.5),
         detalhe: !ult ? "Ainda não treinou" : ok ? `${d.opq.length} sessões, última coerente` : coerente ? "Faça mais uma sessão" : "Última sessão com respostas incoerentes ou forçadas",
       };
@@ -171,7 +172,7 @@ export function avaliar(t: Tarefa, d: DadosJornada): StatusTarefa {
     case "ingles": {
       const total = TODAS_AULAS.length;
       const f = TODAS_AULAS.filter((a) => d.ingles.get(chaveAula(a))?.concluida).length;
-      return { titulo: t.titulo, href: "/crew-select/ingles-a-bordo", feito: total > 0 && f === total, progresso: total ? f / total : 0, detalhe: `${f} de ${total} aulas` };
+      return { titulo: t.titulo, href: "/head-hunter/ingles-a-bordo", feito: total > 0 && f === total, progresso: total ? f / total : 0, detalhe: `${f} de ${total} aulas` };
     }
   }
 }
@@ -248,12 +249,12 @@ function missaoDoDia(d: DadosJornada, etapas: EtapaAvaliada[], atual: number): I
   const feitoIngles = [...d.ingles.values()].some((x) => diaSP(x.updated_at) === d.hoje) || hojeTreinos.some((t) => bancoDe(t.simulado_id) === "ingles");
 
   return [
-    { id: "treino", titulo: `Treino rápido: ${treino.titulo}`, detalhe: "10 questões com correção na hora, priorizando as que você ainda não viu e as que errou.", feito: feitoTreino, acao: { banco: treino.banco } },
+    { id: "treino", titulo: `Treino rápido: ${BANCOS[treino.banco] ?? treino.titulo}`, detalhe: "10 questões com correção na hora, priorizando as que você ainda não viu e as que errou.", feito: feitoTreino, acao: { banco: treino.banco } },
     aula
-      ? { id: "aula", titulo: `Aula: ${aula.titulo}`, detalhe: aula.modulo, feito: feitoAula, href: `/crew-select/aula/${aula.id}` }
-      : { id: "aula", titulo: "Revise um módulo", detalhe: "Você concluiu as aulas disponíveis da sua etapa.", feito: feitoAula, href: "/crew-select#modulos" },
+      ? { id: "aula", titulo: `Aula: ${aula.titulo}`, detalhe: aula.modulo, feito: feitoAula, href: `/head-hunter/aula/${aula.id}` }
+      : { id: "aula", titulo: "Revise um módulo", detalhe: "Você concluiu as aulas disponíveis da sua etapa.", feito: feitoAula, href: "/head-hunter#modulos" },
     proxIngles
-      ? { id: "ingles", titulo: `Inglês: ${proxIngles.titulo}`, detalhe: `Aula ${chaveAula(proxIngles)} do Inglês a bordo`, feito: feitoIngles, href: `/crew-select/ingles-a-bordo/${proxIngles.modulo}/${proxIngles.numero}` }
+      ? { id: "ingles", titulo: `Inglês: ${proxIngles.titulo}`, detalhe: `Aula ${chaveAula(proxIngles)} do Inglês a bordo`, feito: feitoIngles, href: `/head-hunter/ingles-a-bordo/${proxIngles.modulo}/${proxIngles.numero}` }
       : { id: "ingles", titulo: "Treino rápido de inglês", detalhe: "10 questões com correção na hora.", feito: feitoIngles, acao: { banco: "ingles" } },
   ];
 }

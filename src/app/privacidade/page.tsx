@@ -12,9 +12,9 @@ export default function PrivacidadePage() {
           controlador (razão social, CNPJ e contato do encarregado).
         </p>
         <h2 className="font-display text-xl font-bold text-navy">Dados que coletamos</h2>
-        <p>Seu e-mail, para criar a conta e enviar o link de acesso; o apelido que você escolher; os relatos, confirmações e denúncias que você publicar; e o e-mail informado na lista de espera do Crew Select.</p>
+        <p>Seu e-mail, para criar a conta e enviar o link de acesso; o apelido que você escolher; os relatos, confirmações e denúncias que você publicar; e o e-mail informado na lista de espera do Head Hunter.</p>
         <h2 className="font-display text-xl font-bold text-navy">Como usamos</h2>
-        <p>Para operar o fórum, moderar o conteúdo e avisar sobre o Crew Select a quem entrou na lista de espera. Não vendemos seus dados.</p>
+        <p>Para operar o fórum, moderar o conteúdo e avisar sobre o Head Hunter a quem entrou na lista de espera. Não vendemos seus dados.</p>
         <h2 className="font-display text-xl font-bold text-navy">Anonimato</h2>
         <p>Relatos publicados como anônimos não exibem seu apelido para outros usuários. A equipe de moderação pode ver a autoria para aplicar as regras do fórum.</p>
         <h2 className="font-display text-xl font-bold text-navy">Seus direitos</h2>

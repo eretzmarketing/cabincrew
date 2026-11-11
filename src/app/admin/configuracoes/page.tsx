@@ -21,7 +21,7 @@ export default async function ConfiguracoesPage() {
         <Chave
           chave="crew_select_aberto"
           ligado={cfg.crew_select_aberto}
-          titulo="Crew Select liberado"
+          titulo="Head Hunter liberado"
           descricao="Ligado: todo cadastrado acessa os módulos publicados. Desligado: os alunos veem a tela “Em breve”."
         />
       </Card>

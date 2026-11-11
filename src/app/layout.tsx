@@ -22,7 +22,7 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://cabincrew.com.br";
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "Cabin Crew — Crew Select, o preparatório para comissário de voo",
+    default: "Cabin Crew — Head Hunter, o preparatório para comissário de voo",
     template: "%s · Cabin Crew",
   },
   description:

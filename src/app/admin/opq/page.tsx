@@ -25,7 +25,7 @@ export default async function AdminOpq({ searchParams }: { searchParams: Promise
     <>
       <div className="flex flex-wrap items-end justify-between gap-4">
         <Titulo sub="Afirmações do treino de personalidade (estilo OPQ/SHL). Cada sessão sorteia 3 afirmações de cada traço, sempre com pelo menos uma de cada direção.">Perfil comportamental</Titulo>
-        <Link href="/crew-select/perfil-comportamental" target="_blank" className={btnSecundario}>Ver como aluno ↗</Link>
+        <Link href="/head-hunter/perfil-comportamental" target="_blank" className={btnSecundario}>Ver como aluno ↗</Link>
       </div>
 
       {semSql && (

@@ -13,7 +13,7 @@ export default async function ContaPage({ searchParams }: { searchParams: Promis
   const { supabase, user, profile } = await getUser();
   if (!user || !profile) redirect("/entrar?modo=entrar&next=/conta");
 
-  const voltar = sp.next?.startsWith("/crew-select") ? sp.next : sp.foto ? "/crew-select" : null;
+  const voltar = sp.next?.startsWith("/head-hunter") ? sp.next : sp.foto ? "/head-hunter" : null;
   const { count } = await supabase.from("relatos").select("id", { count: "exact", head: true }).eq("autor_id", user.id);
 
   return (
@@ -23,7 +23,7 @@ export default async function ContaPage({ searchParams }: { searchParams: Promis
         <section id="foto" className="flex scroll-mt-6 flex-col gap-4 rounded-[20px] border border-line bg-white p-6">
           <div className="flex flex-col gap-1">
             <h2 className="font-display text-xl font-bold">Foto de perfil</h2>
-            <p className="text-[15px] text-ink-2">Obrigatória para usar o Crew Select e os simulados.</p>
+            <p className="text-[15px] text-ink-2">Obrigatória para usar o Head Hunter e os simulados.</p>
           </div>
           <AvatarForm
             atual={avatarUrl(user.id, profile.avatar_em)}
@@ -32,7 +32,7 @@ export default async function ContaPage({ searchParams }: { searchParams: Promis
           />
           {profile.avatar_em && voltar && (
             <Link href={voltar} className="inline-flex min-h-12 items-center self-start rounded-full bg-brand-strong px-6 font-display font-bold text-white hover:bg-brand-deep">
-              Continuar para o Crew Select →
+              Continuar para o Head Hunter →
             </Link>
           )}
         </section>

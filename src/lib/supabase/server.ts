@@ -60,7 +60,7 @@ export async function exigirLogin(destino: string, admin = false) {
   const ctx = await getUser();
   if (!ctx.user || !ctx.profile) redirect(`/entrar?modo=entrar&next=${encodeURIComponent(destino)}`);
   if (ctx.profile.bloqueado && !ctx.profile.is_admin) redirect("/bloqueado");
-  if (admin && !ctx.profile.is_admin) redirect("/crew-select");
+  if (admin && !ctx.profile.is_admin) redirect("/head-hunter");
   return { ...ctx, user: ctx.user, profile: ctx.profile };
 }
 

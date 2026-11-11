@@ -16,7 +16,7 @@ export default async function Header() {
 
         {user && (
           <nav aria-label="Principal" className="order-3 flex w-full flex-wrap items-center gap-x-7 gap-y-2 font-display text-[15px] font-semibold md:order-none md:w-auto">
-            <Link href="/crew-select" className={link}>Crew Select</Link>
+            <Link href="/head-hunter" className={link}>Head Hunter</Link>
             {forum_ativo && <Link href="/forum" className={link}>Fórum de Seleções</Link>}
             {profile?.is_admin && <Link href="/admin" className={link}>Administrador</Link>}
           </nav>

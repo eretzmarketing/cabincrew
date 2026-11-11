@@ -16,7 +16,7 @@ export default async function EntrarPage({
   const { next, erro, modo, equipe } = await searchParams;
   const { manutencao } = await getConfig();
   const soEquipe = manutencao && equipe !== undefined; // em manutenção: só login da equipe, sem cadastro
-  const destino = next && next.startsWith("/") && !next.startsWith("//") ? next : "/crew-select";
+  const destino = next && next.startsWith("/") && !next.startsWith("//") ? next : "/head-hunter";
   const { user } = await getUser();
   if (user) redirect(destino);
 
@@ -51,7 +51,7 @@ export default async function EntrarPage({
                 </h1>
                 <p className="text-base leading-relaxed text-ink-2">
                   {aba === "cadastro"
-                    ? "Leva menos de um minuto e você já começa o Crew Select."
+                    ? "Leva menos de um minuto e você já começa o Head Hunter."
                     : "Entre com o e-mail e a senha do seu cadastro."}
                 </p>
               </div>

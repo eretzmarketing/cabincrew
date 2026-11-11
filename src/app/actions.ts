@@ -10,14 +10,14 @@ import { paisPorIso, telefoneInternacional } from "@/lib/paises";
 
 export type FormState = { ok?: boolean; erro?: string; msg?: string } | undefined;
 
-/* ---------- Lista de espera do Crew Select ---------- */
+/* ---------- Lista de espera do Head Hunter ---------- */
 export async function entrarListaEspera(_: FormState, form: FormData): Promise<FormState> {
   const email = String(form.get("email") ?? "").trim().toLowerCase();
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return { erro: "Digite um e-mail válido." };
   const supabase = await createClient();
   const { error } = await supabase.from("lista_espera").insert({ email });
   if (error && error.code !== "23505") return { erro: "Não foi possível salvar agora. Tente de novo." };
-  return { ok: true, msg: "Pronto! Avisaremos você quando o Crew Select abrir." };
+  return { ok: true, msg: "Pronto! Avisaremos você quando o Head Hunter abrir." };
 }
 
 /* ---------- "Quero ser avisado(a)" da página Em breve ---------- */
@@ -41,7 +41,7 @@ export async function queroSerAvisado(_: FormState, form: FormData): Promise<For
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 function destinoSeguro(form: FormData) {
-  return seguro(String(form.get("next") ?? "/crew-select"));
+  return seguro(String(form.get("next") ?? "/head-hunter"));
 }
 
 /** Aceita (11) 98765-4321, 11987654321, +55 11 98765-4321… e devolve +5511987654321 */
@@ -277,7 +277,7 @@ export async function moderarRelato(form: FormData) {
 
 function seguro(caminho: string) {
   return caminho.startsWith("/") && !caminho.startsWith("//") ? caminho 
- : "/crew-select";
+ : "/head-hunter";
 }
 
 /* ---------- Foto de perfil (avatar) ---------- */

@@ -27,7 +27,7 @@ export default function EmBreve({ logado }: { logado: boolean }) {
             Estamos preparando a sua decolagem.
           </h1>
           <p className="text-lg leading-relaxed text-ink-2">
-            A nova Cabin Crew está chegando com o Crew Select, o preparatório que acompanha você em cada fase da seleção para
+            A nova Cabin Crew está chegando com o Head Hunter, o preparatório que acompanha você em cada fase da seleção para
             comissário de voo.
           </p>
           <AvisoForm />

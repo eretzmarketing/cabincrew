@@ -36,7 +36,7 @@ export default async function AdminEntrevista() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <Titulo sub={`${partes.length} partes · ${ativas} perguntas visíveis para os alunos. Edite textos, respostas-modelo, fotos e a ordem.`}>Entrevista em inglês</Titulo>
         <div className="flex flex-wrap gap-2">
-          <Link href="/crew-select/entrevista-ingles" target="_blank" className={btnSecundario}>Ver como aluno ↗</Link>
+          <Link href="/head-hunter/entrevista-ingles" target="_blank" className={btnSecundario}>Ver como aluno ↗</Link>
           <Link href="/admin/entrevista/nova" className={btnPrimario}>+ Nova parte</Link>
         </div>
       </div>

@@ -41,7 +41,7 @@ export default async function AdminParteEntrevista({ params, searchParams }: { p
       <Link href="/admin/entrevista" className="text-sm font-semibold text-muted hover:text-navy">← Entrevista em inglês</Link>
       <div className="flex flex-wrap items-end justify-between gap-4">
         <Titulo>{nova ? "Nova parte" : p.titulo}</Titulo>
-        {!nova && p.slug && <Link href={`/crew-select/entrevista-ingles/${p.slug}`} target="_blank" className={btnSecundario}>Ver como aluno ↗</Link>}
+        {!nova && p.slug && <Link href={`/head-hunter/entrevista-ingles/${p.slug}`} target="_blank" className={btnSecundario}>Ver como aluno ↗</Link>}
       </div>
       {criada && <p role="status" className="rounded-xl bg-[#e5f6ec] px-4 py-3 text-[15px] text-[#0f6b3a]">Parte criada. Agora adicione as perguntas.</p>}
 

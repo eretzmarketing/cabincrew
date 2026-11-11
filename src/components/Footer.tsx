@@ -14,8 +14,8 @@ export default async function Footer() {
           </div>
           <nav aria-label="Rodapé" className="flex flex-wrap gap-14 text-[15px]">
             <div className="flex flex-col gap-2.5">
-              <strong className="font-display text-white">Crew Select</strong>
-              <Link href="/crew-select" className="hover:text-white">Área do aluno</Link>
+              <strong className="font-display text-white">Head Hunter</strong>
+              <Link href="/head-hunter" className="hover:text-white">Área do aluno</Link>
               <Link href="/conta" className="hover:text-white">Minha conta</Link>
             </div>
             {forum_ativo && (

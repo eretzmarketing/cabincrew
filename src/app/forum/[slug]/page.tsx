@@ -255,8 +255,8 @@ export default async function SelecaoPage({ params, searchParams }: Props) {
 
           <div className="flex flex-col gap-2.5 rounded-[20px] border border-brand-line bg-brand-soft p-6">
             <strong className="font-display text-[17px]">Foi chamado para a próxima fase?</strong>
-            <span className="text-[15px] leading-relaxed text-ink-2">O Crew Select vai montar um plano de treino até a sua próxima etapa, com base nestes relatos.</span>
-            <Link href="/#crew-select" className="py-2.5 font-display text-[15px] font-bold text-[#b0002a]">Entrar na lista de espera →</Link>
+            <span className="text-[15px] leading-relaxed text-ink-2">O Head Hunter vai montar um plano de treino até a sua próxima etapa, com base nestes relatos.</span>
+            <Link href="/#head-hunter" className="py-2.5 font-display text-[15px] font-bold text-[#b0002a]">Entrar na lista de espera →</Link>
           </div>
 
           <div className="flex flex-col gap-2.5 rounded-[20px] border border-line bg-white p-6">

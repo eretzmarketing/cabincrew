@@ -45,7 +45,7 @@ export default async function AdminHome() {
           <Numero rotulo="Lista de interesse" valor={interessados} detalhe="pedidos de aviso na página Em breve →" />
         </Link>
         <Numero rotulo="Cadastros" valor={usuarios} detalhe={`${hojeN} hoje · ${semanaN} nos últimos 7 dias`} />
-        <Numero rotulo="Aulas publicadas" valor={aulasPub} detalhe="no Crew Select" />
+        <Numero rotulo="Aulas publicadas" valor={aulasPub} detalhe="no Head Hunter" />
         <Numero rotulo="Aulas concluídas" valor={conclusoes} detalhe="somando todos os alunos" />
         <Numero rotulo="Relatos no fórum" valor={relatos} detalhe={cfg.forum_ativo ? "fórum ligado" : "fórum desligado"} />
       </div>
@@ -69,7 +69,7 @@ export default async function AdminHome() {
         <Card className="flex-[1_1_260px]">
           <h2 className="font-display text-xl font-bold">Atalhos</h2>
           <div className="flex flex-col gap-2">
-            <Link href="/admin/crew-select" className={btnSecundario}>Editar módulos e aulas</Link>
+            <Link href="/admin/head-hunter" className={btnSecundario}>Editar módulos e aulas</Link>
             <a href="/admin/usuarios/csv" className={btnSecundario}>Exportar todos os usuários (CSV)</a>
             <Link href="/admin/configuracoes" className={btnSecundario}>Ligar ou desligar recursos</Link>
           </div>

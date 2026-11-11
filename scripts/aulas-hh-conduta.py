@@ -16,7 +16,7 @@ from pathlib import Path
 from PIL import Image
 
 RAIZ = Path(__file__).resolve().parent.parent
-HH_MODULO = [1, 6, 6, 6, 6, 6, 4, 10, 11]   # módulo do Head Hunter (posição) -> ordem do módulo no Crew Select
+HH_MODULO = [1, 6, 6, 6, 6, 6, 4, 10, 11]   # módulo do Head Hunter (posição) -> ordem do módulo no Head Hunter
 CONDUTA_MODULO = 12
 
 
@@ -84,7 +84,7 @@ def main(hh_dir, conduta_dir):
     )
     sql = f"""-- Cabin Crew · Aulas de texto dos cursos Head Hunter ({sum(o.startswith('horsky-hh') for *_, o in linhas)}) e Conduta Profissional ({sum(o.startswith('horsky-conduta') for *_, o in linhas)})
 -- Gerado por scripts/aulas-hh-conduta.py. Pode rodar mais de uma vez (atualiza, não duplica).
--- As aulas entram como RASCUNHO. Revise em Admin → Crew Select e publique, ou rode 0027_publicar_aulas_importadas.sql.
+-- As aulas entram como RASCUNHO. Revise em Admin → Head Hunter e publique, ou rode 0027_publicar_aulas_importadas.sql.
 -- Aulas que você já publicou continuam publicadas (o publicado não é alterado na atualização).
 
 insert into aulas (modulo_id, ordem, titulo, resumo, conteudo, duracao_min, origem, tipo, publicado)
