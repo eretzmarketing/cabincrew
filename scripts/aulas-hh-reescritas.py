@@ -461,7 +461,7 @@ AULAS["680306e1-33e0-466a-b7a9-3b077c0f7eac"] = """
 
 SQL_TOPO = """-- Cabin Crew · Aulas do Head Hunter reescritas em texto
 -- As imagens (infográficos) do curso se perderam também no site da Horsky.
--- 8 aulas que dependiam das imagens foram reescritas em texto completo;
+-- 8 aulas que dependiam das imagens foram reescritas em texto completo, com uma ilustração nova cada;
 -- as outras aulas do Head Hunter só perdem as imagens quebradas.
 -- Gerado por scripts/aulas-hh-reescritas.py. Pode rodar mais de uma vez.
 """
@@ -471,9 +471,24 @@ def q(s):
     return "'" + s.replace("'", "''") + "'"
 
 
+IMAGENS = {
+    "72ccb73e-33d7-4645-b820-1b7abad47a15": ("funil-selecao", "O funil da seleção: inscrição e triagem, provas online, testes comportamentais, dinâmica de grupo, entrevistas, exames e admissão"),
+    "05e5f6d8-4811-4102-9b7f-a28d340c095d": ("quatro-pilares", "Os 4 pilares do comissário: segurança, servir, equipe e responsabilidade"),
+    "9733bb24-9b6e-4ede-81f2-b38ee0803e3e": ("gramatica", "O que mais cai em português: crase, concordância, regência, pontuação e palavras que confundem"),
+    "e64413dd-e538-44f9-a8f9-10da3898c259": ("interpretacao", "As 3 armadilhas da interpretação: extrapolar, reduzir e trocar palavras. Responda só o que o texto diz"),
+    "13bd7dd9-16c8-486c-bcb8-6b01e3cc8557": ("ingles-cabine", "Inglês do embarque ao pouso: boarding, safety demo, service, turbulence e landing"),
+    "f56ef31c-e539-49f2-b011-7754559476ca": ("logica", "Lógica sem chute: diagrama de conjuntos e os conectivos se… então, e, ou, não"),
+    "3b7120d2-38f5-41e9-b3dc-78bcaf003c28": ("perfil-cognitivo", "O perfil equilibrado: lógica, atenção, velocidade, compreensão e emoções"),
+    "680306e1-33e0-466a-b7a9-3b077c0f7eac": ("testes-shl", "As 5 baterias de testes: verbal, numérico, indutivo, dedutivo e situacional"),
+}
+
+
 def main():
     partes = [SQL_TOPO]
     for lid, html in AULAS.items():
+        if lid in IMAGENS:
+            nome, alt = IMAGENS[lid]
+            html = f'<p><img src="/img/aulas/head-hunter/{nome}.jpg" alt="{alt}" loading="lazy" /></p>\n' + html.strip()
         partes.append(f"update aulas set conteudo = {q(html.strip())}, updated_at = now() where origem = {q('horsky-hh-' + lid)};\n")
     partes.append(
         "-- remove as imagens quebradas que sobraram nas outras aulas do Head Hunter\n"

@@ -1,10 +1,11 @@
 -- Cabin Crew · Aulas do Head Hunter reescritas em texto
 -- As imagens (infográficos) do curso se perderam também no site da Horsky.
--- 8 aulas que dependiam das imagens foram reescritas em texto completo;
+-- 8 aulas que dependiam das imagens foram reescritas em texto completo, com uma ilustração nova cada;
 -- as outras aulas do Head Hunter só perdem as imagens quebradas.
 -- Gerado por scripts/aulas-hh-reescritas.py. Pode rodar mais de uma vez.
 
-update aulas set conteudo = '<p>Entenda a estrutura completa dos processos seletivos das companhias aéreas, do edital à contratação, e o que realmente diferencia quem é aprovado de quem é eliminado em cada etapa.</p>
+update aulas set conteudo = '<p><img src="/img/aulas/head-hunter/funil-selecao.jpg" alt="O funil da seleção: inscrição e triagem, provas online, testes comportamentais, dinâmica de grupo, entrevistas, exames e admissão" loading="lazy" /></p>
+<p>Entenda a estrutura completa dos processos seletivos das companhias aéreas, do edital à contratação, e o que realmente diferencia quem é aprovado de quem é eliminado em cada etapa.</p>
 
 <h3>O funil da seleção</h3>
 <p>Uma seleção de comissários funciona como um funil: milhares de inscritos no começo e poucas dezenas de contratados no fim. Cada etapa elimina uma parte dos candidatos e, em várias delas, o que conta é o <strong>ranking</strong>, não só passar.</p>
@@ -57,7 +58,8 @@ update aulas set conteudo = '<p>Entenda a estrutura completa dos processos selet
 
 <blockquote><p>Recrutadores experientes afirmam que decidem sobre muitos candidatos nos primeiros 5 minutos de contato, antes de qualquer resposta formal. Cuide de cada detalhe desde a chegada ao local de seleção.</p></blockquote>', updated_at = now() where origem = 'horsky-hh-72ccb73e-33d7-4645-b820-1b7abad47a15';
 
-update aulas set conteudo = '<p>Antes de qualquer técnica, existe uma forma de pensar. A mentalidade certa é o que separa os candidatos aprovados daqueles que sabem as respostas, mas não convencem ninguém.</p>
+update aulas set conteudo = '<p><img src="/img/aulas/head-hunter/quatro-pilares.jpg" alt="Os 4 pilares do comissário: segurança, servir, equipe e responsabilidade" loading="lazy" /></p>
+<p>Antes de qualquer técnica, existe uma forma de pensar. A mentalidade certa é o que separa os candidatos aprovados daqueles que sabem as respostas, mas não convencem ninguém.</p>
 
 <h3>Os quatro pilares da mentalidade de comissário</h3>
 <ol>
@@ -105,7 +107,8 @@ update aulas set conteudo = '<p>Antes de qualquer técnica, existe uma forma de 
 <li>Qual dos quatro pilares você precisa desenvolver mais?</li>
 </ul>', updated_at = now() where origem = 'horsky-hh-05e5f6d8-4811-4102-9b7f-a28d340c095d';
 
-update aulas set conteudo = '<p>Dominar os pontos de gramática que mais aparecem nas provas de seleção elimina erros bobos e aumenta a nota sem exigir estudo enciclopédico.</p>
+update aulas set conteudo = '<p><img src="/img/aulas/head-hunter/gramatica.jpg" alt="O que mais cai em português: crase, concordância, regência, pontuação e palavras que confundem" loading="lazy" /></p>
+<p>Dominar os pontos de gramática que mais aparecem nas provas de seleção elimina erros bobos e aumenta a nota sem exigir estudo enciclopédico.</p>
 
 <h3>Os pontos mais cobrados</h3>
 <h4>1. Crase</h4>
@@ -167,7 +170,8 @@ update aulas set conteudo = '<p>Dominar os pontos de gramática que mais aparece
 
 <blockquote><p>Muitas questões de português usam textos sobre aviação. Conhecer o vocabulário técnico acelera a leitura e evita erros de interpretação por desconhecimento do tema.</p></blockquote>', updated_at = now() where origem = 'horsky-hh-9733bb24-9b6e-4ede-81f2-b38ee0803e3e';
 
-update aulas set conteudo = '<p>Textos instrucionais e regulatórios são base frequente das provas de português. Interpretar com precisão, sem acrescentar nem tirar informação, é exatamente o que as questões avaliam.</p>
+update aulas set conteudo = '<p><img src="/img/aulas/head-hunter/interpretacao.jpg" alt="As 3 armadilhas da interpretação: extrapolar, reduzir e trocar palavras. Responda só o que o texto diz" loading="lazy" /></p>
+<p>Textos instrucionais e regulatórios são base frequente das provas de português. Interpretar com precisão, sem acrescentar nem tirar informação, é exatamente o que as questões avaliam.</p>
 
 <h3>O que a prova realmente avalia</h3>
 <ul>
@@ -219,7 +223,8 @@ update aulas set conteudo = '<p>Textos instrucionais e regulatórios são base f
 
 <blockquote><p>A forma como você fala revela o quanto se preparou. Recrutadores percebem na hora quem praticou a comunicação formal e quem apenas decorou respostas.</p></blockquote>', updated_at = now() where origem = 'horsky-hh-e64413dd-e538-44f9-a8f9-10da3898c259';
 
-update aulas set conteudo = '<p>O inglês da aviação tem um repertório próprio de palavras e frases que todo comissário precisa dominar, organizadas na sequência real do voo, do embarque ao pouso. Para treinar a pronúncia, use o curso <strong>Inglês a bordo</strong> e a <strong>Entrevista em inglês</strong> do Head Hunter.</p>
+update aulas set conteudo = '<p><img src="/img/aulas/head-hunter/ingles-cabine.jpg" alt="Inglês do embarque ao pouso: boarding, safety demo, service, turbulence e landing" loading="lazy" /></p>
+<p>O inglês da aviação tem um repertório próprio de palavras e frases que todo comissário precisa dominar, organizadas na sequência real do voo, do embarque ao pouso. Para treinar a pronúncia, use o curso <strong>Inglês a bordo</strong> e a <strong>Entrevista em inglês</strong> do Head Hunter.</p>
 
 <h3>Vocabulário essencial</h3>
 <table>
@@ -278,7 +283,8 @@ update aulas set conteudo = '<p>O inglês da aviação tem um repertório própr
 
 <blockquote><p>Em emergências, a clareza e a firmeza da voz são tão importantes quanto as palavras. Pratique os comandos de evacuação em voz alta: o tom transmite autoridade e controla o pânico.</p></blockquote>', updated_at = now() where origem = 'horsky-hh-13bd7dd9-16c8-486c-bcb8-6b01e3cc8557';
 
-update aulas set conteudo = '<p>Lógica proposicional, analogias e silogismos são a base das questões de raciocínio formal nas seleções. Dominar as regras elimina a dependência da intuição, que costuma falhar nesse tipo de questão.</p>
+update aulas set conteudo = '<p><img src="/img/aulas/head-hunter/logica.jpg" alt="Lógica sem chute: diagrama de conjuntos e os conectivos se… então, e, ou, não" loading="lazy" /></p>
+<p>Lógica proposicional, analogias e silogismos são a base das questões de raciocínio formal nas seleções. Dominar as regras elimina a dependência da intuição, que costuma falhar nesse tipo de questão.</p>
 
 <h3>Proposições e conectivos</h3>
 <p>Uma proposição é uma frase que pode ser verdadeira (V) ou falsa (F). Os conectivos ligam proposições:</p>
@@ -330,7 +336,8 @@ update aulas set conteudo = '<p>Lógica proposicional, analogias e silogismos s�
 
 <blockquote><p>Conclusões que <em>parecem razoáveis</em> são a principal armadilha dos silogismos. Se a informação não está nas premissas, não pode estar na conclusão.</p></blockquote>', updated_at = now() where origem = 'horsky-hh-f56ef31c-e539-49f2-b011-7754559476ca';
 
-update aulas set conteudo = '<p>Recrutadores não procuram o candidato mais inteligente. Procuram o perfil cognitivo mais adequado ao ambiente da aviação: pressão, imprevisibilidade e responsabilidade por muitas pessoas ao mesmo tempo.</p>
+update aulas set conteudo = '<p><img src="/img/aulas/head-hunter/perfil-cognitivo.jpg" alt="O perfil equilibrado: lógica, atenção, velocidade, compreensão e emoções" loading="lazy" /></p>
+<p>Recrutadores não procuram o candidato mais inteligente. Procuram o perfil cognitivo mais adequado ao ambiente da aviação: pressão, imprevisibilidade e responsabilidade por muitas pessoas ao mesmo tempo.</p>
 
 <h3>As cinco dimensões avaliadas</h3>
 <table>
@@ -390,7 +397,8 @@ update aulas set conteudo = '<p>Recrutadores não procuram o candidato mais inte
 
 <blockquote><p>Cognição pode ser treinada, especialmente as dimensões que mais pesam na avaliação aérea. Com preparação consistente, o desempenho pode mudar bastante em 4 a 8 semanas.</p></blockquote>', updated_at = now() where origem = 'horsky-hh-3b7120d2-38f5-41e9-b3dc-78bcaf003c28';
 
-update aulas set conteudo = '<p>A SHL é uma das maiores fornecedoras de testes psicométricos para seleção de pessoal, e aparece em processos de companhias aéreas como a LATAM. Conhecer o formato antes da seleção elimina o efeito surpresa, que gasta tempo e atenção preciosos nas primeiras questões.</p>
+update aulas set conteudo = '<p><img src="/img/aulas/head-hunter/testes-shl.jpg" alt="As 5 baterias de testes: verbal, numérico, indutivo, dedutivo e situacional" loading="lazy" /></p>
+<p>A SHL é uma das maiores fornecedoras de testes psicométricos para seleção de pessoal, e aparece em processos de companhias aéreas como a LATAM. Conhecer o formato antes da seleção elimina o efeito surpresa, que gasta tempo e atenção preciosos nas primeiras questões.</p>
 
 <h3>Como os testes são aplicados</h3>
 <ul>
