@@ -381,7 +381,7 @@ from (values
 <li>Música de fundo e efeitos de edição.</li>
 </ul>
 
-<blockquote><p>Grave, assista e regrave pelo menos três vezes. Na terceira você já estará muito mais natural.</p></blockquote>', 10, 'cc-aula-foto-e-video-de-apresentacao'),
+<blockquote><p>Grave, assista e regrave pelo menos três vezes. Na terceira você já estará muito mais natural. Use o <a href="/head-hunter/video-apresentacao">Treino de vídeo</a>: ele mostra os tópicos na hora certa, marca o tempo e traz o checklist de autoavaliação.</p></blockquote>', 10, 'cc-aula-foto-e-video-de-apresentacao'),
   (7, 1, 'O que a dinâmica de grupo avalia', 'Os comportamentos que os avaliadores observam e os papéis que você pode ter no grupo.', '<p>Na dinâmica, os avaliadores não procuram quem tem a melhor ideia. Procuram quem <strong>trabalha bem com pessoas que acabou de conhecer</strong>, exatamente como numa tripulação.</p>
 
 <h3>O que é observado</h3>

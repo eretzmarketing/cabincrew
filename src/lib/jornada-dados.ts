@@ -13,7 +13,7 @@ export async function lerCheckin(supabase: SupabaseClient, userId: string) {
 }
 
 export async function carregarJornada(supabase: SupabaseClient, userId: string) {
-  const [mod, aul, prog, tent, sims, ing, opq, anac, checkin] = await Promise.all([
+  const [mod, aul, prog, tent, sims, ing, opq, vid, anac, checkin] = await Promise.all([
     supabase.from("modulos").select("id, ordem, titulo").eq("publicado", true).order("ordem"),
     supabase.from("aulas").select("id, modulo_id, ordem, titulo").eq("publicado", true).order("ordem"),
     supabase.from("progresso").select("aula_id, concluida_em").eq("user_id", userId),
@@ -21,6 +21,7 @@ export async function carregarJornada(supabase: SupabaseClient, userId: string) 
     supabase.from("simulados").select("id, origem, bancos"),
     supabase.from("ingles_progresso").select("aula, concluida, updated_at").eq("user_id", userId),
     supabase.from("opq_tentativas").select("perfil, created_at").eq("user_id", userId).order("created_at", { ascending: false }).limit(20),
+    supabase.from("video_treinos").select("nota, created_at").eq("user_id", userId).order("created_at", { ascending: false }).limit(20),
     supabase.rpc("anac_liberado"),
     lerCheckin(supabase, userId),
   ]);
@@ -40,6 +41,7 @@ export async function carregarJornada(supabase: SupabaseClient, userId: string) 
     simulados,
     ingles: new Map(((ing.data ?? []) as { aula: string; concluida: boolean; updated_at: string }[]).map((x) => [x.aula, { concluida: x.concluida, updated_at: x.updated_at }])),
     opq: (opq.data ?? []) as { perfil: PerfilOpq; created_at: string }[],
+    videos: (vid.data ?? []) as { nota: number; created_at: string }[],
     hoje: diaSP(new Date()),
   };
   return { dados, dataMeta: checkin.dataMeta, jornada: montarJornada(dados) };

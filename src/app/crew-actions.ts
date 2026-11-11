@@ -7,6 +7,7 @@ import type { FormState } from "@/app/actions";
 import { BANCOS } from "@/lib/crew";
 import { LETRAS, chaveEnunciado, type QuestaoImportada } from "@/lib/importar-questoes";
 import type { PerfilOpq } from "@/lib/opq";
+import { CHECKLIST_VIDEO, METAS_VIDEO, dentroDoTempo } from "@/lib/video";
 
 const UUID = /^[0-9a-f-]{36}$/i;
 
@@ -608,6 +609,23 @@ export async function salvarAfirmacaoOpq(_: unknown, form: FormData): Promise<{ 
   if (error) return { erro: "Não foi possível salvar." };
   revalidatePath("/admin/opq");
   return { msg: id ? "Salvo." : "Afirmação criada." };
+}
+
+/* ---------- Vídeo de apresentação ---------- */
+export async function salvarVideoTreino(d: { duracao: number; meta: number; checklist: string[] }): Promise<{ nota?: number; erro?: string }> {
+  const { supabase, user } = await getUser();
+  if (!user) return { erro: "Faça login para salvar." };
+  const validos = new Set(CHECKLIST_VIDEO.map((c) => c.id));
+  const duracao = Math.min(600, Math.max(1, Math.round(Number(d.duracao) || 0)));
+  const meta = METAS_VIDEO.some((m) => m.seg === d.meta) ? d.meta : 90;
+  const marcados = [...new Set((d.checklist ?? []).filter((x) => validos.has(x) && x !== "tempo"))];
+  if (dentroDoTempo(duracao, meta)) marcados.push("tempo");
+  const nota = Math.round((marcados.length / CHECKLIST_VIDEO.length) * 100);
+  const { error } = await supabase.from("video_treinos").insert({ user_id: user.id, duracao_seg: duracao, meta_seg: meta, checklist: marcados, nota });
+  if (error) return { erro: "Não foi possível salvar agora. Tente de novo." };
+  revalidatePath("/head-hunter/video-apresentacao");
+  revalidatePath("/head-hunter");
+  return { nota };
 }
 
 /* ---------- Jornada ---------- */

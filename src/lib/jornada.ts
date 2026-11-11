@@ -21,6 +21,7 @@ export type Tarefa =
   | { tipo: "treino"; banco: string; titulo: string }
   | { tipo: "simulado"; origem: string; titulo: string; href: string }
   | { tipo: "opq"; titulo: string }
+  | { tipo: "video"; titulo: string }
   | { tipo: "ingles"; titulo: string };
 
 type EtapaBase = { id: string; titulo: string; resumo: string; tarefas: Tarefa[]; dica?: Partial<Record<Companhia, string>> };
@@ -76,7 +77,7 @@ const ETAPAS: Record<string, EtapaBase> = {
   },
   entrevista: {
     id: "entrevista", titulo: "Entrevistas", resumo: "Entrevista com RH e gestores, comunicação e apresentação pessoal.",
-    tarefas: [{ tipo: "modulo", ordem: 8 }, { tipo: "modulo", ordem: 10 }],
+    tarefas: [{ tipo: "modulo", ordem: 8 }, { tipo: "video", titulo: "Vídeo de apresentação" }, { tipo: "modulo", ordem: 10 }],
     dica: { azul: "A Azul costuma pedir um vídeo de apresentação. Treine falar de você em 1 a 2 minutos." },
   },
   final: {
@@ -113,6 +114,7 @@ export type DadosJornada = {
   simulados: Map<number, { origem: string | null; bancos: string[] }>;
   ingles: Map<string, { concluida: boolean; updated_at: string }>;
   opq: { perfil: PerfilOpq; created_at: string }[];  // mais recente primeiro
+  videos: { nota: number; created_at: string }[];    // mais recente primeiro
   hoje: string;                                       // AAAA-MM-DD em São Paulo
 };
 
@@ -167,6 +169,15 @@ export function avaliar(t: Tarefa, d: DadosJornada): StatusTarefa {
         titulo: t.titulo, href: "/head-hunter/perfil-comportamental", feito: ok,
         progresso: ok ? 1 : Math.min(d.opq.length, 2) / 2 * (coerente ? 1 : 0.5),
         detalhe: !ult ? "Ainda não treinou" : ok ? `${d.opq.length} sessões, última coerente` : coerente ? "Faça mais uma sessão" : "Última sessão com respostas incoerentes ou forçadas",
+      };
+    }
+    case "video": {
+      const ult = d.videos[0];
+      const ok = d.videos.length >= 2 && ult.nota >= META;
+      return {
+        titulo: t.titulo, href: "/head-hunter/video-apresentacao", feito: ok,
+        progresso: ok ? 1 : !ult ? 0 : (Math.min(d.videos.length, 2) / 2) * Math.min(1, ult.nota / META),
+        detalhe: !ult ? "Grave e avalie o seu vídeo" : ok ? `${d.videos.length} gravações, última ${ult.nota}%` : `Última ${ult.nota}% · meta: 2 gravações e ${META}%`,
       };
     }
     case "ingles": {
@@ -266,6 +277,7 @@ function sequencia(d: DadosJornada) {
     ...[...d.concluidas.values()].map(diaSP),
     ...[...d.ingles.values()].map((x) => diaSP(x.updated_at)),
     ...d.opq.map((x) => diaSP(x.created_at)),
+    ...d.videos.map((x) => diaSP(x.created_at)),
   ]);
   const dia = new Date(`${d.hoje}T12:00:00Z`);
   if (!dias.has(d.hoje)) dia.setUTCDate(dia.getUTCDate() - 1);
