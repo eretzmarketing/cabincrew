@@ -628,6 +628,14 @@ export async function salvarVideoTreino(d: { duracao: number; meta: number; chec
   return { nota };
 }
 
+/* ---------- Ranking ---------- */
+export async function alternarRanking(form: FormData) {
+  const { supabase, user } = await getUser();
+  if (!user) return;
+  await supabase.rpc("definir_ranking_oculto", { p_oculto: form.get("oculto") === "1" });
+  revalidatePath("/head-hunter/ranking");
+}
+
 /* ---------- Jornada ---------- */
 export async function iniciarTreino(form: FormData) {
   const { supabase, user } = await getUser();

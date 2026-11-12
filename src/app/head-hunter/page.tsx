@@ -5,6 +5,7 @@ import { Arrow, Check } from "@/components/icons";
 import JornadaPainel from "@/components/JornadaPainel";
 import { exigirCrewSelect } from "@/lib/crew-gate";
 import { carregarJornada } from "@/lib/jornada-dados";
+import { calcularMedalhas } from "@/lib/medalhas";
 import { numeroModulo, type Modulo } from "@/lib/crew";
 
 export const metadata: Metadata = { title: "Head Hunter", robots: { index: false } };
@@ -22,6 +23,10 @@ export default async function CrewSelectPage({ searchParams }: { searchParams: P
     supabase.rpc("anac_liberado"),
     carregarJornada(supabase, user.id),
   ]);
+  const { data: rk } = await supabase.rpc("ranking_semana", { p_semanas_atras: 0 });
+  const minhaPos = ((rk ?? []) as { posicao: number; pontos: number; eu: boolean }[]).find((l) => l.eu);
+  const medalhas = calcularMedalhas(dados, jornada);
+  const ganhas = medalhas.filter((m) => m.ganha);
   const temAnac = anac.error ? true : anac.data === true;
 
   const concluidas = new Set((feitas ?? []).map((f) => f.aula_id));
@@ -95,6 +100,18 @@ export default async function CrewSelectPage({ searchParams }: { searchParams: P
               <span className="text-[15px] text-[#d7dbe6]">O inglês do dia a dia do comissário, com diálogos, exercícios de fala e quiz em cada aula.</span>
             </span>
             <span className="relative inline-flex min-h-12 items-center gap-2 rounded-full bg-brand-strong px-6 font-display font-bold text-white">Abrir o curso <Arrow /></span>
+          </Link>
+          <Link href="/head-hunter/ranking" className="flex flex-wrap items-center justify-between gap-4 rounded-[22px] border-2 border-brand-line bg-white p-6 text-navy hover:border-brand">
+            <span className="flex flex-col gap-1">
+              <span className="self-start rounded-full bg-brand-soft px-3 py-1 font-display text-xs font-bold tracking-[.08em] text-brand-strong uppercase">Ranking da semana</span>
+              <strong className="font-display text-xl font-extrabold">
+                {minhaPos ? `Você está em ${minhaPos.posicao}º com ${minhaPos.pontos} pontos` : "Pontue nesta semana e entre no ranking"}
+              </strong>
+              <span className="text-[15px] text-ink-2">
+                {ganhas.length} de {medalhas.length} medalhas {ganhas.length > 0 && <span aria-hidden="true">· {ganhas.slice(-6).map((m) => m.emoji).join(" ")}</span>}
+              </span>
+            </span>
+            <span className="inline-flex min-h-12 items-center gap-2 rounded-full bg-brand-strong px-6 font-display font-bold text-white">Ver ranking <Arrow /></span>
           </Link>
           <Link href="/head-hunter/video-apresentacao" className="flex flex-wrap items-center justify-between gap-4 rounded-[22px] border-2 border-brand-line bg-white p-6 text-navy hover:border-brand">
             <span className="flex flex-col gap-1">

@@ -271,14 +271,31 @@ function missaoDoDia(d: DadosJornada, etapas: EtapaAvaliada[], atual: number): I
 }
 
 /** Dias seguidos com alguma atividade (conta a partir de hoje, ou de ontem se hoje ainda não estudou). */
-function sequencia(d: DadosJornada) {
-  const dias = new Set<string>([
+export function diasAtivos(d: DadosJornada) {
+  return new Set<string>([
     ...d.tentativas.map((t) => diaSP(t.finalizada_em)),
     ...[...d.concluidas.values()].map(diaSP),
     ...[...d.ingles.values()].map((x) => diaSP(x.updated_at)),
     ...d.opq.map((x) => diaSP(x.created_at)),
     ...d.videos.map((x) => diaSP(x.created_at)),
   ]);
+}
+
+/** Maior sequência de dias seguidos com estudo, em toda a história do aluno. */
+export function maiorSequencia(d: DadosJornada) {
+  const dias = [...diasAtivos(d)].sort();
+  let melhor = 0, atual = 0, ant = "";
+  for (const k of dias) {
+    const x = new Date(`${ant}T12:00:00Z`); x.setUTCDate(x.getUTCDate() + 1);
+    atual = ant && x.toISOString().slice(0, 10) === k ? atual + 1 : 1;
+    melhor = Math.max(melhor, atual);
+    ant = k;
+  }
+  return melhor;
+}
+
+function sequencia(d: DadosJornada) {
+  const dias = diasAtivos(d);
   const dia = new Date(`${d.hoje}T12:00:00Z`);
   if (!dias.has(d.hoje)) dia.setUTCDate(dia.getUTCDate() - 1);
   let n = 0;
