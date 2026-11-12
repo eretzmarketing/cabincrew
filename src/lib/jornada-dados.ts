@@ -22,7 +22,7 @@ export async function carregarJornada(supabase: SupabaseClient, userId: string) 
     supabase.from("ingles_progresso").select("aula, concluida, updated_at").eq("user_id", userId),
     supabase.from("opq_tentativas").select("perfil, created_at").eq("user_id", userId).order("created_at", { ascending: false }).limit(20),
     supabase.from("video_treinos").select("nota, created_at").eq("user_id", userId).order("created_at", { ascending: false }).limit(20),
-    supabase.rpc("anac_liberado"),
+    supabase.rpc("anac_liberado", { p_user: userId }),
     lerCheckin(supabase, userId),
   ]);
   const simulados = new Map<number, { origem: string | null; bancos: string[] }>();

@@ -7,6 +7,7 @@ const ITENS = [
   { href: "/admin", label: "Visão geral", exato: true },
   { href: "/admin/usuarios", label: "Usuários" },
   { href: "/admin/interessados", label: "Lista de interesse" },
+  { href: "/admin/head-hunter/alunos", label: "Alunos do Head Hunter" },
   { href: "/admin/head-hunter", label: "Head Hunter" },
   { href: "/admin/anac", label: "Simulado ANAC" },
   { href: "/admin/questoes", label: "Banco de questões" },
@@ -23,7 +24,9 @@ export default function AdminNav() {
   return (
     <nav aria-label="Painel administrador" className="flex gap-1 overflow-x-auto md:flex-col">
       {ITENS.map((i) => {
-        const ativo = i.exato ? path === i.href : path.startsWith(i.href);
+        // vale o item mais específico (ex.: "Alunos do Head Hunter" e não "Head Hunter")
+        const casa = (x: (typeof ITENS)[number]) => (x.exato ? path === x.href : path === x.href || path.startsWith(x.href + "/"));
+        const ativo = casa(i) && !ITENS.some((x) => x !== i && x.href.length > i.href.length && casa(x));
         return (
           <Link
             key={i.href}
