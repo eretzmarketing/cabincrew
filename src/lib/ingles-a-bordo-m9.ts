@@ -1,0 +1,447 @@
+import type { AulaIngles } from "@/lib/ingles-a-bordo";
+
+/** Módulo 9 · Delays and complaints. Conteúdo original Cabin Crew. */
+export const MODULO_9: AulaIngles[] = [
+  /* ------------------------------------------------------------------ 9.1 */
+  {
+    modulo: 9,
+    numero: 1,
+    titulo: "Explicando um atraso",
+    tituloEn: "Explaining a delay",
+    objetivo: "Informar um atraso com clareza: motivo, tempo previsto e o que vai acontecer em seguida.",
+    foto: "/img/ingles/cena-28.jpg",
+    fotoAlt: "Passageiro gesticula enquanto a comissária explica a situação",
+    minutos: 15,
+    intro:
+      "Atrasos irritam, mas a falta de informação irrita mais. Diga o motivo (quando puder), o tempo previsto e quando você vai dar a próxima atualização. Nunca invente uma previsão.",
+    dialogo: {
+      titulo: "Why aren't we moving?",
+      contexto: "O avião está parado no portão há 30 minutos. Mr. Clarke chama Marco.",
+      personagens: ["Clarke", "Marco", "Captain"],
+      falas: [
+        { quem: "Clarke", en: "Excuse me. We've been sitting here for half an hour. What's going on?", pt: "Com licença. Estamos parados aqui há meia hora. O que está acontecendo?" },
+        { quem: "Marco", en: "I'm sorry for the delay, sir. There's heavy traffic at the airport, and we're waiting for a take-off slot.", pt: "Peço desculpas pelo atraso, senhor. O tráfego no aeroporto está intenso e estamos aguardando um horário de decolagem." },
+        { quem: "Clarke", en: "How long will it be?", pt: "Quanto tempo vai demorar?" },
+        { quem: "Marco", en: "The captain expects about twenty more minutes. He'll make an announcement as soon as he has an update.", pt: "O comandante prevê mais uns vinte minutos. Ele fará um anúncio assim que tiver uma atualização." },
+        { quem: "Clarke", en: "I have an important meeting this afternoon.", pt: "Eu tenho uma reunião importante hoje à tarde." },
+        { quem: "Marco", en: "I completely understand. Would you like some water while we wait?", pt: "Eu entendo completamente. O senhor gostaria de uma água enquanto esperamos?" },
+        { quem: "Clarke", en: "Yes, please. Thank you for explaining.", pt: "Sim, por favor. Obrigado por explicar." },
+        { quem: "Captain", en: "Ladies and gentlemen, this is your captain. We've now been cleared for take-off in about fifteen minutes. We apologize for the delay and thank you for your patience.", pt: "Senhoras e senhores, aqui é o comandante. Fomos autorizados a decolar em cerca de quinze minutos. Pedimos desculpas pelo atraso e agradecemos a paciência." },
+      ],
+    },
+    vocabulario: [
+      { en: "delay / delayed", pt: "atraso / atrasado" },
+      { en: "heavy traffic", pt: "tráfego intenso" },
+      { en: "take-off slot", pt: "horário de decolagem autorizado" },
+      { en: "weather conditions", pt: "condições meteorológicas" },
+      { en: "technical issue", pt: "problema técnico" },
+      { en: "to be cleared", pt: "ser autorizado" },
+      { en: "update", pt: "atualização" },
+      { en: "while we wait", pt: "enquanto esperamos" },
+    ],
+    expressoes: [
+      { en: "I'm sorry for the delay.", pt: "Peço desculpas pelo atraso.", uso: "Comece reconhecendo o problema." },
+      { en: "We're waiting for…", pt: "Estamos aguardando…", uso: "Explica o motivo." },
+      { en: "The captain expects about … more minutes.", pt: "O comandante prevê mais uns … minutos.", uso: "Previsão vinda de quem sabe." },
+      { en: "He'll make an announcement as soon as he has an update.", pt: "Ele fará um anúncio assim que tiver novidades.", uso: "Promete a próxima informação." },
+      { en: "I completely understand.", pt: "Eu entendo completamente.", uso: "Empatia com a frustração." },
+    ],
+    dica: "Se você não sabe o tempo de atraso, diga: \"I don't have an exact time yet, but I'll update you as soon as I know.\" É melhor do que um palpite que não se cumpre.",
+    atividades: [
+      {
+        tipo: "compreensao",
+        questoes: [
+          { pergunta: "Why is the plane delayed?", opcoes: [{ texto: "Bad weather" }, { texto: "Heavy traffic at the airport", certa: true }, { texto: "A technical issue" }], explicacao: "\"There's heavy traffic at the airport.\"" },
+          { pergunta: "Why is Mr. Clarke worried?", opcoes: [{ texto: "He has a connection." }, { texto: "He has an important meeting.", certa: true }, { texto: "He's hungry." }], explicacao: "\"I have an important meeting this afternoon.\"" },
+          { pergunta: "When will they take off, according to the captain?", opcoes: [{ texto: "In about fifteen minutes", certa: true }, { texto: "In one hour" }, { texto: "Right now" }], explicacao: "\"cleared for take-off in about fifteen minutes\"" },
+        ],
+      },
+      { tipo: "ditado", frases: ["I'm sorry for the delay.", "We're waiting for a take-off slot.", "Thank you for your patience."] },
+      {
+        tipo: "ordenar",
+        instrucao: "Coloque a conversa na ordem certa.",
+        falas: ["Why are we still at the gate?", "I'm sorry for the delay. We're waiting for some bags to be loaded.", "How long will it take?", "About ten more minutes.", "The captain will update you soon."],
+      },
+      {
+        tipo: "ligar",
+        instrucao: "Ligue o inglês ao português.",
+        pares: [
+          ["delay", "atraso"],
+          ["heavy traffic", "tráfego intenso"],
+          ["technical issue", "problema técnico"],
+          ["to be cleared", "ser autorizado"],
+          ["weather conditions", "condições meteorológicas"],
+        ],
+      },
+      {
+        tipo: "lacunas",
+        itens: [
+          { frase: "I'm sorry for the ___.", resposta: "delay" },
+          { frase: "We're ___ for a take-off slot.", resposta: "waiting" },
+          { frase: "The captain ___ about twenty more minutes.", resposta: "expects" },
+          { frase: "I completely ___.", resposta: "understand" },
+          { frase: "Thank you for your ___.", resposta: "patience" },
+        ],
+      },
+      {
+        tipo: "falar",
+        frases: [
+          { en: "I'm sorry for the delay. We're waiting for a take-off slot.", pt: "Peço desculpas pelo atraso. Estamos aguardando um horário de decolagem." },
+          { en: "I don't have an exact time yet, but I'll update you as soon as I know.", pt: "Ainda não tenho um horário exato, mas aviso assim que souber." },
+          { en: "I completely understand. Would you like some water while we wait?", pt: "Eu entendo completamente. Gostaria de uma água enquanto esperamos?" },
+        ],
+      },
+      {
+        tipo: "roleplay",
+        situacao: "O voo está atrasado por causa do tempo, e você não sabe a previsão.",
+        voce: "Comissário(a)",
+        turnos: [
+          { outro: "What's happening? Why aren't we leaving?", modelo: "I'm sorry for the delay, madam. There's bad weather at our destination." },
+          { outro: "How long will we wait?", modelo: "I don't have an exact time yet, but I'll update you as soon as I know." },
+          { outro: "This is so frustrating.", modelo: "I completely understand. Would you like something to drink while we wait?" },
+          { outro: "A coffee, please.", modelo: "Of course. I'll bring it right away." },
+        ],
+      },
+    ],
+    quiz: [
+      { pergunta: "Você não sabe quanto tempo vai durar o atraso. O que dizer?", opcoes: [{ texto: "Five minutes, I think." }, { texto: "I don't have an exact time yet, but I'll update you.", certa: true }, { texto: "I don't know. Ask the captain." }], explicacao: "Honesto e com promessa de retorno." },
+      { pergunta: "\"To be cleared for take-off\" é:", opcoes: [{ texto: "ser autorizado a decolar", certa: true }, { texto: "limpar a pista" }, { texto: "cancelar a decolagem" }], explicacao: "Cleared = autorizado." },
+      { pergunta: "\"Heavy traffic\" é:", opcoes: [{ texto: "tráfego intenso", certa: true }, { texto: "carga pesada" }, { texto: "chuva forte" }], explicacao: "Heavy aqui é intenso." },
+      { pergunta: "Qual frase mostra empatia?", opcoes: [{ texto: "It's not my fault." }, { texto: "I completely understand.", certa: true }, { texto: "Everyone is waiting." }], explicacao: "Reconhece a frustração." },
+      { pergunta: "\"Thank you for your patience\" é usado:", opcoes: [{ texto: "para agradecer a paciência num atraso", certa: true }, { texto: "para pedir silêncio" }, { texto: "para encerrar o voo" }], explicacao: "Agradecimento padrão em atrasos." },
+    ],
+  },
+
+  /* ------------------------------------------------------------------ 9.2 */
+  {
+    modulo: 9,
+    numero: 2,
+    titulo: "Conexões perdidas",
+    tituloEn: "Missed connections",
+    objetivo: "Orientar o passageiro preocupado com a conexão: o que a tripulação pode fazer e o que vai acontecer em solo.",
+    foto: "/img/ingles/cena-29.jpg",
+    fotoAlt: "Passageiro preocupado conversa com a comissária no corredor",
+    minutos: 15,
+    intro:
+      "Com atraso, muitos passageiros temem perder a conexão. A tripulação normalmente não remarca voos, mas pode informar a equipe de solo e orientar o passageiro. O segredo é não prometer o que não depende de você.",
+    dialogo: {
+      titulo: "I'm going to miss my connection",
+      contexto: "O voo vai pousar com 50 minutos de atraso. Mr. Becker tem uma conexão para Frankfurt.",
+      personagens: ["Becker", "Leila"],
+      falas: [
+        { quem: "Becker", en: "Excuse me, I have a connection to Frankfurt at 6:15. Am I going to miss it?", pt: "Com licença, eu tenho uma conexão para Frankfurt às 6h15. Vou perder?" },
+        { quem: "Leila", en: "Let me check your details. May I see your boarding pass for the next flight?", pt: "Deixa eu verificar seus dados. Posso ver o cartão de embarque do próximo voo?" },
+        { quem: "Becker", en: "Here. We land at 5:40 now, right?", pt: "Aqui. Agora a gente pousa às 5h40, certo?" },
+        { quem: "Leila", en: "That's right. It will be tight, but I'll inform our ground staff about your connection.", pt: "Isso. Vai ser apertado, mas vou informar a nossa equipe de solo sobre a sua conexão." },
+        { quem: "Becker", en: "And if I miss it?", pt: "E se eu perder?" },
+        { quem: "Leila", en: "If you miss it, our ground staff will help you at the transfer desk and rebook you on the next available flight.", pt: "Se o senhor perder, a nossa equipe de solo vai ajudar no balcão de conexões e remarcar no próximo voo disponível." },
+        { quem: "Becker", en: "Can I get off first?", pt: "Posso desembarcar primeiro?" },
+        { quem: "Leila", en: "I'll ask the purser if we can move you closer to the front before landing. I can't promise, but I'll try.", pt: "Vou perguntar à chefe de cabine se podemos mudar o senhor para mais perto da frente antes do pouso. Não posso prometer, mas vou tentar." },
+        { quem: "Becker", en: "Thank you. I appreciate it.", pt: "Obrigado. Agradeço." },
+      ],
+    },
+    vocabulario: [
+      { en: "connection / connecting flight", pt: "conexão / voo de conexão" },
+      { en: "to miss", pt: "perder (voo, conexão)" },
+      { en: "tight", pt: "apertado (tempo)" },
+      { en: "ground staff", pt: "equipe de solo" },
+      { en: "transfer desk", pt: "balcão de conexões" },
+      { en: "to rebook", pt: "remarcar" },
+      { en: "next available flight", pt: "próximo voo disponível" },
+      { en: "to get off", pt: "desembarcar, sair do avião" },
+    ],
+    expressoes: [
+      { en: "Let me check your details.", pt: "Deixa eu verificar seus dados.", uso: "Antes de responder." },
+      { en: "It will be tight.", pt: "Vai ser apertado.", uso: "Honesto, sem alarmar." },
+      { en: "I'll inform our ground staff.", pt: "Vou informar a equipe de solo.", uso: "O que a tripulação pode fazer." },
+      { en: "They will rebook you on the next available flight.", pt: "Vão remarcar o senhor no próximo voo disponível.", uso: "Explica o que acontece se perder." },
+      { en: "I can't promise, but I'll try.", pt: "Não posso prometer, mas vou tentar.", uso: "Expectativa realista." },
+    ],
+    dica: "\"Miss\" tem vários sentidos: \"miss a flight\" (perder um voo), \"I miss you\" (sinto sua falta). Já \"lose\" é perder um objeto: \"I lost my passport\".",
+    atividades: [
+      {
+        tipo: "compreensao",
+        questoes: [
+          { pergunta: "Where is Mr. Becker's connection going?", opcoes: [{ texto: "Paris" }, { texto: "Frankfurt", certa: true }, { texto: "Munich" }], explicacao: "\"I have a connection to Frankfurt.\"" },
+          { pergunta: "What time do they land now?", opcoes: [{ texto: "5:40", certa: true }, { texto: "6:15" }, { texto: "5:14" }], explicacao: "\"We land at 5:40 now, right?\" — \"That's right.\"" },
+          { pergunta: "Who will rebook him if he misses the flight?", opcoes: [{ texto: "Leila" }, { texto: "The captain" }, { texto: "The ground staff", certa: true }], explicacao: "\"Our ground staff will help you at the transfer desk.\"" },
+        ],
+      },
+      { tipo: "ditado", frases: ["Let me check your details.", "It will be tight.", "I can't promise, but I'll try."] },
+      {
+        tipo: "ordenar",
+        instrucao: "Coloque a conversa na ordem certa.",
+        falas: ["Am I going to miss my connection?", "Let me check. What time is your next flight?", "At 9:30.", "It will be tight, but I'll inform our ground staff.", "Thank you."],
+      },
+      {
+        tipo: "ligar",
+        instrucao: "Ligue o inglês ao português.",
+        pares: [
+          ["ground staff", "equipe de solo"],
+          ["to rebook", "remarcar"],
+          ["transfer desk", "balcão de conexões"],
+          ["to get off", "desembarcar"],
+          ["tight", "apertado"],
+        ],
+      },
+      {
+        tipo: "lacunas",
+        itens: [
+          { frase: "Am I going to ___ my connection?", resposta: "miss" },
+          { frase: "It will be ___.", resposta: "tight" },
+          { frase: "I'll inform our ground ___.", resposta: "staff" },
+          { frase: "They will ___ you on the next available flight.", resposta: "rebook" },
+          { frase: "I can't ___, but I'll try.", resposta: "promise" },
+        ],
+      },
+      {
+        tipo: "falar",
+        frases: [
+          { en: "Let me check your details. May I see your next boarding pass?", pt: "Deixa eu verificar seus dados. Posso ver o próximo cartão de embarque?" },
+          { en: "It will be tight, but I'll inform our ground staff.", pt: "Vai ser apertado, mas vou informar a equipe de solo." },
+          { en: "If you miss it, they will rebook you on the next available flight.", pt: "Se perder, vão remarcar você no próximo voo disponível." },
+        ],
+      },
+      {
+        tipo: "roleplay",
+        situacao: "Uma passageira tem conexão para Roma em 40 minutos após o pouso.",
+        voce: "Comissário(a)",
+        turnos: [
+          { outro: "My flight to Rome leaves 40 minutes after we land. Will I make it?", modelo: "Let me check your details. It will be tight, but I'll inform our ground staff." },
+          { outro: "What if I miss it?", modelo: "Our ground staff will help you at the transfer desk and rebook you on the next available flight." },
+          { outro: "Can I sit closer to the door?", modelo: "I'll ask the purser. I can't promise, but I'll try." },
+          { outro: "Thank you so much.", modelo: "You're welcome." },
+        ],
+      },
+    ],
+    quiz: [
+      { pergunta: "\"To miss a flight\" é:", opcoes: [{ texto: "perder um voo", certa: true }, { texto: "sentir falta de um voo" }, { texto: "cancelar um voo" }], explicacao: "Miss a flight = perder o voo." },
+      { pergunta: "Quem remarca o voo do passageiro?", opcoes: [{ texto: "A tripulação, durante o voo" }, { texto: "A equipe de solo", certa: true }, { texto: "O próprio passageiro, no avião" }], explicacao: "Ground staff / transfer desk." },
+      { pergunta: "\"I can't promise, but I'll try\" serve para:", opcoes: [{ texto: "criar uma expectativa realista", certa: true }, { texto: "recusar ajuda" }, { texto: "prometer" }], explicacao: "Honestidade evita frustração." },
+      { pergunta: "\"I lost my passport\" usa lose porque:", opcoes: [{ texto: "é um objeto perdido", certa: true }, { texto: "é um voo" }, { texto: "é passado de miss" }], explicacao: "Lose = perder objetos; miss = perder voo, ônibus, oportunidade." },
+      { pergunta: "\"It will be tight\" significa:", opcoes: [{ texto: "Vai ser apertado (o tempo).", certa: true }, { texto: "O cinto vai apertar." }, { texto: "Vai ser fácil." }], explicacao: "Tight = apertado." },
+    ],
+  },
+
+  /* ------------------------------------------------------------------ 9.3 */
+  {
+    modulo: 9,
+    numero: 3,
+    titulo: "Lidando com uma reclamação",
+    tituloEn: "Handling a complaint",
+    objetivo: "Ouvir uma reclamação sem interromper, reconhecer o problema e propor uma solução concreta.",
+    foto: "/img/ingles/cena-26.jpg",
+    fotoAlt: "Passageira reclama com a comissária, que ouve com atenção",
+    minutos: 15,
+    intro:
+      "Reclamações bem resolvidas viram elogios. Use a sequência: ouvir, reconhecer, desculpar-se, resolver e confirmar. Fale baixo, mantenha a calma e não leve para o lado pessoal.",
+    dialogo: {
+      titulo: "This is unacceptable",
+      contexto: "A refeição especial de Mrs. Lopez não foi carregada. Ela está irritada. Ana atende.",
+      personagens: ["Lopez", "Ana"],
+      falas: [
+        { quem: "Lopez", en: "This is unacceptable. I ordered a gluten-free meal two weeks ago, and you don't have it!", pt: "Isso é inaceitável. Eu pedi uma refeição sem glúten há duas semanas e vocês não têm!" },
+        { quem: "Ana", en: "I'm really sorry, Mrs. Lopez. I can see why you're upset.", pt: "Sinto muito mesmo, Sra. Lopez. Entendo por que a senhora está chateada." },
+        { quem: "Lopez", en: "I can't eat anything on this tray. I have coeliac disease.", pt: "Não posso comer nada desta bandeja. Eu tenho doença celíaca." },
+        { quem: "Ana", en: "Thank you for explaining. Let me see what we have. We have fresh fruit, and some snacks are labelled gluten-free.", pt: "Obrigada por explicar. Deixa eu ver o que temos. Temos frutas frescas, e alguns lanches têm o rótulo sem glúten." },
+        { quem: "Lopez", en: "Are you sure they're safe?", pt: "Você tem certeza de que são seguros?" },
+        { quem: "Ana", en: "I'll bring the packets so you can check the ingredients yourself.", pt: "Vou trazer as embalagens para a senhora mesma conferir os ingredientes." },
+        { quem: "Lopez", en: "OK. But I want to make a complaint.", pt: "Tá. Mas eu quero fazer uma reclamação." },
+        { quem: "Ana", en: "Of course. I'll report this to the purser, and I'll give you the details to contact our customer service.", pt: "Claro. Vou reportar isso à chefe de cabine e vou passar os dados para a senhora entrar em contato com o nosso atendimento ao cliente." },
+        { quem: "Lopez", en: "Thank you. At least you're listening.", pt: "Obrigada. Pelo menos você está ouvindo." },
+      ],
+    },
+    vocabulario: [
+      { en: "complaint / to complain", pt: "reclamação / reclamar" },
+      { en: "unacceptable", pt: "inaceitável" },
+      { en: "upset", pt: "chateado(a)" },
+      { en: "coeliac (celiac) disease", pt: "doença celíaca" },
+      { en: "labelled", pt: "com rótulo, rotulado" },
+      { en: "packet", pt: "embalagem, pacotinho" },
+      { en: "customer service", pt: "atendimento ao cliente" },
+      { en: "to report", pt: "reportar" },
+    ],
+    expressoes: [
+      { en: "I'm really sorry.", pt: "Sinto muito mesmo.", uso: "Desculpa sincera, sem justificativas." },
+      { en: "I can see why you're upset.", pt: "Entendo por que está chateado(a).", uso: "Reconhece o sentimento." },
+      { en: "Let me see what we have.", pt: "Deixa eu ver o que temos.", uso: "Parte para a solução." },
+      { en: "So you can check it yourself.", pt: "Para o(a) senhor(a) mesmo(a) conferir.", uso: "Dá controle ao passageiro." },
+      { en: "I'll report this to the purser.", pt: "Vou reportar isso à chefe de cabine.", uso: "Mostra que a reclamação será registrada." },
+    ],
+    dica: "Evite \"Calm down\" (acalme-se): costuma irritar ainda mais. Prefira reconhecer: \"I can see why you're upset\".",
+    atividades: [
+      {
+        tipo: "compreensao",
+        questoes: [
+          { pergunta: "What is the problem?", opcoes: [{ texto: "Her seat is broken." }, { texto: "Her gluten-free meal is missing.", certa: true }, { texto: "Her bag is lost." }], explicacao: "\"I ordered a gluten-free meal… and you don't have it!\"" },
+          { pergunta: "What does Ana offer?", opcoes: [{ texto: "A refund" }, { texto: "Fresh fruit and gluten-free snacks", certa: true }, { texto: "A business class seat" }], explicacao: "\"We have fresh fruit, and some snacks are labelled gluten-free.\"" },
+          { pergunta: "What will Ana do about the complaint?", opcoes: [{ texto: "Ignore it" }, { texto: "Report it to the purser and give customer service details", certa: true }, { texto: "Call the captain" }], explicacao: "Ela registra e orienta a passageira." },
+        ],
+      },
+      { tipo: "ditado", frases: ["I'm really sorry.", "I can see why you're upset.", "Let me see what we have."] },
+      {
+        tipo: "ordenar",
+        instrucao: "Coloque o atendimento na ordem certa (ouvir, reconhecer, desculpar, resolver, confirmar).",
+        falas: ["My screen hasn't worked for the whole flight!", "I can see why you're upset.", "I'm really sorry about that.", "Let me try to restart it for you.", "Is it working now?"],
+      },
+      {
+        tipo: "ligar",
+        instrucao: "Ligue o inglês ao português.",
+        pares: [
+          ["upset", "chateado"],
+          ["complaint", "reclamação"],
+          ["unacceptable", "inaceitável"],
+          ["customer service", "atendimento ao cliente"],
+          ["labelled", "com rótulo"],
+        ],
+      },
+      {
+        tipo: "lacunas",
+        itens: [
+          { frase: "I'm ___ sorry.", resposta: "really" },
+          { frase: "I can see why you're ___.", resposta: "upset" },
+          { frase: "Let me see what we ___.", resposta: "have" },
+          { frase: "I want to make a ___.", resposta: "complaint" },
+          { frase: "I'll ___ this to the purser.", resposta: "report" },
+        ],
+      },
+      {
+        tipo: "falar",
+        frases: [
+          { en: "I'm really sorry. I can see why you're upset.", pt: "Sinto muito mesmo. Entendo por que está chateado(a)." },
+          { en: "Let me see what we have.", pt: "Deixa eu ver o que temos." },
+          { en: "I'll report this to the purser and give you our customer service details.", pt: "Vou reportar à chefe de cabine e passar os dados do atendimento ao cliente." },
+        ],
+      },
+      {
+        tipo: "roleplay",
+        situacao: "Um passageiro reclama que a tela de entretenimento não funciona há horas.",
+        voce: "Comissário(a)",
+        turnos: [
+          { outro: "My screen hasn't worked for four hours. This is ridiculous!", modelo: "I'm really sorry, sir. I can see why you're upset." },
+          { outro: "I paid a lot for this ticket.", modelo: "I understand. Let me try to restart your screen." },
+          { outro: "It still doesn't work.", modelo: "I'm sorry. There's a free seat in row 19 with a working screen. Would you like to move?" },
+          { outro: "Yes. And I want to complain.", modelo: "Of course. I'll report this to the purser and give you our customer service details." },
+        ],
+      },
+    ],
+    quiz: [
+      { pergunta: "Qual frase NÃO usar com um passageiro irritado?", opcoes: [{ texto: "I can see why you're upset." }, { texto: "Calm down.", certa: true }, { texto: "Let me see what we have." }], explicacao: "\"Calm down\" costuma irritar mais." },
+      { pergunta: "\"Upset\" é:", opcoes: [{ texto: "chateado(a)", certa: true }, { texto: "de ponta-cabeça" }, { texto: "animado(a)" }], explicacao: "Upset = chateado, aborrecido." },
+      { pergunta: "Qual é a sequência recomendada?", opcoes: [{ texto: "Justificar, discutir, resolver" }, { texto: "Ouvir, reconhecer, desculpar, resolver, confirmar", certa: true }, { texto: "Resolver sem ouvir" }], explicacao: "Primeiro ouvir, depois agir." },
+      { pergunta: "\"To make a complaint\" é:", opcoes: [{ texto: "fazer uma reclamação", certa: true }, { texto: "fazer um elogio" }, { texto: "fazer um pedido" }], explicacao: "Complaint = reclamação." },
+      { pergunta: "Por que levar as embalagens para a passageira conferir?", opcoes: [{ texto: "Para ela decidir com segurança", certa: true }, { texto: "Para ela jogar fora" }, { texto: "Por regra de reciclagem" }], explicacao: "Com restrição alimentar séria, ela confere os ingredientes." },
+    ],
+  },
+
+  /* ------------------------------------------------------------------ 9.4 */
+  {
+    modulo: 9,
+    numero: 4,
+    titulo: "Passageiro indisciplinado",
+    tituloEn: "Disruptive passengers",
+    objetivo: "Dar limites com firmeza e educação, avisar sobre consequências e acionar a chefe de cabine.",
+    foto: "/img/ingles/cena-27.jpg",
+    fotoAlt: "Comissária conversa com firmeza com uma passageira agitada",
+    minutos: 15,
+    intro:
+      "Às vezes a gentileza não basta. Com um passageiro agressivo ou que desrespeita regras, use frases firmes, curtas e sem ironia. Mantenha distância, chame a chefe de cabine e siga o procedimento da companhia.",
+    dialogo: {
+      titulo: "I need you to stop",
+      contexto: "Mr. Becker bebeu demais e está falando alto com outros passageiros. Tom intervém.",
+      personagens: ["Becker", "Tom", "Grace"],
+      falas: [
+        { quem: "Becker", en: "Another whisky! Now!", pt: "Mais um uísque! Agora!" },
+        { quem: "Tom", en: "Sir, I'm afraid I can't serve you any more alcohol.", pt: "Senhor, infelizmente não posso servir mais bebida alcoólica." },
+        { quem: "Becker", en: "What? I paid for this ticket! Who do you think you are?", pt: "O quê? Eu paguei por esta passagem! Quem você pensa que é?" },
+        { quem: "Tom", en: "Sir, I need you to lower your voice. Other passengers are trying to rest.", pt: "Senhor, preciso que o senhor fale mais baixo. Outros passageiros estão tentando descansar." },
+        { quem: "Becker", en: "I'll talk how I want!", pt: "Eu falo do jeito que eu quiser!" },
+        { quem: "Tom", en: "I understand you're frustrated, but this behaviour is not acceptable on board. I can offer you water, tea or coffee.", pt: "Entendo que o senhor está frustrado, mas este comportamento não é aceitável a bordo. Posso oferecer água, chá ou café." },
+        { quem: "Grace", en: "Good evening, sir. I'm the purser. If this continues, the captain will be informed, and authorities may meet the aircraft on arrival.", pt: "Boa noite, senhor. Eu sou a chefe de cabine. Se isso continuar, o comandante será informado, e as autoridades podem aguardar a aeronave na chegada." },
+        { quem: "Becker", en: "Fine. Fine. Bring me a coffee.", pt: "Tá bom. Tá bom. Me traz um café." },
+        { quem: "Tom", en: "Thank you, sir. I'll bring it now.", pt: "Obrigado, senhor. Vou trazer agora." },
+      ],
+    },
+    vocabulario: [
+      { en: "disruptive / unruly passenger", pt: "passageiro indisciplinado" },
+      { en: "behaviour / behavior", pt: "comportamento" },
+      { en: "to lower your voice", pt: "falar mais baixo" },
+      { en: "acceptable", pt: "aceitável" },
+      { en: "alcohol", pt: "bebida alcoólica" },
+      { en: "authorities", pt: "autoridades" },
+      { en: "on arrival", pt: "na chegada" },
+      { en: "to rest", pt: "descansar" },
+    ],
+    expressoes: [
+      { en: "I'm afraid I can't serve you any more alcohol.", pt: "Infelizmente, não posso servir mais álcool.", uso: "Negativa firme e educada." },
+      { en: "I need you to lower your voice.", pt: "Preciso que fale mais baixo.", uso: "\"I need you to…\" é firme, sem ser rude." },
+      { en: "This behaviour is not acceptable on board.", pt: "Este comportamento não é aceitável a bordo.", uso: "Nomeia o problema, não a pessoa." },
+      { en: "If this continues, the captain will be informed.", pt: "Se continuar, o comandante será informado.", uso: "Consequência clara." },
+      { en: "I understand you're frustrated, but…", pt: "Entendo que está frustrado, mas…", uso: "Empatia + limite." },
+    ],
+    dica: "Critique o comportamento, nunca a pessoa: \"This behaviour is not acceptable\", e não \"You are rude\". Os passos formais para passageiro indisciplinado estão no manual da sua companhia.",
+    atividades: [
+      {
+        tipo: "compreensao",
+        questoes: [
+          { pergunta: "What does Mr. Becker want?", opcoes: [{ texto: "Another whisky", certa: true }, { texto: "A new seat" }, { texto: "To speak to the captain" }], explicacao: "\"Another whisky! Now!\"" },
+          { pergunta: "What does Tom offer instead?", opcoes: [{ texto: "Beer" }, { texto: "Water, tea or coffee", certa: true }, { texto: "Nothing" }], explicacao: "\"I can offer you water, tea or coffee.\"" },
+          { pergunta: "What could happen on arrival?", opcoes: [{ texto: "Authorities may meet the aircraft.", certa: true }, { texto: "He gets a free ticket." }, { texto: "Nothing." }], explicacao: "\"Authorities may meet the aircraft on arrival.\"" },
+        ],
+      },
+      { tipo: "ditado", frases: ["I need you to lower your voice.", "This behaviour is not acceptable on board.", "If this continues, the captain will be informed."] },
+      {
+        tipo: "ordenar",
+        instrucao: "Coloque a conversa na ordem certa.",
+        falas: ["Give me another beer!", "I'm afraid I can't serve you any more alcohol, sir.", "That's ridiculous!", "I understand you're frustrated, but I can offer you water or coffee.", "Fine. A coffee."],
+      },
+      {
+        tipo: "ligar",
+        instrucao: "Ligue o inglês ao português.",
+        pares: [
+          ["behaviour", "comportamento"],
+          ["authorities", "autoridades"],
+          ["to lower your voice", "falar mais baixo"],
+          ["on arrival", "na chegada"],
+          ["disruptive", "indisciplinado"],
+        ],
+      },
+      {
+        tipo: "lacunas",
+        itens: [
+          { frase: "I'm afraid I can't serve you any ___ alcohol.", resposta: "more" },
+          { frase: "I need you to ___ your voice.", resposta: "lower" },
+          { frase: "This behaviour is not ___ on board.", resposta: "acceptable" },
+          { frase: "If this ___, the captain will be informed.", resposta: "continues" },
+          { frase: "I understand you're ___, but…", resposta: "frustrated" },
+        ],
+      },
+      {
+        tipo: "falar",
+        frases: [
+          { en: "Sir, I need you to lower your voice.", pt: "Senhor, preciso que fale mais baixo." },
+          { en: "I understand you're frustrated, but this behaviour is not acceptable on board.", pt: "Entendo que está frustrado, mas este comportamento não é aceitável a bordo." },
+          { en: "If this continues, the captain will be informed.", pt: "Se isso continuar, o comandante será informado." },
+        ],
+      },
+      {
+        tipo: "roleplay",
+        situacao: "Um passageiro se recusa a guardar o vape (cigarro eletrônico) e fala alto.",
+        voce: "Comissário(a)",
+        turnos: [
+          { outro: "It's just a vape. It doesn't hurt anyone!", modelo: "Sir, I'm afraid using a vape is not allowed on board. I need you to put it away." },
+          { outro: "Leave me alone!", modelo: "I understand you're frustrated, but this behaviour is not acceptable on board." },
+          { outro: "And if I don't?", modelo: "If this continues, the captain will be informed, and authorities may meet the aircraft on arrival." },
+          { outro: "OK, OK. It's away.", modelo: "Thank you, sir." },
+        ],
+      },
+    ],
+    quiz: [
+      { pergunta: "Qual frase critica o comportamento, e não a pessoa?", opcoes: [{ texto: "You are very rude." }, { texto: "This behaviour is not acceptable on board.", certa: true }, { texto: "You're crazy." }], explicacao: "Foque no comportamento." },
+      { pergunta: "\"I need you to…\" é:", opcoes: [{ texto: "firme e educado", certa: true }, { texto: "muito informal" }, { texto: "agressivo" }], explicacao: "Expressa uma necessidade clara." },
+      { pergunta: "\"Lower your voice\" significa:", opcoes: [{ texto: "fale mais baixo", certa: true }, { texto: "abaixe a cabeça" }, { texto: "fale mais devagar" }], explicacao: "Lower = abaixar." },
+      { pergunta: "Quando chamar a chefe de cabine?", opcoes: [{ texto: "Nunca" }, { texto: "Quando o passageiro não colabora após os primeiros pedidos", certa: true }, { texto: "Só depois do pouso" }], explicacao: "Siga o procedimento: escalar quando necessário." },
+      { pergunta: "\"On arrival\" é:", opcoes: [{ texto: "na chegada", certa: true }, { texto: "na decolagem" }, { texto: "a caminho" }], explicacao: "Arrival = chegada." },
+    ],
+  },
+];

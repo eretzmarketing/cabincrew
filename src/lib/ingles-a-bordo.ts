@@ -4,6 +4,16 @@
  * expressões e atividades. Enquanto o MP3 não existe, o site lê o diálogo com a voz do navegador.
  */
 import { MODULO_1 } from "@/lib/ingles-a-bordo-m1";
+import { MODULO_2 } from "@/lib/ingles-a-bordo-m2";
+import { MODULO_3 } from "@/lib/ingles-a-bordo-m3";
+import { MODULO_4 } from "@/lib/ingles-a-bordo-m4";
+import { MODULO_5 } from "@/lib/ingles-a-bordo-m5";
+import { MODULO_6 } from "@/lib/ingles-a-bordo-m6";
+import { MODULO_7 } from "@/lib/ingles-a-bordo-m7";
+import { MODULO_8 } from "@/lib/ingles-a-bordo-m8";
+import { MODULO_9 } from "@/lib/ingles-a-bordo-m9";
+import { MODULO_10 } from "@/lib/ingles-a-bordo-m10";
+import { MODULO_11 } from "@/lib/ingles-a-bordo-m11";
 
 export type Personagem = {
   nome: string;
@@ -54,6 +64,13 @@ export const ELENCO: Record<string, Personagem> = {
   Leila: { nome: "Leila Haddad", papel: "Comissária australiana", voz: "f", sotaque: "AU", vozSugerida: "Mulher jovem, sotaque australiano, animada" },
   Captain: { nome: "Captain David Reyes", papel: "Comandante, americano", voz: "m", sotaque: "US", vozSugerida: "Homem de 50 anos, sotaque americano, voz grave e tranquila" },
   Marco: { nome: "Marco Bianchi", papel: "Comissário italiano", voz: "m", sotaque: "GB", vozSugerida: "Homem jovem, inglês fluente com leve sotaque italiano" },
+  // passageiros (aparecem a partir do Módulo 2)
+  Clarke: { nome: "Mr. Peter Clarke", papel: "Passageiro britânico, viaja a trabalho", voz: "m", sotaque: "GB", vozSugerida: "Homem de 50 anos, sotaque britânico, educado e um pouco formal" },
+  Lopez: { nome: "Mrs. Maria Lopez", papel: "Passageira americana, viaja com a filha", voz: "f", sotaque: "US", vozSugerida: "Mulher de 35 anos, sotaque americano, simpática e um pouco cansada" },
+  Lily: { nome: "Lily Lopez", papel: "Filha da Maria, 7 anos", voz: "f", sotaque: "US", vozSugerida: "Menina de 7 anos, sotaque americano, curiosa e animada" },
+  Becker: { nome: "Mr. Jonas Becker", papel: "Passageiro alemão, impaciente", voz: "m", sotaque: "GB", vozSugerida: "Homem de 45 anos, inglês fluente com sotaque alemão, firme e direto" },
+  Kim: { nome: "Ms. Sarah Kim", papel: "Passageira americana, viaja sozinha", voz: "f", sotaque: "US", vozSugerida: "Mulher de 30 anos, sotaque americano, educada e um pouco ansiosa" },
+  Patel: { nome: "Dr. Raj Patel", papel: "Médico, viajando como passageiro", voz: "m", sotaque: "GB", vozSugerida: "Homem de 40 anos, sotaque britânico com leve sotaque indiano, calmo e seguro" },
 };
 
 const MODULOS_BASE: Omit<ModuloIngles, "aulas">[] = [
@@ -70,7 +87,10 @@ const MODULOS_BASE: Omit<ModuloIngles, "aulas">[] = [
   { numero: 11, titulo: "Simulação final", tituloEn: "Final flight simulation", resumo: "Um voo completo do briefing ao desembarque, com todas as situações.", foto: "/img/ingles/cena-03.jpg" },
 ];
 
-const CONTEUDO: Record<number, AulaIngles[]> = { 1: MODULO_1 };
+const CONTEUDO: Record<number, AulaIngles[]> = {
+  1: MODULO_1, 2: MODULO_2, 3: MODULO_3, 4: MODULO_4, 5: MODULO_5, 6: MODULO_6,
+  7: MODULO_7, 8: MODULO_8, 9: MODULO_9, 10: MODULO_10, 11: MODULO_11,
+};
 
 export const MODULOS_INGLES: ModuloIngles[] = MODULOS_BASE.map((m) => ({ ...m, aulas: CONTEUDO[m.numero] ?? [] }));
 

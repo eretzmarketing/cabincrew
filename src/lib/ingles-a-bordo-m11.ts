@@ -1,0 +1,341 @@
+import type { AulaIngles } from "@/lib/ingles-a-bordo";
+
+/** Módulo 11 · Final flight simulation. Revisão do curso inteiro num voo completo. Conteúdo original Cabin Crew. */
+export const MODULO_11: AulaIngles[] = [
+  /* ------------------------------------------------------------------ 11.1 */
+  {
+    modulo: 11,
+    numero: 1,
+    titulo: "Simulação 1: do briefing à decolagem",
+    tituloEn: "Simulation 1: from briefing to take-off",
+    objetivo: "Revisar apresentação, briefing, embarque, bagagem e checagens de segurança numa sequência real.",
+    foto: "/img/ingles/cena-03.jpg",
+    fotoAlt: "Tripulação reunida no terminal antes do voo",
+    minutos: 20,
+    intro:
+      "Nas três aulas finais, você acompanha um voo completo de São Paulo para Nova York. Esta primeira parte vai do briefing até a decolagem e revisa os Módulos 1, 2 e 3. Ouça o diálogo inteiro antes de olhar a tradução.",
+    dialogo: {
+      titulo: "Flight 8180 to New York",
+      contexto: "Briefing na sala da tripulação e, em seguida, o embarque e as checagens finais.",
+      personagens: ["Grace", "Ana", "Kim", "Becker"],
+      falas: [
+        { quem: "Grace", en: "Good evening, everyone. Tonight we're flying to New York JFK. Flight time is ten hours and five minutes.", pt: "Boa noite a todos. Hoje voamos para Nova York JFK. O tempo de voo é de dez horas e cinco minutos." },
+        { quem: "Grace", en: "Ana, you're working at door 2L, and you're in charge of the exit row briefing.", pt: "Ana, você fica na porta 2L e é responsável pelo briefing da fileira de emergência." },
+        { quem: "Ana", en: "Got it. Door 2L and the exit row briefing.", pt: "Entendido. Porta 2L e briefing da fileira de emergência." },
+        { quem: "Ana", en: "Good evening, madam. Welcome on board. May I see your boarding pass?", pt: "Boa noite, senhora. Bem-vinda a bordo. Posso ver o seu cartão de embarque?" },
+        { quem: "Kim", en: "Here you are. I'm in 31A, but my bag is too big for the bin.", pt: "Aqui está. Estou no 31A, mas a minha mala é grande demais para o bagageiro." },
+        { quem: "Ana", en: "Let me have a look. If it doesn't fit, we'll need to check it, but I'll try the bin across the aisle first.", pt: "Deixa eu dar uma olhada. Se não couber, vamos precisar despachar, mas primeiro vou tentar o bagageiro do outro lado do corredor." },
+        { quem: "Ana", en: "Excuse me, sir. You're sitting next to an emergency exit. Are you willing and able to help in an emergency?", pt: "Com licença, senhor. O senhor está sentado ao lado de uma saída de emergência. Está disposto e apto a ajudar numa emergência?" },
+        { quem: "Becker", en: "Yes, I am.", pt: "Sim, estou." },
+        { quem: "Ana", en: "Thank you. Please read the safety card and keep this area clear. And please put your laptop away for take-off.", pt: "Obrigada. Por favor, leia o cartão de segurança e mantenha esta área livre. E guarde o notebook para a decolagem, por favor." },
+        { quem: "Becker", en: "Sure, no problem.", pt: "Claro, sem problema." },
+      ],
+    },
+    vocabulario: [
+      { en: "in charge of", pt: "responsável por" },
+      { en: "door 2L", pt: "porta 2L (segunda porta, lado esquerdo)" },
+      { en: "to fit", pt: "caber" },
+      { en: "across the aisle", pt: "do outro lado do corredor" },
+      { en: "Got it.", pt: "Entendido." },
+      { en: "too big", pt: "grande demais" },
+      { en: "boarding", pt: "embarque" },
+      { en: "briefing", pt: "reunião antes do voo" },
+    ],
+    expressoes: [
+      { en: "You're in charge of…", pt: "Você é responsável por…", uso: "Distribuição de funções no briefing." },
+      { en: "Got it. Door 2L and…", pt: "Entendido. Porta 2L e…", uso: "Confirmar a instrução repetindo (read back)." },
+      { en: "If it doesn't fit, we'll need to check it.", pt: "Se não couber, vamos precisar despachar.", uso: "Revisão do Módulo 2." },
+      { en: "Are you willing and able to help?", pt: "Está disposto(a) e apto(a) a ajudar?", uso: "Revisão do Módulo 3." },
+      { en: "Please put your laptop away for take-off.", pt: "Guarde o notebook para a decolagem.", uso: "Revisão das checagens." },
+    ],
+    dica: "Portas são identificadas por número e lado: L (left, esquerda) e R (right, direita), contando da frente para trás. \"Door 2L\" é a segunda porta do lado esquerdo.",
+    atividades: [
+      {
+        tipo: "compreensao",
+        questoes: [
+          { pergunta: "Where is the flight going?", opcoes: [{ texto: "London" }, { texto: "New York", certa: true }, { texto: "Miami" }], explicacao: "\"Tonight we're flying to New York JFK.\"" },
+          { pergunta: "What is Ana in charge of?", opcoes: [{ texto: "The duty-free" }, { texto: "The exit row briefing", certa: true }, { texto: "The meal service" }], explicacao: "\"you're in charge of the exit row briefing\"" },
+          { pergunta: "What is Ms. Kim's problem?", opcoes: [{ texto: "Her bag is too big for the bin.", certa: true }, { texto: "She's in the wrong seat." }, { texto: "She lost her boarding pass." }], explicacao: "\"my bag is too big for the bin\"" },
+        ],
+      },
+      { tipo: "ditado", frases: ["You're in charge of the exit row briefing.", "My bag is too big for the bin.", "Please keep this area clear."] },
+      {
+        tipo: "ordenar",
+        instrucao: "Coloque as etapas do voo na ordem certa.",
+        falas: ["Briefing in the crew room", "Boarding at the door", "Hand luggage in the bins", "Exit row briefing", "Cabin checks before take-off"],
+      },
+      {
+        tipo: "ligar",
+        instrucao: "Ligue cada frase à etapa do voo.",
+        pares: [
+          ["Welcome on board.", "Embarque"],
+          ["Are you willing and able to help?", "Fileira de emergência"],
+          ["Please stow your tray table.", "Checagens antes da decolagem"],
+          ["You're in charge of door 2L.", "Briefing"],
+          ["There's some space across the aisle.", "Bagagem de mão"],
+        ],
+      },
+      {
+        tipo: "lacunas",
+        itens: [
+          { frase: "You're in ___ of the exit row briefing.", resposta: "charge" },
+          { frase: "May I see your boarding ___?", resposta: "pass" },
+          { frase: "If it doesn't ___, we'll need to check it.", resposta: "fit" },
+          { frase: "Are you willing and ___ to help?", resposta: "able" },
+          { frase: "Please put your laptop ___ for take-off.", resposta: "away" },
+        ],
+      },
+      {
+        tipo: "falar",
+        frases: [
+          { en: "Got it. Door 2L and the exit row briefing.", pt: "Entendido. Porta 2L e briefing da fileira de emergência." },
+          { en: "Good evening, madam. Welcome on board. May I see your boarding pass?", pt: "Boa noite, senhora. Bem-vinda a bordo. Posso ver o seu cartão de embarque?" },
+          { en: "You're sitting next to an emergency exit. Are you willing and able to help?", pt: "O(a) senhor(a) está ao lado de uma saída de emergência. Está disposto(a) e apto(a) a ajudar?" },
+        ],
+      },
+      {
+        tipo: "roleplay",
+        situacao: "Simulação do início do voo: você responde à chefe de cabine e depois atende passageiros.",
+        voce: "Comissário(a)",
+        turnos: [
+          { outro: "(Purser) You're working at door 1R and you're in charge of the galley.", modelo: "Got it. Door 1R and the galley." },
+          { outro: "(Passenger) Hi, I'm in 12C.", modelo: "Good evening. Welcome on board. May I see your boarding pass, please?" },
+          { outro: "(Passenger) Where can I put this bag?", modelo: "Let me have a look. There's some space across the aisle." },
+          { outro: "(Passenger, reclined seat) Yes?", modelo: "Could you please bring your seat back to the upright position for take-off?" },
+        ],
+      },
+    ],
+    quiz: [
+      { pergunta: "\"Door 2L\" é:", opcoes: [{ texto: "a segunda porta do lado esquerdo", certa: true }, { texto: "a porta de duas folhas" }, { texto: "a porta da fileira 2" }], explicacao: "Número da porta + lado (L = left)." },
+      { pergunta: "\"In charge of\" significa:", opcoes: [{ texto: "responsável por", certa: true }, { texto: "cobrando por" }, { texto: "carregando" }], explicacao: "Be in charge of = ser responsável por." },
+      { pergunta: "\"Got it\" é:", opcoes: [{ texto: "Peguei." }, { texto: "Entendido.", certa: true }, { texto: "Ganhei." }], explicacao: "Forma comum de confirmar que entendeu." },
+      { pergunta: "\"It doesn't fit\" significa:", opcoes: [{ texto: "Não cabe.", certa: true }, { texto: "Não serve de presente." }, { texto: "Não está em forma." }], explicacao: "Fit = caber." },
+      { pergunta: "Qual frase revisa o Módulo 3 (segurança)?", opcoes: [{ texto: "Would you like something to drink?" }, { texto: "Please keep this area clear.", certa: true }, { texto: "Your total is ten dollars." }], explicacao: "Instrução da fileira de emergência." },
+    ],
+  },
+
+  /* ------------------------------------------------------------------ 11.2 */
+  {
+    modulo: 11,
+    numero: 2,
+    titulo: "Simulação 2: em cruzeiro",
+    tituloEn: "Simulation 2: in the air",
+    objetivo: "Revisar serviço de bordo, vendas, pedidos de conforto e uma situação médica no mesmo voo.",
+    foto: "/img/ingles/cena-19.jpg",
+    fotoAlt: "Comissária serve o jantar a um passageiro durante o voo",
+    minutos: 20,
+    intro:
+      "O voo para Nova York segue em cruzeiro. Em pouco tempo, Ana serve o jantar, atende pedidos e lida com uma passageira que não se sente bem. Esta parte revisa os Módulos 4 a 7.",
+    dialogo: {
+      titulo: "A busy night",
+      contexto: "Serviço de jantar e, logo depois, uma situação médica.",
+      personagens: ["Ana", "Clarke", "Kim", "Grace"],
+      falas: [
+        { quem: "Ana", en: "Good evening, sir. For dinner we have beef with potatoes or a vegetable risotto.", pt: "Boa noite, senhor. Para o jantar temos carne com batatas ou risoto de legumes." },
+        { quem: "Clarke", en: "The beef, please. And a glass of red wine.", pt: "A carne, por favor. E uma taça de vinho tinto." },
+        { quem: "Ana", en: "Certainly. Here you are. Enjoy your meal.", pt: "Claro. Aqui está. Bom apetite." },
+        { quem: "Clarke", en: "Could I have a blanket later? It's getting cold.", pt: "Pode me dar um cobertor depois? Está esfriando." },
+        { quem: "Ana", en: "Of course. I'll bring one after the service, and I'll ask about the temperature.", pt: "Claro. Trago um depois do serviço e vou perguntar sobre a temperatura." },
+        { quem: "Kim", en: "Excuse me… I don't feel well. I feel very dizzy.", pt: "Com licença… Não estou me sentindo bem. Estou muito tonta." },
+        { quem: "Ana", en: "I'm sorry to hear that. When did it start? Do you have any medical conditions?", pt: "Sinto muito. Quando começou? A senhora tem algum problema de saúde?" },
+        { quem: "Kim", en: "About ten minutes ago. I'm diabetic, and I haven't eaten.", pt: "Uns dez minutos atrás. Eu sou diabética e não comi." },
+        { quem: "Ana", en: "OK. I'll stay with you and call the purser right now.", pt: "Certo. Vou ficar com a senhora e chamar a chefe de cabine agora mesmo." },
+        { quem: "Ana", en: "Grace, a quick update. Passenger in 31A is dizzy. She's diabetic and hasn't eaten. She's conscious and talking.", pt: "Grace, uma atualização rápida. A passageira do 31A está tonta. Ela é diabética e não comeu. Está consciente e falando." },
+        { quem: "Grace", en: "Thank you. Bring her some juice now. I'll get the medical kit and inform the captain.", pt: "Obrigada. Leve um suco para ela agora. Vou pegar o kit médico e informar o comandante." },
+        { quem: "Ana", en: "OK. Juice now, and you're getting the kit.", pt: "Certo. Suco agora, e você vai pegar o kit." },
+      ],
+    },
+    vocabulario: [
+      { en: "risotto", pt: "risoto" },
+      { en: "a glass of", pt: "uma taça / um copo de" },
+      { en: "it's getting cold", pt: "está esfriando" },
+      { en: "after the service", pt: "depois do serviço" },
+      { en: "busy", pt: "movimentado, ocupado" },
+      { en: "right now", pt: "agora mesmo" },
+      { en: "juice", pt: "suco" },
+      { en: "cruise / cruising altitude", pt: "cruzeiro / altitude de cruzeiro" },
+    ],
+    expressoes: [
+      { en: "For dinner we have…", pt: "Para o jantar temos…", uso: "Revisão do Módulo 4." },
+      { en: "I'll bring one after the service.", pt: "Trago um depois do serviço.", uso: "Revisão do Módulo 6." },
+      { en: "When did it start? Do you have any medical conditions?", pt: "Quando começou? Tem algum problema de saúde?", uso: "Revisão do Módulo 7." },
+      { en: "A quick update. Passenger in 31A is…", pt: "Atualização rápida. A passageira do 31A está…", uso: "Reporte à chefe de cabine." },
+      { en: "OK. Juice now, and you're getting the kit.", pt: "Certo. Suco agora, e você pega o kit.", uso: "Read back da instrução." },
+    ],
+    dica: "Num voo real, várias coisas acontecem ao mesmo tempo. Priorize: segurança e saúde primeiro, depois serviço e conforto. O cobertor do Mr. Clarke pode esperar alguns minutos.",
+    atividades: [
+      {
+        tipo: "compreensao",
+        questoes: [
+          { pergunta: "What does Mr. Clarke order?", opcoes: [{ texto: "Risotto and white wine" }, { texto: "Beef and red wine", certa: true }, { texto: "Beef and water" }], explicacao: "\"The beef, please. And a glass of red wine.\"" },
+          { pergunta: "Why does Ms. Kim feel dizzy?", opcoes: [{ texto: "She's diabetic and hasn't eaten.", certa: true }, { texto: "She drank too much wine." }, { texto: "She's afraid of flying." }], explicacao: "\"I'm diabetic, and I haven't eaten.\"" },
+          { pergunta: "What does Grace ask Ana to bring?", opcoes: [{ texto: "Water" }, { texto: "Juice", certa: true }, { texto: "The medical kit" }], explicacao: "\"Bring her some juice now.\" Grace vai buscar o kit." },
+        ],
+      },
+      { tipo: "ditado", frases: ["For dinner we have beef or risotto.", "I'm sorry to hear that.", "A quick update."] },
+      {
+        tipo: "ordenar",
+        instrucao: "Coloque a resposta à situação médica na ordem certa.",
+        falas: ["I don't feel well.", "I'm sorry to hear that. When did it start?", "About ten minutes ago.", "I'll stay with you and call the purser.", "A quick update. Passenger in 31A is dizzy."],
+      },
+      {
+        tipo: "ligar",
+        instrucao: "Ligue cada frase ao módulo que ela revisa.",
+        pares: [
+          ["Enjoy your meal.", "Serviço de bordo"],
+          ["Could I have a blanket?", "Pedidos de conforto"],
+          ["Do you have any medical conditions?", "Situações médicas"],
+          ["Your total is twenty dollars.", "Vendas e pagamentos"],
+          ["A quick update.", "Reporte à chefe de cabine"],
+        ],
+      },
+      {
+        tipo: "lacunas",
+        itens: [
+          { frase: "For dinner we ___ beef or risotto.", resposta: "have" },
+          { frase: "It's getting ___.", resposta: "cold" },
+          { frase: "When did it ___?", resposta: "start" },
+          { frase: "She's ___ and talking.", resposta: "conscious" },
+          { frase: "I'll get the medical ___.", resposta: "kit" },
+        ],
+      },
+      {
+        tipo: "falar",
+        frases: [
+          { en: "For dinner we have beef with potatoes or a vegetable risotto.", pt: "Para o jantar temos carne com batatas ou risoto de legumes." },
+          { en: "I'm sorry to hear that. When did it start?", pt: "Sinto muito. Quando começou?" },
+          { en: "A quick update. Passenger in 31A is dizzy. She's conscious and talking.", pt: "Atualização rápida. A passageira do 31A está tonta. Está consciente e falando." },
+        ],
+      },
+      {
+        tipo: "roleplay",
+        situacao: "Voo em cruzeiro: você atende vários passageiros seguidos.",
+        voce: "Comissário(a)",
+        turnos: [
+          { outro: "(Passenger 1) What's for dinner?", modelo: "For dinner we have chicken with rice or pasta." },
+          { outro: "(Passenger 2) Can I buy this perfume? How much is it?", modelo: "Of course. It's fifty-five dollars. How would you like to pay?" },
+          { outro: "(Passenger 3) My child feels sick.", modelo: "I'm sorry to hear that. When did it start? I'll bring a sick bag and some water." },
+          { outro: "(Purser) What's happening in row 20?", modelo: "A quick update. A child in row 20 feels sick. I'm giving water and a sick bag." },
+        ],
+      },
+    ],
+    quiz: [
+      { pergunta: "Num voo movimentado, o que vem primeiro?", opcoes: [{ texto: "O cobertor" }, { texto: "A passageira passando mal", certa: true }, { texto: "A venda de perfume" }], explicacao: "Saúde e segurança primeiro." },
+      { pergunta: "\"It's getting cold\" significa:", opcoes: [{ texto: "Está esfriando.", certa: true }, { texto: "Pegou um resfriado." }, { texto: "A comida esfriou." }], explicacao: "Get + adjetivo = ficar, tornar-se." },
+      { pergunta: "\"A glass of red wine\" é:", opcoes: [{ texto: "uma taça de vinho tinto", certa: true }, { texto: "uma garrafa de vinho tinto" }, { texto: "um vinho rosé" }], explicacao: "Glass = taça, copo." },
+      { pergunta: "Por que a Ana repete a instrução da Grace?", opcoes: [{ texto: "Para confirmar que entendeu (read back)", certa: true }, { texto: "Porque não ouviu" }, { texto: "Para discordar" }], explicacao: "Prática de segurança na comunicação." },
+      { pergunta: "\"Cruising altitude\" é:", opcoes: [{ texto: "altitude de cruzeiro", certa: true }, { texto: "altitude de pouso" }, { texto: "altitude de navio" }], explicacao: "A altitude estável do voo." },
+    ],
+  },
+
+  /* ------------------------------------------------------------------ 11.3 */
+  {
+    modulo: 11,
+    numero: 3,
+    titulo: "Simulação 3: atraso, pouso e despedida",
+    tituloEn: "Simulation 3: delay, landing and goodbye",
+    objetivo: "Revisar turbulência, atrasos, conexões, pouso e despedida, e encerrar o curso com confiança.",
+    foto: "/img/ingles/cena-29.jpg",
+    fotoAlt: "Comissária conversa com um passageiro preocupado durante o voo",
+    minutos: 20,
+    intro:
+      "Última parte do voo para Nova York: turbulência, um atraso por causa do tráfego, um passageiro preocupado com a conexão, o pouso e a despedida. Esta aula revisa os Módulos 8, 9 e 10. Parabéns por chegar até aqui!",
+    dialogo: {
+      titulo: "Welcome to New York",
+      contexto: "Uma hora antes do pouso, turbulência e atraso. Depois, a chegada.",
+      personagens: ["Captain", "Ana", "Becker", "Grace", "Lopez"],
+      falas: [
+        { quem: "Captain", en: "Ladies and gentlemen, we're expecting some turbulence. Please return to your seats and fasten your seatbelts.", pt: "Senhoras e senhores, esperamos alguma turbulência. Por favor, voltem aos seus assentos e afivelem os cintos." },
+        { quem: "Ana", en: "Sir, please return to your seat. The seatbelt sign is on.", pt: "Senhor, por favor, volte ao seu assento. O aviso de cinto está aceso." },
+        { quem: "Becker", en: "OK. But will we be late? I have a connection to Chicago.", pt: "Tá. Mas vamos atrasar? Eu tenho uma conexão para Chicago." },
+        { quem: "Ana", en: "There's heavy traffic at JFK, so we may be about twenty minutes late. It might be tight, but I'll inform our ground staff.", pt: "O tráfego em JFK está intenso, então podemos atrasar uns vinte minutos. Pode ficar apertado, mas vou informar a equipe de solo." },
+        { quem: "Becker", en: "Thank you. I appreciate it.", pt: "Obrigado. Agradeço." },
+        { quem: "Grace", en: "Ladies and gentlemen, we have started our descent into New York. The local time is 6:20 in the morning.", pt: "Senhoras e senhores, iniciamos a descida para Nova York. O horário local é 6h20 da manhã." },
+        { quem: "Grace", en: "Welcome to New York. Please remain seated until the seatbelt sign is off. Passengers with connecting flights, please follow the transfer signs.", pt: "Bem-vindos a Nova York. Por favor, permaneçam sentados até o aviso de cinto apagar. Passageiros com conexão, sigam as placas de conexão." },
+        { quem: "Lopez", en: "Thank you for everything. You were all wonderful.", pt: "Obrigada por tudo. Vocês foram maravilhosos." },
+        { quem: "Ana", en: "That's so kind of you. Thank you for flying with us, and have a lovely stay!", pt: "Que gentileza. Obrigada por voar conosco, e tenha uma ótima estadia!" },
+      ],
+    },
+    vocabulario: [
+      { en: "late", pt: "atrasado" },
+      { en: "might / may", pt: "pode ser que, talvez" },
+      { en: "to appreciate", pt: "agradecer, valorizar" },
+      { en: "all", pt: "todos" },
+      { en: "early", pt: "adiantado, cedo" },
+      { en: "on time", pt: "no horário" },
+      { en: "arrival", pt: "chegada" },
+      { en: "departure", pt: "partida" },
+    ],
+    expressoes: [
+      { en: "Please return to your seat. The seatbelt sign is on.", pt: "Volte ao seu assento. O aviso de cinto está aceso.", uso: "Revisão do Módulo 8." },
+      { en: "We may be about twenty minutes late.", pt: "Podemos atrasar uns vinte minutos.", uso: "\"May\" indica possibilidade, sem prometer." },
+      { en: "It might be tight, but I'll inform our ground staff.", pt: "Pode ficar apertado, mas vou informar a equipe de solo.", uso: "Revisão do Módulo 9." },
+      { en: "Please remain seated until the seatbelt sign is off.", pt: "Permaneçam sentados até o aviso de cinto apagar.", uso: "Revisão do Módulo 10." },
+      { en: "Thank you for flying with us, and have a lovely stay!", pt: "Obrigado(a) por voar conosco, e tenha uma ótima estadia!", uso: "Despedida." },
+    ],
+    dica: "Você terminou o curso! Para manter o inglês vivo: refaça os quizzes, grave-se nas atividades de fala e treine a Entrevista em inglês do Head Hunter. Constância vale mais que intensidade.",
+    atividades: [
+      {
+        tipo: "compreensao",
+        questoes: [
+          { pergunta: "Where is Mr. Becker's connection going?", opcoes: [{ texto: "Boston" }, { texto: "Chicago", certa: true }, { texto: "Miami" }], explicacao: "\"I have a connection to Chicago.\"" },
+          { pergunta: "Why may they be late?", opcoes: [{ texto: "Bad weather" }, { texto: "Heavy traffic at JFK", certa: true }, { texto: "A medical emergency" }], explicacao: "\"There's heavy traffic at JFK.\"" },
+          { pergunta: "What is the local time in New York?", opcoes: [{ texto: "6:20 a.m.", certa: true }, { texto: "6:20 p.m." }, { texto: "2:06 a.m." }], explicacao: "\"The local time is 6:20 in the morning.\"" },
+        ],
+      },
+      { tipo: "ditado", frases: ["The seatbelt sign is on.", "We may be about twenty minutes late.", "Have a lovely stay!"] },
+      {
+        tipo: "ordenar",
+        instrucao: "Coloque o final do voo na ordem certa.",
+        falas: ["Turbulence: please return to your seats.", "Delay: heavy traffic at the airport.", "Descent: the local time is 6:20.", "Landing: please remain seated.", "Goodbye: thank you for flying with us."],
+      },
+      {
+        tipo: "ligar",
+        instrucao: "Ligue o inglês ao português.",
+        pares: [
+          ["late", "atrasado"],
+          ["on time", "no horário"],
+          ["early", "adiantado"],
+          ["arrival", "chegada"],
+          ["departure", "partida"],
+        ],
+      },
+      {
+        tipo: "lacunas",
+        itens: [
+          { frase: "Please return to your ___.", resposta: "seat" },
+          { frase: "We ___ be about twenty minutes late.", resposta: "may", aceitas: ["might"] },
+          { frase: "I'll inform our ground ___.", resposta: "staff" },
+          { frase: "Please remain seated until the seatbelt sign is ___.", resposta: "off" },
+          { frase: "Thank you for ___ with us.", resposta: "flying" },
+        ],
+      },
+      {
+        tipo: "falar",
+        frases: [
+          { en: "Sir, please return to your seat. The seatbelt sign is on.", pt: "Senhor, por favor, volte ao seu assento. O aviso de cinto está aceso." },
+          { en: "We may be about twenty minutes late. I'll inform our ground staff.", pt: "Podemos atrasar uns vinte minutos. Vou informar a equipe de solo." },
+          { en: "Thank you for flying with us, and have a lovely stay!", pt: "Obrigado(a) por voar conosco, e tenha uma ótima estadia!" },
+        ],
+      },
+      {
+        tipo: "roleplay",
+        situacao: "Simulação final: responda a cada situação do fim do voo.",
+        voce: "Comissário(a)",
+        turnos: [
+          { outro: "(Turbulence. A passenger is standing in the aisle.)", modelo: "Please return to your seat. The seatbelt sign is on." },
+          { outro: "(Passenger) Are we going to be late? I have a connection.", modelo: "We may be a little late. It might be tight, but I'll inform our ground staff." },
+          { outro: "(After landing, a passenger stands up.)", modelo: "Please remain seated until the seatbelt sign is off." },
+          { outro: "(At the door) Thank you, it was a great flight!", modelo: "That's so kind of you. Thank you for flying with us, and have a lovely day!" },
+        ],
+      },
+    ],
+    quiz: [
+      { pergunta: "\"We may be late\" indica:", opcoes: [{ texto: "certeza de atraso" }, { texto: "possibilidade de atraso", certa: true }, { texto: "que não vai atrasar" }], explicacao: "May/might = possibilidade." },
+      { pergunta: "\"On time\" é:", opcoes: [{ texto: "no horário", certa: true }, { texto: "a tempo de sobra" }, { texto: "atrasado" }], explicacao: "On time = pontual." },
+      { pergunta: "\"I appreciate it\" significa:", opcoes: [{ texto: "Agradeço.", certa: true }, { texto: "Eu aprecio a vista." }, { texto: "Eu avalio." }], explicacao: "Forma de agradecer." },
+      { pergunta: "Qual frase NÃO é de despedida?", opcoes: [{ texto: "Have a lovely stay!" }, { texto: "Thank you for flying with us." }, { texto: "Please fasten your seatbelt.", certa: true }], explicacao: "Essa é uma instrução de segurança." },
+      { pergunta: "\"Departure\" é:", opcoes: [{ texto: "partida", certa: true }, { texto: "chegada" }, { texto: "departamento" }], explicacao: "Departure = partida; arrival = chegada." },
+    ],
+  },
+];
