@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import AdminNav from "@/components/AdminNav";
+import AdminNav, { AdminAbas } from "@/components/AdminNav";
 import { exigirLogin } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: { default: "Administrador", template: "%s · Administrador" }, robots: { index: false } };
@@ -13,7 +13,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <span className="px-1 font-display text-xs font-bold tracking-[.1em] text-muted uppercase">Administrador</span>
           <AdminNav />
         </aside>
-        <div className="flex min-w-0 flex-1 flex-col gap-8">{children}</div>
+        <div className="flex min-w-0 flex-1 flex-col gap-8">
+          <AdminAbas />
+          {children}
+        </div>
       </div>
     </main>
   );
