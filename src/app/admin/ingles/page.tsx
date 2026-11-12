@@ -3,21 +3,23 @@ import Link from "next/link";
 import { Card, Numero, Titulo, btnPrimario, btnSecundario } from "@/components/admin-ui";
 import CopiarTexto from "@/components/CopiarTexto";
 import { ELENCO, MODULOS_INGLES, TODAS_AULAS, chaveAula, chaveDoArquivo, roteiroAula } from "@/lib/ingles-a-bordo";
+import { audiosGerados } from "@/lib/ingles-audios";
 import { getUser } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Inglês a bordo" };
 
 export default async function AdminIngles() {
   const { supabase } = await getUser();
-  const [au, pr] = await Promise.all([
+  const [au, pr, gerados] = await Promise.all([
     supabase.rpc("audios_ingles"),
     supabase.from("ingles_progresso").select("user_id, aula, nota, concluida").limit(50000),
+    audiosGerados(),
   ]);
   const semSql = !!au.error || !!pr.error;
-  const audios = new Map<string, string>();
+  const audios = new Map<string, string>(Object.keys(gerados).map((k) => [k, "gerado pelo ElevenLabs"]));
   for (const a of (au.data ?? []) as { nome: string }[]) {
     const k = chaveDoArquivo(a.nome);
-    if (k && !audios.has(k)) audios.set(k, a.nome);
+    if (k && (!audios.has(k) || audios.get(k) === "gerado pelo ElevenLabs")) audios.set(k, a.nome);
   }
   const linhas = (pr.data ?? []) as { user_id: string; aula: string; nota: number; concluida: boolean }[];
   const alunos = new Set(linhas.map((l) => l.user_id)).size;

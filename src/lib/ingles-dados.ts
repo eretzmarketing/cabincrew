@@ -1,22 +1,26 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { NOTA_MINIMA, TODAS_AULAS, chaveAula, chaveDoArquivo } from "@/lib/ingles-a-bordo";
+import { audiosGerados } from "@/lib/ingles-audios";
 import { urlMidia } from "@/lib/midia-comum";
 
 export type ProgressoIngles = Record<string, { nota: number; concluida: boolean }>;
 
 /**
- * Áudios do curso (MP3 da galeria de Mídia com nome "1.1.mp3" etc.) e progresso do aluno.
+ * Áudios do curso (MP3 da galeria de Mídia com nome "1.1.mp3" etc., ou gerados pelo script do ElevenLabs) e progresso do aluno.
  * Antes do SQL 0022, segue funcionando: sem MP3 (voz do navegador) e com todas as aulas abertas.
  */
 export async function carregarIngles(supabase: SupabaseClient, userId: string) {
-  const [au, pr] = await Promise.all([
+  const [au, pr, gerados] = await Promise.all([
     supabase.rpc("audios_ingles"),
     supabase.from("ingles_progresso").select("aula, nota, concluida").eq("user_id", userId),
+    audiosGerados(),
   ]);
-  const audios: Record<string, string> = {};
+  // vale primeiro o MP3 enviado na galeria de Mídia; senão, o gerado pelo script do ElevenLabs
+  const audios: Record<string, string> = { ...gerados };
+  const daGaleria = new Set<string>();
   for (const a of (au.data ?? []) as { nome: string; arquivo: string }[]) {
     const k = chaveDoArquivo(a.nome);
-    if (k && !audios[k]) audios[k] = urlMidia(a.arquivo); // o mais recente vale
+    if (k && !daGaleria.has(k)) { audios[k] = urlMidia(a.arquivo); daGaleria.add(k); } // o mais recente da galeria vale
   }
   const progresso: ProgressoIngles = {};
   for (const p of (pr.data ?? []) as { aula: string; nota: number; concluida: boolean }[]) progresso[p.aula] = { nota: p.nota, concluida: p.concluida };
