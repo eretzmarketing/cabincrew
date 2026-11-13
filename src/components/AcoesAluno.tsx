@@ -176,7 +176,7 @@ export default function AcoesAluno({ aluno, sugestoes, verFicha = true, voltarPa
   return (
     <div className="flex items-center justify-end gap-1.5">
       {verFicha && <Link href={`/admin/head-hunter/alunos/${aluno.id}`} className={icone} title="Ver ficha completa" aria-label={`Ver ficha de ${aluno.nome}`}><IOlho /></Link>}
-      <BotaoWhatsapp telefone={aluno.whatsapp} nome={aluno.nome} userId={aluno.id} sugestoes={sugestoes} tamanho="sm" />
+      {aluno.whatsapp ? <BotaoWhatsapp telefone={aluno.whatsapp} nome={aluno.nome} userId={aluno.id} sugestoes={sugestoes} tamanho="sm" /> : <span className="w-9" aria-hidden="true" />}
       <button type="button" className={icone} onClick={() => setAberto("editar")} title="Editar cursos e módulos" aria-label={`Editar ${aluno.nome}`}><ILapis /></button>
       <button type="button" className={`${icone} ${aluno.bloqueado ? "border-brand-deep bg-brand-soft text-brand-deep" : ""}`} onClick={() => setAberto("banir")} title={aluno.bloqueado ? "Banido (clique para remover)" : "Banir"} aria-label={aluno.bloqueado ? `Remover banimento de ${aluno.nome}` : `Banir ${aluno.nome}`}><IBanir /></button>
       <button type="button" className={`${icone} hover:border-brand-deep hover:text-brand-deep`} onClick={() => setAberto("excluir")} title="Excluir conta" aria-label={`Excluir ${aluno.nome}`}><ILixo /></button>

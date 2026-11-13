@@ -157,14 +157,6 @@ export async function alterarConfig(form: FormData) {
   revalidatePath("/", "layout");
 }
 
-export async function alterarAdmin(form: FormData) {
-  const { supabase, user } = await admin();
-  const id = String(form.get("id"));
-  if (!UUID.test(id) || id === user!.id) return; // ninguém remove o próprio acesso por engano
-  await supabase.from("profiles").update({ is_admin: form.get("valor") === "true" }).eq("id", id);
-  revalidatePath("/admin/usuarios");
-}
-
 /* ---------- Simulados (aluno) ---------- */
 export async function iniciarSimulado(form: FormData) {
   const { supabase, user } = await getUser();

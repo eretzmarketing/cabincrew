@@ -138,11 +138,11 @@ export default async function AlunosHeadHunterPage({ searchParams }: { searchPar
                       <span className="truncate text-[13px] text-muted">{l.email ?? ""}</span>
                     </span>
                   </Link>
-                  <span className="flex min-w-[150px] flex-col">
+                  <span className="flex w-[150px] flex-col">
                     <span className={`self-start rounded-full px-2.5 py-0.5 text-[12px] font-semibold whitespace-nowrap ${SITUACOES[st].cor}`}>{SITUACOES[st].rotulo}</span>
                     <span className="pt-0.5 text-[12px] text-muted">{rs.length ? <span className="font-semibold text-brand-strong">⚠ {rs[0]}</span> : quando(l.ultima)}</span>
                   </span>
-                  <span className="flex min-w-[90px] gap-1" aria-label="Cursos">
+                  <span className="flex w-[70px] gap-1" aria-label="Cursos">
                     {cursos.map((c) => <span key={c} title={c === "english" ? "Flight Attendant English" : "Head Hunter"} className="rounded-md bg-[#eef1ff] px-1.5 py-0.5 text-[11px] font-bold text-navy">{c === "english" ? "EN" : "HH"}</span>)}
                   </span>
                   <AcoesAluno aluno={{ id: l.id, nome, email: l.email, whatsapp: l.whatsapp, bloqueado: l.bloqueado }}
