@@ -52,12 +52,12 @@ export default async function AlunoPage({ params }: { params: Promise<{ id: stri
 
   return (
     <>
-      <Link href="/admin/head-hunter/alunos" className="text-sm font-semibold text-navy">← Alunos do Head Hunter</Link>
+      <Link href="/admin/usuarios" className="text-sm font-semibold text-navy">← Usuários</Link>
       <div className="flex flex-wrap items-start justify-between gap-4">
         <Titulo sub={<>{l.email ?? "sem e-mail"}{l.whatsapp && <> · {l.whatsapp}</>} · cadastro em {new Date(l.cadastro).toLocaleDateString("pt-BR")}</>}>
           {nomeAluno(l)} <span className={`ml-2 inline-block rounded-full px-3 py-1 align-middle text-sm font-semibold ${SITUACOES[st].cor}`}>{SITUACOES[st].rotulo}</span>
         </Titulo>
-        <AcoesAluno aluno={{ id: l.id, nome: nomeAluno(l), email: l.email, whatsapp: l.whatsapp, bloqueado: l.bloqueado }} verFicha={false} voltarPara="/admin/head-hunter/alunos"
+        <AcoesAluno aluno={{ id: l.id, nome: nomeAluno(l), email: l.email, whatsapp: l.whatsapp, bloqueado: l.bloqueado }} verFicha={false} voltarPara="/admin/usuarios"
           sugestoes={[{ rotulo: "Sugerida para a situação do aluno", texto: mensagemSugerida(l) }]} />
       </div>
 

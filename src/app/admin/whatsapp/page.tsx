@@ -77,7 +77,7 @@ export default async function WhatsappAdminPage() {
 
       <Card>
         <h2 className="font-display text-xl font-extrabold">Enviar um teste</h2>
-        <p className="text-[15px] text-ink-2">Mande para o seu próprio número antes de liberar os avisos. Para falar com um aluno, use o botão na página dele em Head Hunter → <Link href="/admin/head-hunter/alunos" className="font-semibold underline underline-offset-4">Alunos</Link>.</p>
+        <p className="text-[15px] text-ink-2">Mande para o seu próprio número antes de liberar os avisos. Para falar com um aluno, use o ícone do WhatsApp em <Link href="/admin/usuarios" className="font-semibold underline underline-offset-4">Usuários</Link>.</p>
         <EnviarWhatsappForm textoInicial="Teste do Cabin Crew ✈️ Se chegou, está tudo certo!" rotulo="Enviar teste" />
       </Card>
 
@@ -132,7 +132,7 @@ export default async function WhatsappAdminPage() {
                 const nome = nomeDe(e);
                 return (
                   <tr key={e.id} className="border-b border-[#eceef3] last:border-0">
-                    <td className="p-3">{e.user_id && e.profiles ? <Link href={`/admin/head-hunter/alunos/${e.user_id}`} className="font-semibold text-navy underline-offset-4 hover:underline">{nome}</Link> : <span className="font-semibold">{nome}</span>}</td>
+                    <td className="p-3">{e.user_id && e.profiles ? <Link href={`/admin/usuarios/${e.user_id}`} className="font-semibold text-navy underline-offset-4 hover:underline">{nome}</Link> : <span className="font-semibold">{nome}</span>}</td>
                     <td className="p-3 whitespace-nowrap">{e.telefone ?? "—"}</td>
                     <td className="p-3">
                       {e.evento === "manual" ? "Mensagem avulsa" : titulo.get(e.evento) ?? "Aviso excluído"}

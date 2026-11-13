@@ -71,7 +71,7 @@ export default async function CompraPage({ params }: { params: Promise<{ id: str
             {linha("E-mail", c.email ?? "—")}
             {linha("WhatsApp", c.whatsapp ?? "—")}
             {linha("CPF/CNPJ", c.documento ?? "—")}
-            {linha("Cadastro no site", e ? `excluído em ${dataHoraBR(e.excluida_em)}` : c.user_id ? <Link href={`/admin/head-hunter/alunos/${c.user_id}`} className="underline underline-offset-4">ver aluno</Link> : "sem cadastro")}
+            {linha("Cadastro no site", e ? `excluído em ${dataHoraBR(e.excluida_em)}` : c.user_id ? <Link href={`/admin/usuarios/${c.user_id}`} className="underline underline-offset-4">ver aluno</Link> : "sem cadastro")}
           </div>
         </Card>
 

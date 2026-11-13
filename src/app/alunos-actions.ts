@@ -16,7 +16,8 @@ async function admin() {
 
 function revalidar(id: string) {
   revalidatePath("/admin/head-hunter/alunos");
-  revalidatePath(`/admin/head-hunter/alunos/${id}`);
+  revalidatePath("/admin/usuarios");
+  revalidatePath(`/admin/usuarios/${id}`);
 }
 
 export type DadosGestao = {

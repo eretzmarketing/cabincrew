@@ -131,7 +131,7 @@ export default async function AlunosHeadHunterPage({ searchParams }: { searchPar
               const nome = nomeAluno(l);
               return (
                 <li key={l.id} className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
-                  <Link href={`/admin/head-hunter/alunos/${l.id}`} className="flex min-w-0 flex-[1_1_260px] items-center gap-3" aria-label={`Ver ficha de ${nome}`}>
+                  <Link href={`/admin/usuarios/${l.id}`} className="flex min-w-0 flex-[1_1_260px] items-center gap-3" aria-label={`Ver ficha de ${nome}`}>
                     <AvatarAluno src={foto} nome={nome} />
                     <span className="flex min-w-0 flex-col">
                       <span className="truncate font-semibold text-navy">{nome}{l.bloqueado && <span className="ml-2 rounded-full bg-brand-soft px-2 py-0.5 align-middle text-[11px] font-bold text-brand-deep">BANIDO</span>}</span>

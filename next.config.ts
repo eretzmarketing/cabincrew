@@ -25,6 +25,8 @@ const nextConfig: NextConfig = {
       { source: "/head-hunter/ingles-a-bordo/:path*", destination: "/english/:path*", permanent: true },
       { source: "/head-hunter/anac", destination: "/simulados-anac", permanent: true },
       { source: "/head-hunter/comprar", destination: "/comprar/head-hunter", permanent: true },
+      // ficha do aluno agora fica em Usuários
+      { source: "/admin/head-hunter/alunos/:id([0-9a-fA-F-]{36})", destination: "/admin/usuarios/:id", permanent: true },
     ];
     return [...internos, ...["comissariadevoo.com.br", "www.comissariadevoo.com.br", "www.cabincrew.com.br"].map((host) => ({
       source: "/:path*",

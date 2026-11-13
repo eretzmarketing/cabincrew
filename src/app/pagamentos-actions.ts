@@ -132,7 +132,7 @@ export async function alterarAcesso(form: FormData) {
   } else if (acao === "encerrar") {
     await supabase.from("acessos").update({ status: "revogado", encerrado_em: new Date().toISOString(), motivo: "encerrado pelo administrador" }).eq("user_id", userId).eq("produto", produto);
   }
-  revalidatePath(`/admin/head-hunter/alunos/${userId}`);
+  revalidatePath(`/admin/usuarios/${userId}`);
 }
 
 const ORIGENS: Record<string, { rotulo: string; plataforma: string }> = {
@@ -227,7 +227,7 @@ export async function adicionarAoCurso(_: Estado, form: FormData): Promise<Estad
     }
   }
   revalidatePath("/admin/head-hunter/alunos");
-  if (aluno) redirect(`/admin/head-hunter/alunos/${aluno.id}?ok=acesso`);
+  if (aluno) redirect(`/admin/usuarios/${aluno.id}?ok=acesso`);
   return { ok: true, msg: `Acesso reservado para ${email}. Assim que a pessoa criar a conta com esse e-mail, o ${prod.nome} é liberado sozinho.${avisado}` };
 }
 

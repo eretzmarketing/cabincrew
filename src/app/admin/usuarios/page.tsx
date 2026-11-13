@@ -64,6 +64,7 @@ export default async function UsuariosPage({ searchParams }: { searchParams: Pro
     <>
       <div className="flex flex-wrap items-end justify-between gap-4">
         <Titulo sub={`${total} ${total === 1 ? "cadastro" : "cadastros"}${filtrando ? " com estes filtros" : ""}.`}>Usuários</Titulo>
+        {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- download do CSV, não é página */}
         <a href="/admin/usuarios/csv" className={btnSecundario}>⬇ Exportar (CSV)</a>
       </div>
 
@@ -112,7 +113,7 @@ export default async function UsuariosPage({ searchParams }: { searchParams: Pro
           const cs = cursos.get(p.id) ?? [];
           return (
             <li key={p.id} className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
-              <Link href={`/admin/head-hunter/alunos/${p.id}`} className="flex min-w-0 flex-[1_1_260px] items-center gap-3" aria-label={`Ver ficha de ${nome}`}>
+              <Link href={`/admin/usuarios/${p.id}`} className="flex min-w-0 flex-[1_1_260px] items-center gap-3" aria-label={`Ver ficha de ${nome}`}>
                 <AvatarAluno src={avatarUrl(p.id, fotoDe.get(p.id) ?? null)} nome={nome} />
                 <span className="flex min-w-0 flex-col">
                   <span className="truncate font-semibold text-navy">{nome}{p.bloqueado && <span className="ml-2 rounded-full bg-brand-soft px-2 py-0.5 align-middle text-[11px] font-bold text-brand-deep">BANIDO</span>}</span>
