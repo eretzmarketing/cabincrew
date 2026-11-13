@@ -5,17 +5,17 @@ import { notFound, redirect } from "next/navigation";
 import CursoPlayer from "@/components/CursoPlayer";
 import { MODULOS_INGLES, NOTA_MINIMA, chaveAula } from "@/lib/ingles-a-bordo";
 import { aulaLiberada, carregarIngles } from "@/lib/ingles-dados";
-import { exigirCrewSelect } from "@/lib/crew-gate";
+import { exigirCurso } from "@/lib/crew-gate";
 import { navegacaoIngles } from "@/lib/curso-navegacao";
 
-export const metadata: Metadata = { title: "Inglês a bordo · Head Hunter", robots: { index: false } };
+export const metadata: Metadata = { title: "Flight Attendant English", robots: { index: false } };
 
 export default async function ModuloInglesPage({ params }: { params: Promise<{ modulo: string }> }) {
   const { modulo } = await params;
   const m = MODULOS_INGLES.find((x) => String(x.numero) === modulo);
   if (!m || !m.aulas.length) notFound();
-  const { supabase, user, profile, liberado } = await exigirCrewSelect(`/head-hunter/ingles-a-bordo/${modulo}`);
-  if (!liberado) redirect("/head-hunter");
+  const { supabase, user, profile, liberado } = await exigirCurso("english", `/english/${modulo}`);
+  if (!liberado) redirect("/english");
   const { progresso, comProgresso } = await carregarIngles(supabase, user.id);
   const livre = profile.is_admin || !comProgresso;
   const nav = navegacaoIngles(progresso, livre, { modulo: m.numero });
@@ -23,7 +23,7 @@ export default async function ModuloInglesPage({ params }: { params: Promise<{ m
   const seguir = daqui.find((x) => !x.feita && !x.bloqueada) ?? daqui[0];
 
   return (
-    <CursoPlayer curso="Inglês a bordo" voltar={{ href: "/head-hunter/ingles-a-bordo", rotulo: "Inglês a bordo" }} secoes={nav.secoes} feitas={nav.feitas} total={nav.total}
+    <CursoPlayer curso="Flight Attendant English" voltar={{ href: "/english", rotulo: "Flight Attendant English" }} secoes={nav.secoes} feitas={nav.feitas} total={nav.total}
       rodape={seguir && !seguir.bloqueada ? (
         <>
           <span className="text-[14px] text-muted">{daqui.filter((x) => x.feita).length} de {daqui.length} aulas concluídas</span>
@@ -70,7 +70,7 @@ export default async function ModuloInglesPage({ params }: { params: Promise<{ m
           return (
             <li key={k}>
               {aberta ? (
-                <Link href={`/head-hunter/ingles-a-bordo/${m.numero}/${a.numero}`} className="flex items-center gap-4 rounded-[20px] border border-line bg-white p-3 pr-5 text-navy hover:border-navy">{corpo}</Link>
+                <Link href={`/english/${m.numero}/${a.numero}`} className="flex items-center gap-4 rounded-[20px] border border-line bg-white p-3 pr-5 text-navy hover:border-navy">{corpo}</Link>
               ) : (
                 <div aria-disabled="true" className="flex items-center gap-4 rounded-[20px] border border-line bg-white/60 p-3 pr-5 text-navy">{corpo}</div>
               )}

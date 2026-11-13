@@ -39,7 +39,7 @@ export function ConexaoMPForm({ publicKey, conectado, temSegredo }: { publicKey:
   );
 }
 
-export function ProdutoForm({ p }: { p: { slug: string; preco: number; desconto_pix: number; descricao: string | null; ativo: boolean; dias_apos_conclusao?: number } }) {
+export function ProdutoForm({ p }: { p: { slug: string; preco: number; desconto_pix: number; descricao: string | null; ativo: boolean; dias_apos_conclusao?: number; destaque?: string | null; topicos?: string[] | null } }) {
   const [s, acao, pend] = useActionState(salvarProduto, {});
   const [preco, setPreco] = useState(String(p.preco).replace(".", ","));
   const [desc, setDesc] = useState(String(p.desconto_pix).replace(".", ","));
@@ -60,7 +60,7 @@ export function ProdutoForm({ p }: { p: { slug: string; preco: number; desconto_
         </div>
       </div>
       <div className="flex flex-col gap-1">
-        <label htmlFor={`dias-${p.slug}`} className="text-[14px] font-semibold">Dias de acesso depois de concluir a jornada</label>
+        <label htmlFor={`dias-${p.slug}`} className="text-[14px] font-semibold">Dias de acesso depois de concluir o curso</label>
         <input id={`dias-${p.slug}`} name="dias_apos_conclusao" type="number" min={0} max={365} defaultValue={p.dias_apos_conclusao ?? 30} className={`${campo} sm:max-w-[200px]`} />
         <span className="text-[13px] text-muted">Tempo para o aluno revisar antes da seleção. Use 0 para encerrar no mesmo dia.</span>
       </div>
@@ -68,8 +68,16 @@ export function ProdutoForm({ p }: { p: { slug: string; preco: number; desconto_
         No checkout: <strong>{reais(n)}</strong> no cartão (até 12x, juros por conta do aluno) · <strong className="text-[#0f6b3a]">{reais(Math.round(n * (100 - d)) / 100)}</strong> no Pix
       </p>
       <div className="flex flex-col gap-1">
-        <label htmlFor={`desc-${p.slug}`} className="text-[14px] font-semibold">Descrição na página de venda</label>
-        <textarea id={`desc-${p.slug}`} name="descricao" defaultValue={p.descricao ?? ""} rows={3} maxLength={500} className={campo} />
+        <label htmlFor={`desc-${p.slug}`} className="text-[14px] font-semibold">Descrição</label>
+        <textarea id={`desc-${p.slug}`} name="descricao" defaultValue={p.descricao ?? ""} rows={2} maxLength={500} className={campo} />
+      </div>
+      <div className="flex flex-col gap-1">
+        <label htmlFor={`top-${p.slug}`} className="text-[14px] font-semibold">Principais tópicos na página Planos <span className="font-normal text-muted">(um por linha)</span></label>
+        <textarea id={`top-${p.slug}`} name="topicos" defaultValue={(p.topicos ?? []).join("\n")} rows={6} className={campo} />
+      </div>
+      <div className="flex flex-col gap-1">
+        <label htmlFor={`dest-${p.slug}`} className="text-[14px] font-semibold">Tarja de destaque <span className="font-normal text-muted">(opcional, ex.: Mais popular)</span></label>
+        <input id={`dest-${p.slug}`} name="destaque" defaultValue={p.destaque ?? ""} maxLength={30} className={`${campo} sm:max-w-[320px]`} />
       </div>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <label className="flex min-h-11 cursor-pointer items-center gap-2 text-[15px] font-semibold">
@@ -89,8 +97,12 @@ const ORIGENS = [
   ["outro", "Outro", "Dinheiro, transferência, outra plataforma"],
 ] as const;
 
-export function AdicionarAlunoForm({ emailInicial, nomeInicial, precoPadrao, agora, formas }: { emailInicial: string; nomeInicial: string; precoPadrao: string; agora: string; formas: Record<string, string> }) {
+export function AdicionarAlunoForm({ emailInicial, nomeInicial, produtos, produtoInicial, agora, formas }: {
+  emailInicial: string; nomeInicial: string; produtos: { slug: string; nome: string; preco: number }[]; produtoInicial: string; agora: string; formas: Record<string, string>;
+}) {
   const [s, acao, pend] = useActionState(adicionarAoCurso, {});
+  const [produto, setProduto] = useState(produtoInicial);
+  const precoPadrao = String(produtos.find((p) => p.slug === produto)?.preco ?? "").replace(".", ",");
   const [origem, setOrigem] = useState("cortesia");
   const [forma, setForma] = useState("pix");
   const pago = origem !== "cortesia";
@@ -114,6 +126,17 @@ export function AdicionarAlunoForm({ emailInicial, nomeInicial, precoPadrao, ago
       </div>
 
       <fieldset className="flex flex-col gap-2">
+        <legend className={`${rot} mb-2`}>Curso *</legend>
+        <div className="grid gap-2 sm:grid-cols-3">
+          {produtos.map((p) => (
+            <label key={p.slug} className={`flex min-h-14 cursor-pointer items-center gap-2 rounded-2xl border-2 px-4 py-2.5 font-display font-extrabold ${produto === p.slug ? "border-navy bg-[#f4f6fb]" : "border-line"}`}>
+              <input type="radio" name="produto" value={p.slug} checked={produto === p.slug} onChange={() => setProduto(p.slug)} className="h-4 w-4 accent-[#1f2a44]" />{p.nome}
+            </label>
+          ))}
+        </div>
+      </fieldset>
+
+      <fieldset className="flex flex-col gap-2">
         <legend className={`${rot} mb-2`}>Como ele entra no curso? *</legend>
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
           {ORIGENS.map(([k, r, d]) => (
@@ -128,7 +151,7 @@ export function AdicionarAlunoForm({ emailInicial, nomeInicial, precoPadrao, ago
       {pago && (
         <div className="grid gap-4 rounded-2xl bg-soft p-4 md:grid-cols-3">
           <p className="text-[14px] text-ink-2 md:col-span-3">Vai para o <strong>Livro de compras</strong> como prova da venda (data e hora contam para os 7 dias de arrependimento).</p>
-          <div className="flex flex-col gap-1"><label htmlFor="a-valor" className={rot}>Valor pago (R$) *</label><input id="a-valor" name="valor" inputMode="decimal" defaultValue={precoPadrao} className={campo} /></div>
+          <div className="flex flex-col gap-1"><label htmlFor="a-valor" className={rot}>Valor pago (R$) *</label><input key={produto} id="a-valor" name="valor" inputMode="decimal" defaultValue={precoPadrao} className={campo} /></div>
           <div className="flex flex-col gap-1">
             <label htmlFor="a-forma" className={rot}>Forma de pagamento *</label>
             <select id="a-forma" name="forma_pagamento" value={forma} onChange={(e) => setForma(e.target.value)} className={campo}>
@@ -151,7 +174,7 @@ export function AdicionarAlunoForm({ emailInicial, nomeInicial, precoPadrao, ago
         <label className="flex min-h-11 cursor-pointer items-center gap-2 text-[15px] font-semibold">
           <input type="checkbox" name="avisar" defaultChecked className="h-5 w-5 accent-[#c8102e]" /> Avisar o aluno no WhatsApp
         </label>
-        <button className={btn} disabled={pend}>{pend ? "Liberando…" : "Liberar acesso ao Head Hunter"}</button>
+        <button className={btn} disabled={pend}>{pend ? "Liberando…" : "Liberar acesso"}</button>
       </div>
       <Aviso s={s} />
     </form>

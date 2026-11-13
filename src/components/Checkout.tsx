@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
-type Produto = { slug: string; nome: string; preco: number; pix: number; descontoPix: number; diasExtras: number };
+type Produto = { slug: string; nome: string; endereco: string; preco: number; pix: number; descontoPix: number; diasExtras: number };
 type Pix = { id: number; codigo?: string; imagem?: string; link?: string; valor: number; criado: number };
 
 const reais = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -41,8 +41,8 @@ export default function Checkout({ publicKey, produto, email, nome }: { publicKe
       <section className="flex flex-col items-center gap-4 rounded-[22px] bg-white p-8 text-center shadow-sm md:p-12" role="status">
         <span aria-hidden="true" className="flex h-20 w-20 items-center justify-center rounded-full bg-[#e5f6ec] text-[40px]">✓</span>
         <h2 className="font-display text-[28px] font-extrabold">Pagamento aprovado! Bem-vindo(a) a bordo, {nome.split(" ")[0]}. ✈️</h2>
-        <p className="max-w-[520px] text-[17px] text-ink-2">Seu acesso ao Head Hunter já está liberado. A confirmação também chega no seu WhatsApp.</p>
-        <a href="/head-hunter" className="inline-flex min-h-14 items-center rounded-xl bg-brand-strong px-8 font-display text-[17px] font-bold text-white hover:bg-brand-deep">Começar agora</a>
+        <p className="max-w-[520px] text-[17px] text-ink-2">Seu acesso ao {produto.nome} já está liberado. A confirmação também chega no seu WhatsApp.</p>
+        <a href={produto.endereco} className="inline-flex min-h-14 items-center rounded-xl bg-brand-strong px-8 font-display text-[17px] font-bold text-white hover:bg-brand-deep">Começar agora</a>
       </section>
     );
   }
@@ -52,7 +52,7 @@ export default function Checkout({ publicKey, produto, email, nome }: { publicKe
         <span aria-hidden="true" className="text-[48px]">⏳</span>
         <h2 className="font-display text-[26px] font-extrabold">Pagamento em análise</h2>
         <p className="max-w-[520px] text-[17px] text-ink-2">O Mercado Pago está analisando o pagamento (costuma levar poucos minutos). Assim que for aprovado, o acesso é liberado sozinho e você recebe a confirmação no WhatsApp.</p>
-        <Link href="/head-hunter" className="font-semibold text-navy underline underline-offset-4">Voltar ao Head Hunter</Link>
+        <Link href="/planos" className="font-semibold text-navy underline underline-offset-4">Voltar aos planos</Link>
       </section>
     );
   }
@@ -83,7 +83,7 @@ export default function Checkout({ publicKey, produto, email, nome }: { publicKe
         {metodo === "cartao" && <p className="text-[14px] text-[#d7dbe6]">No parcelamento, os juros do cartão são calculados pelo Mercado Pago e aparecem antes de você confirmar.</p>}
         <ul className="flex flex-col gap-1.5 border-t border-white/15 pt-4 text-[14px] text-[#d7dbe6]">
           <li>✓ Acesso liberado na hora após a aprovação</li>
-          <li>✓ Acesso até você concluir toda a jornada{produto.diasExtras > 0 ? `, mais ${produto.diasExtras} dias para revisar` : ""}</li>
+          <li>✓ Acesso até você concluir o curso{produto.diasExtras > 0 ? `, mais ${produto.diasExtras} dias para revisar` : ""}</li>
           <li>✓ 7 dias de garantia, conforme o Código de Defesa do Consumidor</li>
         </ul>
         <span className="text-[12px] text-[#aab3c8]">Pagamento processado pelo Mercado Pago. Os dados do cartão não passam pelo site da Cabin Crew.</span>

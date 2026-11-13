@@ -35,8 +35,8 @@ export default async function PagamentosPage() {
       </Card>
 
       <Card className={crew_select_aberto ? "border-2 border-brand" : ""}>
-        <Chave chave="crew_select_aberto" ligado={crew_select_aberto} titulo="Head Hunter liberado para todos, sem pagamento"
-          descricao="Ligado: todo cadastrado acessa o Head Hunter de graça (bom para a fase de testes). Desligado: só quem comprou (ou quem você liberar na página do aluno) acessa, e os demais veem a página de venda." />
+        <Chave chave="crew_select_aberto" ligado={crew_select_aberto} titulo="Cursos liberados para todos, sem pagamento"
+          descricao="Ligado: todo cadastrado acessa o Head Hunter e o Flight Attendant English de graça (bom para a fase de testes). Desligado: só quem comprou (ou quem você liberar na página do aluno) acessa; os demais veem a página de venda." />
       </Card>
 
       <p className="text-[15px] text-ink-2">Preço e desconto no Pix: <Link href="/admin/produtos" className="font-semibold underline underline-offset-4">Financeiro › Produtos e preços</Link>. As vendas entram sozinhas no <Link href="/admin/compras" className="font-semibold underline underline-offset-4">Livro de compras</Link>.</p>

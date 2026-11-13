@@ -17,7 +17,7 @@ export default async function CrewSelectPage({ searchParams }: { searchParams: P
 
   if (!liberado) {
     if (encerrado) return <Concluido nome={profile.nome ?? profile.apelido} em={acesso?.expira_em ?? acesso?.encerrado_em ?? null} />;
-    const { data: prod } = await supabase.from("produtos").select("nome, descricao, preco, desconto_pix, ativo, dias_apos_conclusao").eq("slug", "head-hunter").maybeSingle();
+    const { data: prod } = await supabase.from("produtos").select("*").eq("slug", "head-hunter").maybeSingle();
     return <Venda nome={profile.nome ?? profile.apelido} prod={prod} revogado={acesso?.status === "revogado"} />;
   }
 
@@ -106,7 +106,7 @@ export default async function CrewSelectPage({ searchParams }: { searchParams: P
           <JornadaPainel j={jornada} temCheckin={dados.companhias.length > 0} dataMeta={dataMeta} hoje={dados.hoje} />
           <h2 className="pt-6 font-display text-2xl font-extrabold">Atalhos</h2>
           {temAnac && lista.some((m) => m.recurso === "anac") && (
-            <Link href="/head-hunter/anac" className="flex flex-wrap items-center justify-between gap-4 rounded-[22px] border-2 border-brand-line bg-white p-6 text-navy hover:border-brand">
+            <Link href="/simulados-anac" className="flex flex-wrap items-center justify-between gap-4 rounded-[22px] border-2 border-brand-line bg-white p-6 text-navy hover:border-brand">
               <span className="flex flex-col gap-1">
                 <span className="self-start rounded-full bg-brand-soft px-3 py-1 font-display text-xs font-bold tracking-[.08em] text-brand-strong uppercase">Simulados ANAC</span>
                 <strong className="font-display text-xl font-extrabold">Treine para a prova da ANAC</strong>
@@ -115,14 +115,14 @@ export default async function CrewSelectPage({ searchParams }: { searchParams: P
               <span className="inline-flex min-h-12 items-center gap-2 rounded-full bg-brand-strong px-6 font-display font-bold text-white">Abrir simulados <Arrow /></span>
             </Link>
           )}
-          <Link href="/head-hunter/ingles-a-bordo" className="group relative flex flex-wrap items-center justify-between gap-4 overflow-hidden rounded-[22px] bg-navy p-6 text-white">
+          <Link href={dados.temEnglish ? "/english" : "/planos#english"} className="group relative flex flex-wrap items-center justify-between gap-4 overflow-hidden rounded-[22px] bg-navy p-6 text-white">
             <Image src="/img/ingles/cena-01.jpg" alt="" fill sizes="1200px" className="object-cover opacity-25 transition duration-500 group-hover:scale-[1.02]" />
             <span className="relative flex flex-col gap-1">
-              <span className="self-start rounded-full bg-white/15 px-3 py-1 font-display text-xs font-bold tracking-[.08em] uppercase">Novo · Curso</span>
-              <strong className="font-display text-xl font-extrabold">Inglês a bordo</strong>
-              <span className="text-[15px] text-[#d7dbe6]">O inglês do dia a dia do comissário, com diálogos, exercícios de fala e quiz em cada aula.</span>
+              <span className="self-start rounded-full bg-white/15 px-3 py-1 font-display text-xs font-bold tracking-[.08em] uppercase">{dados.temEnglish ? "Seu curso de inglês" : "Curso à parte"}</span>
+              <strong className="font-display text-xl font-extrabold">Flight Attendant English</strong>
+              <span className="text-[15px] text-[#d7dbe6]">Curso completo de inglês para aviação: diálogos de bordo com áudio, anúncios, emergências e quiz em cada aula.</span>
             </span>
-            <span className="relative inline-flex min-h-12 items-center gap-2 rounded-full bg-brand-strong px-6 font-display font-bold text-white">Abrir o curso <Arrow /></span>
+            <span className="relative inline-flex min-h-12 items-center gap-2 rounded-full bg-brand-strong px-6 font-display font-bold text-white">{dados.temEnglish ? "Abrir o curso" : "Conhecer o curso"} <Arrow /></span>
           </Link>
           <Link href="/head-hunter/ranking" className="flex flex-wrap items-center justify-between gap-4 rounded-[22px] border-2 border-brand-line bg-white p-6 text-navy hover:border-brand">
             <span className="flex flex-col gap-1">
@@ -188,7 +188,7 @@ export default async function CrewSelectPage({ searchParams }: { searchParams: P
   );
 }
 
-type Prod = { nome: string; descricao: string | null; preco: number; desconto_pix: number; ativo: boolean; dias_apos_conclusao?: number } | null;
+type Prod = { nome: string; descricao: string | null; preco: number; desconto_pix: number; ativo: boolean; dias_apos_conclusao?: number; topicos?: string[] | null } | null;
 const reais = (v: number) => Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 function Venda({ nome, prod, revogado }: { nome: string; prod: Prod; revogado: boolean }) {
@@ -205,7 +205,7 @@ function Venda({ nome, prod, revogado }: { nome: string; prod: Prod; revogado: b
           {revogado && <p className="rounded-xl bg-[#fff8e6] px-4 py-3 text-[15px] text-[#7a5a00]">Seu acesso anterior foi encerrado. Para voltar a estudar, faça uma nova compra.</p>}
           <p className="text-[17px] leading-relaxed text-ink-2">{prod?.descricao ?? "Preparatório completo para a seleção de comissário(a) de voo."}</p>
           <ul className="flex flex-col gap-2 text-[16px]">
-            {["Jornada personalizada para a companhia que você quer", "Aulas, simulados no estilo das seleções e dinâmicas de grupo", "Treino de entrevista, vídeo de apresentação e Inglês a bordo com áudio", (prod?.dias_apos_conclusao ?? 30) > 0 ? `Acesso até você concluir toda a jornada, mais ${prod?.dias_apos_conclusao ?? 30} dias para revisar` : "Acesso até você concluir toda a jornada"].map((t) => (
+            {[...(prod?.topicos?.length ? prod.topicos : ["Jornada personalizada para a companhia que você quer", "Aulas, simulados no estilo das seleções e dinâmicas de grupo", "Treino de entrevista em inglês e vídeo de apresentação"]), (prod?.dias_apos_conclusao ?? 30) > 0 ? `Acesso até você concluir toda a jornada, mais ${prod?.dias_apos_conclusao ?? 30} dias para revisar` : "Acesso até você concluir toda a jornada"].map((t) => (
               <li key={t} className="flex gap-2"><span className="text-brand-strong"><Check /></span>{t}</li>
             ))}
           </ul>
@@ -216,7 +216,8 @@ function Venda({ nome, prod, revogado }: { nome: string; prod: Prod; revogado: b
                 <span className="text-[15px] text-ink-2">no cartão, em até 12x</span>
               </div>
               {Number(prod.desconto_pix) > 0 && <p className="text-[16px]"><strong className="text-[#0f6b3a]">{reais(pix)} no Pix</strong> ({Number(prod.desconto_pix)}% de desconto)</p>}
-              <Link href="/head-hunter/comprar" className="inline-flex min-h-14 items-center justify-center gap-2 rounded-xl bg-brand-strong px-6 font-display text-[17px] font-bold text-white hover:bg-brand-deep">Quero começar agora <Arrow /></Link>
+              <Link href="/comprar/head-hunter" className="inline-flex min-h-14 items-center justify-center gap-2 rounded-xl bg-brand-strong px-6 font-display text-[17px] font-bold text-white hover:bg-brand-deep">Quero começar agora <Arrow /></Link>
+              <Link href="/planos" className="text-center text-[15px] font-semibold text-navy underline underline-offset-4">Ver o combo com o Flight Attendant English</Link>
               <span className="text-[13px] text-muted">Pagamento seguro pelo Mercado Pago. Acesso liberado na hora.</span>
             </div>
           ) : <p className="text-[17px] text-ink-2">As inscrições abrem em breve. Avisaremos você pelo WhatsApp.</p>}
@@ -236,7 +237,7 @@ function Concluido({ nome, em }: { nome: string; em: string | null }) {
           Você completou toda a jornada e o seu acesso ao curso terminou{em ? ` em ${new Date(em).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}` : ""}. Agora é com você: chegue confiante na seleção. Boa sorte! ✈️
         </p>
         <p className="text-[15px] text-muted">Quer revisar tudo antes da prova? Você pode comprar um novo acesso.</p>
-        <Link href="/head-hunter/comprar" className="inline-flex min-h-12 items-center rounded-xl border-2 border-navy px-6 font-semibold text-navy hover:bg-navy hover:text-white">Comprar novo acesso</Link>
+        <Link href="/comprar/head-hunter" className="inline-flex min-h-12 items-center rounded-xl border-2 border-navy px-6 font-semibold text-navy hover:bg-navy hover:text-white">Comprar novo acesso</Link>
       </div>
     </main>
   );

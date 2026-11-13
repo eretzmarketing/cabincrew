@@ -655,7 +655,7 @@ function Quiz({ aula, chave, notaAnterior, proxima, logado }: { aula: AulaIngles
           </p>
           <div className="flex flex-wrap gap-2">
             {passou && proxima && <Link href={proxima.href} className={btnPrim}>Próxima aula: {proxima.titulo} →</Link>}
-            {passou && !proxima && <Link href="/head-hunter/ingles-a-bordo" className={btnPrim}>Voltar ao curso</Link>}
+            {passou && !proxima && <Link href="/english" className={btnPrim}>Voltar ao curso</Link>}
             <button type="button" onClick={() => { setEsc({}); setFim(null); setTentativa(tentativa + 1); }} className={btnSec}>Refazer o quiz</button>
           </div>
         </div>

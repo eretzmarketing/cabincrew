@@ -109,8 +109,8 @@ export async function registrarPagamento(pg: Pagamento): Promise<{ situacao: str
   if (error) { console.error("[mercadopago] não foi possível registrar o pagamento", pg.id, error.message); return { situacao: "erro", erro: error.message }; }
   const r = ((data ?? []) as { situacao: string; envio_id: number | null; telefone: string | null; nome: string | null; texto: string | null }[])[0];
   if (r?.envio_id && r.telefone && r.texto) {
-    const { data: prod } = await supabase.from("produtos").select("nome").eq("slug", ref.produto).maybeSingle();
-    const texto = preencher(r.texto, { nome: r.nome ?? "", produto: prod?.nome ?? "Head Hunter", valor: reais(pg.transaction_amount), forma: FORMA[metodo] ?? metodo });
+    const { data: prod } = await supabase.from("produtos").select("nome, endereco").eq("slug", ref.produto).maybeSingle();
+    const texto = preencher(r.texto, { nome: r.nome ?? "", produto: prod?.nome ?? "Head Hunter", endereco: `${SITE}${prod?.endereco ?? "/head-hunter"}`, valor: reais(pg.transaction_amount), forma: FORMA[metodo] ?? metodo });
     const res = await enviarWhatsapp(r.telefone, texto);
     await supabase.rpc("mp_whatsapp_resultado", { p_chave: cfg.chave, p_id: r.envio_id, p_status: res.ok ? "enviada" : res.status, p_texto: texto, p_erro: res.ok ? null : res.erro });
   }

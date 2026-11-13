@@ -27,7 +27,7 @@ export const GRUPOS: Grupo[] = [
       { href: "/admin/questoes", label: "Banco de questões" },
       { href: "/admin/opq", label: "Perfil comportamental" },
       { href: "/admin/entrevista", label: "Entrevista em inglês" },
-      { href: "/admin/ingles", label: "Inglês a bordo" },
+      { href: "/admin/ingles", label: "Flight Attendant English" },
     ],
   },
   { id: "campanhas", label: "Campanhas", itens: [{ href: "/admin/campanhas", label: "Campanhas" }] },

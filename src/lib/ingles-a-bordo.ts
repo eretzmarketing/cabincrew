@@ -1,5 +1,5 @@
 /**
- * Inglês a bordo · curso de inglês operacional para comissários (conteúdo original Cabin Crew).
+ * Flight Attendant English · curso de inglês operacional para comissários (conteúdo original Cabin Crew).
  * Cada aula tem um diálogo (que vira o MP3 "M.A.mp3" gerado no ElevenLabs), vocabulário,
  * expressões e atividades. Enquanto o MP3 não existe, o site lê o diálogo com a voz do navegador.
  */

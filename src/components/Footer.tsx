@@ -15,6 +15,8 @@ export default async function Footer() {
           <nav aria-label="Rodapé" className="flex flex-wrap gap-14 text-[15px]">
             <div className="flex flex-col gap-2.5">
               <strong className="font-display text-white">Head Hunter</strong>
+              <Link href="/planos" className="hover:text-white">Planos</Link>
+              <Link href="/simulados-anac" className="hover:text-white">Simulados ANAC grátis</Link>
               <Link href="/head-hunter" className="hover:text-white">Área do aluno</Link>
               <Link href="/conta" className="hover:text-white">Minha conta</Link>
             </div>

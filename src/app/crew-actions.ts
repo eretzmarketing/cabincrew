@@ -170,9 +170,10 @@ export async function iniciarSimulado(form: FormData) {
   const { supabase, user } = await getUser();
   const simulado = Number(form.get("simulado_id"));
   const aula = String(form.get("aula_id") ?? "");
-  if (!user) redirect(`/entrar?modo=entrar&next=/head-hunter/aula/${aula}`);
+  const volta = aula ? `/head-hunter/aula/${aula}` : "/simulados-anac";
+  if (!user) redirect(`/entrar?modo=entrar&next=${volta}`);
   const { data, error } = await supabase.rpc("iniciar_simulado", { p_simulado: simulado });
-  if (error || !data) redirect(`/head-hunter/aula/${aula}?erro=simulado`);
+  if (error || !data) redirect(`${volta}?erro=simulado`);
   redirect(`/head-hunter/simulado/${data}?aula=${aula}`);
 }
 
@@ -586,7 +587,7 @@ export async function renomearMidia(id: string, titulo: string) {
   revalidatePath("/admin/midia");
 }
 
-/* ---------- Inglês a bordo ---------- */
+/* ---------- Flight Attendant English ---------- */
 export async function salvarQuizIngles(aula: string, nota: number): Promise<{ ok: boolean; concluida: boolean; melhor: number }> {
   const { supabase, user } = await getUser();
   const n = Math.max(0, Math.min(100, Math.round(Number(nota) || 0)));
@@ -597,13 +598,17 @@ export async function salvarQuizIngles(aula: string, nota: number): Promise<{ ok
   const { error } = await supabase
     .from("ingles_progresso")
     .upsert({ user_id: user.id, aula, nota: melhor, concluida, updated_at: new Date().toISOString() }, { onConflict: "user_id,aula" });
-  revalidatePath("/head-hunter/ingles-a-bordo", "layout");
+  revalidatePath("/english", "layout");
   if (!error && concluida) {
     const { data: prog } = await supabase.from("ingles_progresso").select("aula").eq("user_id", user.id).eq("concluida", true);
     const ok = new Set((prog ?? []).map((x) => x.aula as string));
     const mod = MODULOS_INGLES.find((m) => m.aulas.some((x) => chaveAula(x) === aula));
     if (mod && mod.aulas.every((x) => ok.has(chaveAula(x)))) avisarAluno(supabase, "ingles_modulo", { numero: mod.numero, modulo: mod.titulo }, String(mod.numero));
-    if (TODAS_AULAS.every((x) => ok.has(chaveAula(x)))) avisarAluno(supabase, "ingles_concluido");
+    if (TODAS_AULAS.every((x) => ok.has(chaveAula(x)))) {
+      avisarAluno(supabase, "ingles_concluido");
+      // acesso comprado: ao concluir o curso começam os dias extras para revisar
+      await supabase.rpc("concluir_acesso", { p_produto: "english" });
+    }
   }
   return { ok: !error, concluida, melhor };
 }
@@ -669,7 +674,7 @@ export async function iniciarTreino(form: FormData) {
   if (!user) redirect("/entrar?modo=entrar&next=/head-hunter");
   if (!/^[a-z]{3,12}$/.test(banco)) redirect("/head-hunter");
   const { data, error } = await supabase.rpc("iniciar_treino", { p_banco: banco });
-  if (error || !data) redirect("/head-hunter?erro=treino");
+  if (error || !data) redirect(banco === "anac" ? "/simulados-anac?erro=treino" : "/head-hunter?erro=treino");
   redirect(`/head-hunter/simulado/${data}`);
 }
 

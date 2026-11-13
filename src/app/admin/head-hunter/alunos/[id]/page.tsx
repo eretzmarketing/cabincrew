@@ -23,12 +23,12 @@ export default async function AlunoPage({ params }: { params: Promise<{ id: stri
   const { id } = await params;
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
   const { supabase } = await getUser();
-  const [{ data: linha }, { dados, dataMeta, jornada }, { data: recentes }, { data: comprasAluno }, { data: acesso }] = await Promise.all([
+  const [{ data: linha }, { dados, dataMeta, jornada }, { data: recentes }, { data: comprasAluno }, { data: acessosAluno }] = await Promise.all([
     supabase.rpc("admin_hh_alunos", { p_busca: "", p_id: id }),
     carregarJornada(supabase, id),
     supabase.from("tentativas").select("nota, iniciada_em, finalizada_em, saidas_aba, simulados(titulo, origem)").eq("user_id", id).order("iniciada_em", { ascending: false }).limit(15),
     supabase.from("compras").select("*").eq("user_id", id).order("comprada_em", { ascending: false }),
-    supabase.from("acessos").select("*").eq("user_id", id).eq("produto", "head-hunter").maybeSingle(),
+    supabase.from("acessos").select("*").eq("user_id", id),
   ]);
   const l = ((linha ?? []) as LinhaAluno[])[0];
   if (!l) notFound();
@@ -125,7 +125,7 @@ export default async function AlunoPage({ params }: { params: Promise<{ id: stri
             <h2 className="font-display text-xl font-extrabold">Outros treinos</h2>
             <ul className="flex flex-col gap-1.5 text-[15px]">
               <li>Aulas concluídas: <strong>{l.aulas}</strong></li>
-              <li>Inglês a bordo: <strong>{l.ingles}/{TOTAL_INGLES}</strong> aulas</li>
+              <li>Flight Attendant English: <strong>{l.ingles}/{TOTAL_INGLES}</strong> aulas</li>
               <li>Perfil comportamental: <strong>{l.opq}</strong> sessões{dados.opq[0] && <> · última {dados.opq[0].perfil.incoerentes.length ? `com ${dados.opq[0].perfil.incoerentes.length} incoerência(s)` : "coerente"}</>}</li>
               <li>Vídeo de apresentação: <strong>{dados.videos.length}</strong> gravações{l.melhor_video !== null && <> · melhor {l.melhor_video}%</>}</li>
             </ul>
@@ -157,19 +157,30 @@ export default async function AlunoPage({ params }: { params: Promise<{ id: stri
           )}
 
           <Card>
-            <h2 className="font-display text-xl font-extrabold">Acesso ao Head Hunter</h2>
-            <p className="text-[15px]">
-              {!acesso ? "Sem acesso comprado." : acesso.status === "ativo" ? <><strong className="text-[#0f6b3a]">Ativo</strong> desde {dataHoraBR(acesso.liberado_em)}</>
-                : <><strong>{acesso.status === "concluido" ? "Concluído" : "Encerrado"}</strong> em {acesso.encerrado_em ? dataHoraBR(acesso.encerrado_em) : "—"}</>}
-              {acesso?.concluido_em && <span className="block text-[14px]">Concluiu a jornada em {dataHoraBR(acesso.concluido_em)}{acesso.expira_em ? ` · acesso até ${dataHoraBR(acesso.expira_em)}` : ""}</span>}
-              {acesso?.motivo && <span className="block text-[13px] text-muted">{acesso.motivo}</span>}
-            </p>
-            <form action={alterarAcesso} className="flex flex-wrap gap-2">
-              <input type="hidden" name="user_id" value={l.id} />
-              {acesso?.status === "ativo"
-                ? <button name="acao" value="encerrar" className="min-h-11 cursor-pointer rounded-full border-2 border-line px-4 text-[14px] font-semibold text-brand-deep hover:border-brand-deep">Encerrar acesso</button>
-                : <Link href={`/admin/head-hunter/alunos/adicionar?email=${encodeURIComponent(l.email ?? "")}`} className="inline-flex min-h-11 items-center rounded-full bg-navy px-4 text-[14px] font-semibold text-white hover:bg-navy-deep">{acesso ? "Liberar de novo" : "Liberar acesso"}</Link>}
-            </form>
+            <h2 className="font-display text-xl font-extrabold">Acesso aos cursos</h2>
+            {([["head-hunter", "Head Hunter"], ["english", "Flight Attendant English"]] as const).map(([curso, rotulo]) => {
+              const acesso = ((acessosAluno ?? []) as { produto: string; status: string; liberado_em: string; encerrado_em: string | null; concluido_em: string | null; expira_em: string | null; motivo: string | null }[]).find((x) => x.produto === curso);
+              const ativo = acesso?.status === "ativo" && (!acesso.expira_em || Date.parse(acesso.expira_em) > Date.parse(new Date().toISOString()));
+              return (
+                <div key={curso} className="flex flex-col gap-2 border-t border-line pt-3 first-of-type:border-0 first-of-type:pt-0">
+                  <p className="text-[15px]">
+                    <strong className="font-display">{rotulo}:</strong>{" "}
+                    {!acesso ? "sem acesso." : ativo ? <><strong className="text-[#0f6b3a]">ativo</strong> desde {dataHoraBR(acesso.liberado_em)}</>
+                      : <><strong>{acesso.status === "revogado" ? "encerrado" : "concluído"}</strong> em {dataHoraBR(acesso.encerrado_em ?? acesso.expira_em ?? acesso.liberado_em)}</>}
+                    {acesso?.concluido_em && <span className="block text-[14px]">Concluiu o curso em {dataHoraBR(acesso.concluido_em)}{acesso.expira_em ? ` · acesso até ${dataHoraBR(acesso.expira_em)}` : ""}</span>}
+                    {acesso?.motivo && <span className="block text-[13px] text-muted">{acesso.motivo}</span>}
+                  </p>
+                  {ativo ? (
+                    <form action={alterarAcesso}>
+                      <input type="hidden" name="user_id" value={l.id} /><input type="hidden" name="produto" value={curso} />
+                      <button name="acao" value="encerrar" className="min-h-11 cursor-pointer rounded-full border-2 border-line px-4 text-[14px] font-semibold text-brand-deep hover:border-brand-deep">Encerrar acesso</button>
+                    </form>
+                  ) : (
+                    <Link href={`/admin/head-hunter/alunos/adicionar?email=${encodeURIComponent(l.email ?? "")}&produto=${curso}`} className="inline-flex min-h-11 items-center self-start rounded-full bg-navy px-4 text-[14px] font-semibold text-white hover:bg-navy-deep">{acesso ? "Liberar de novo" : "Liberar acesso"}</Link>
+                  )}
+                </div>
+              );
+            })}
             <span className="text-[13px] text-muted">Compras pelo Mercado Pago liberam sozinhas. Para cortesia, Pix direto ou curso presencial, use Liberar acesso.</span>
           </Card>
 

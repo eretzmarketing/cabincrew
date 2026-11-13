@@ -21,8 +21,8 @@ export default async function ConfiguracoesPage() {
         <Chave
           chave="crew_select_aberto"
           ligado={cfg.crew_select_aberto}
-          titulo="Head Hunter liberado para todos, sem pagamento"
-          descricao="Ligado: todo cadastrado acessa o Head Hunter de graça. Desligado: só quem comprou (ou quem você liberar na página do aluno) acessa; os demais veem a página de venda."
+          titulo="Cursos liberados para todos, sem pagamento"
+          descricao="Ligado: todo cadastrado acessa o Head Hunter e o Flight Attendant English de graça. Desligado: só quem comprou (ou quem você liberar na página do aluno) acessa; os demais veem a página de venda."
         />
       </Card>
       <Card>

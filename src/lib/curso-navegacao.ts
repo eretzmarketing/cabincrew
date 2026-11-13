@@ -1,4 +1,4 @@
-/** Monta a lista lateral (módulos e aulas) do player de curso: Head Hunter e Inglês a bordo. */
+/** Monta a lista lateral (módulos e aulas) do player de curso: Head Hunter e Flight Attendant English. */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ItemCurso, SecaoCurso } from "@/components/CursoPlayer";
 import { numeroModulo, type Aula, type Modulo } from "@/lib/crew";
@@ -22,7 +22,7 @@ function fechar(secoes: SecaoCurso[]): Navegacao {
 /** Atalhos de treino que ficam dentro de cada módulo do Head Hunter. */
 function extras(m: Modulo): ItemCurso[] {
   const x: ItemCurso[] = [];
-  if (m.recurso === "anac") x.push({ href: "/head-hunter/anac", titulo: "Simulados ANAC", tipo: "treino", extra: true });
+  if (m.recurso === "anac") x.push({ href: "/simulados-anac", titulo: "Simulados ANAC", tipo: "treino", extra: true });
   if (m.recurso === "dinamicas") x.push({ href: "/head-hunter/dinamicas", titulo: "Biblioteca de dinâmicas", tipo: "treino", extra: true });
   if (m.ordem === 6) x.push({ href: "/head-hunter/perfil-comportamental", titulo: "Treino do perfil comportamental", tipo: "treino", extra: true });
   if (m.ordem === 8) {
@@ -66,12 +66,12 @@ export function navegacaoIngles(progresso: ProgressoIngles, livre: boolean, atua
     const itens: ItemCurso[] = m.aulas.map((a) => {
       const k = chaveAula(a);
       return {
-        href: `/head-hunter/ingles-a-bordo/${m.numero}/${a.numero}`, titulo: `${k} · ${a.titulo}`, tipo: "audio", minutos: a.minutos,
+        href: `/english/${m.numero}/${a.numero}`, titulo: `${k} · ${a.titulo}`, tipo: "audio", minutos: a.minutos,
         feita: !!progresso[k]?.concluida, bloqueada: !aulaLiberada(k, progresso, livre), atual: k === atual.chave,
       };
     });
     return {
-      id: `i${m.numero}`, rotulo: `Módulo ${m.numero}`, titulo: m.titulo, href: `/head-hunter/ingles-a-bordo/${m.numero}`,
+      id: `i${m.numero}`, rotulo: `Módulo ${m.numero}`, titulo: m.titulo, href: `/english/${m.numero}`,
       atual: m.numero === atual.modulo || itens.some((i) => i.atual), itens,
     };
   });

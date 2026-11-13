@@ -76,7 +76,7 @@ export default async function ModuloPage({ params }: { params: Promise<{ id: str
         )}
 
         {m.recurso === "anac" && (
-          <Link href="/head-hunter/anac" className="flex items-center justify-between gap-4 rounded-[20px] bg-navy p-6 text-white hover:bg-navy-deep">
+          <Link href="/simulados-anac" className="flex items-center justify-between gap-4 rounded-[20px] bg-navy p-6 text-white hover:bg-navy-deep">
             <span className="flex flex-col gap-1">
               <strong className="font-display text-lg">Simulados ANAC</strong>
               <span className="text-[15px] text-[#d7dbe6]">Treine por bloco ou faça a prova completa, com seu histórico de notas.</span>

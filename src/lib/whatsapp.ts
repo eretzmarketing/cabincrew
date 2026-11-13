@@ -92,8 +92,8 @@ export const GATILHOS: Record<string, string> = {
   boas_vindas: "Logo depois do cadastro no site",
   checkin: "No primeiro check-in do Head Hunter",
   modulo_concluido: "Quando o aluno conclui um módulo do Head Hunter",
-  ingles_modulo: "Quando o aluno conclui um módulo do Inglês a bordo",
-  ingles_concluido: "Quando o aluno conclui o Inglês a bordo inteiro",
+  ingles_modulo: "Quando o aluno conclui um módulo do Flight Attendant English",
+  ingles_concluido: "Quando o aluno conclui o Flight Attendant English inteiro",
   jornada_concluida: "Quando o aluno conclui toda a jornada do Head Hunter",
 };
 

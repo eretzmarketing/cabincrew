@@ -31,7 +31,7 @@ export function calcularMedalhas(d: DadosJornada, j: Jornada): Medalha[] {
     { id: "gabaritou", emoji: "💯", nome: "Gabarito", como: "Acertar 100% em um treino ou simulado.", ganha: [...treinos, ...provas].some((t) => t.nota === 100) },
     { id: "perfil", emoji: "🧩", nome: "Perfil coerente", como: "Terminar o perfil comportamental sem respostas incoerentes ou forçadas.", ganha: coerente },
     { id: "video", emoji: "🎥", nome: "Câmera ligada", como: `Tirar ${META}% ou mais no treino de vídeo de apresentação.`, ganha: melhorVideo >= META },
-    { id: "ingles", emoji: "🇬🇧", nome: "Welcome aboard", como: "Concluir o Módulo 1 do Inglês a bordo.", ganha: m1.length > 0 && m1Feitas === m1.length, progresso: dez(m1Feitas, m1.length) },
+    { id: "ingles", emoji: "🇬🇧", nome: "Welcome aboard", como: "Concluir o Módulo 1 do Flight Attendant English.", ganha: m1.length > 0 && m1Feitas === m1.length, progresso: dez(m1Feitas, m1.length) },
     { id: "etapa", emoji: "🛬", nome: "Primeira etapa", como: "Concluir uma etapa da jornada.", ganha: etapasFeitas >= 1 },
     { id: "pronto", emoji: "👑", nome: "Pronto para a seleção", como: "Concluir todas as etapas da jornada.", ganha: comConteudo > 0 && etapasFeitas >= comConteudo, progresso: dez(etapasFeitas, comConteudo) },
   ];

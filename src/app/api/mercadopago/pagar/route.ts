@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { configMP, criarPagamento, precoPor, referencia, registrarPagamento, URL_WEBHOOK } from "@/lib/mercadopago";
+import { cursosDoAluno } from "@/lib/crew-gate";
 import { getUser } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -36,10 +37,10 @@ export async function POST(req: Request) {
 
   const corpo = (await req.json().catch(() => ({}))) as { produto?: string; metodo?: string; cpf?: string; cartao?: Record<string, unknown> };
   const slug = corpo.produto ?? "head-hunter";
-  const { data: prod } = await supabase.from("produtos").select("slug, nome, preco, desconto_pix, ativo").eq("slug", slug).maybeSingle();
+  const { data: prod } = await supabase.from("produtos").select("slug, nome, preco, desconto_pix, ativo, inclui").eq("slug", slug).maybeSingle();
   if (!prod?.ativo) return NextResponse.json({ erro: "Produto indisponível." }, { status: 404 });
-  const { data: acesso } = await supabase.from("acessos").select("status, expira_em").eq("user_id", user.id).eq("produto", slug).maybeSingle();
-  if (acesso?.status === "ativo" && (!acesso.expira_em || Date.parse(acesso.expira_em) > Date.now())) return NextResponse.json({ erro: "Você já tem acesso ao Head Hunter." }, { status: 409 });
+  const ativos = await cursosDoAluno(supabase, user.id);
+  if (((prod.inclui as string[] | null) ?? [slug]).every((c) => ativos.has(c))) return NextResponse.json({ erro: `Você já tem acesso a ${prod.nome}.` }, { status: 409 });
 
   const nome = String(profile.nome || profile.apelido || "").trim();
   const [primeiro, ...resto] = nome.split(" ");

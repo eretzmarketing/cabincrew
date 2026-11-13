@@ -13,7 +13,7 @@ export async function lerCheckin(supabase: SupabaseClient, userId: string) {
 }
 
 export async function carregarJornada(supabase: SupabaseClient, userId: string) {
-  const [mod, aul, prog, tent, sims, ing, opq, vid, anac, checkin] = await Promise.all([
+  const [mod, aul, prog, tent, sims, ing, opq, vid, anac, checkin, eng] = await Promise.all([
     supabase.from("modulos").select("id, ordem, titulo").eq("publicado", true).order("ordem"),
     supabase.from("aulas").select("id, modulo_id, ordem, titulo").eq("publicado", true).order("ordem"),
     supabase.from("progresso").select("aula_id, concluida_em").eq("user_id", userId),
@@ -24,6 +24,7 @@ export async function carregarJornada(supabase: SupabaseClient, userId: string) 
     supabase.from("video_treinos").select("nota, created_at").eq("user_id", userId).order("created_at", { ascending: false }).limit(20),
     supabase.rpc("anac_liberado", { p_user: userId }),
     lerCheckin(supabase, userId),
+    supabase.rpc("tem_acesso", { p_produto: "english", p_user: userId }),
   ]);
   const simulados = new Map<number, { origem: string | null; bancos: string[] }>();
   for (const s of (sims.data ?? []) as { id: number; origem: string | null; bancos: string[] }[]) simulados.set(s.id, { origem: s.origem, bancos: s.bancos ?? [] });
@@ -31,6 +32,7 @@ export async function carregarJornada(supabase: SupabaseClient, userId: string) 
   const dados: DadosJornada = {
     companhias: checkin.companhias,
     anacLiberado: anac.error ? true : anac.data === true,
+    temEnglish: !eng.error && eng.data === true,
     modulos: (mod.data ?? []) as DadosJornada["modulos"],
     aulas: (aul.data ?? []) as DadosJornada["aulas"],
     concluidas: new Map(((prog.data ?? []) as { aula_id: string; concluida_em: string }[]).map((p) => [p.aula_id, p.concluida_em])),

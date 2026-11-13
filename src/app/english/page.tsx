@@ -4,13 +4,26 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { MODULOS_INGLES, TODAS_AULAS, chaveAula } from "@/lib/ingles-a-bordo";
 import { aulaLiberada, carregarIngles } from "@/lib/ingles-dados";
-import { exigirCrewSelect } from "@/lib/crew-gate";
+import { exigirCurso } from "@/lib/crew-gate";
 
-export const metadata: Metadata = { title: "Inglês a bordo · Head Hunter", robots: { index: false } };
+export const metadata: Metadata = { title: "Flight Attendant English", robots: { index: false } };
 
 export default async function InglesABordoPage() {
-  const { supabase, user, profile, liberado } = await exigirCrewSelect("/head-hunter/ingles-a-bordo");
-  if (!liberado) redirect("/head-hunter");
+  const { supabase, user, profile, liberado, acesso, pago, encerrado } = await exigirCurso("english", "/english");
+  if (!liberado) {
+    if (!encerrado) redirect("/planos#english");
+    return (
+      <main className="bg-soft">
+        <div className="mx-auto flex max-w-[760px] flex-col items-center gap-5 px-6 py-20 text-center">
+          <span aria-hidden="true" className="text-[64px] leading-none">🇬🇧</span>
+          <h1 className="font-display text-[34px] leading-tight font-extrabold">Congratulations, {(profile.nome ?? profile.apelido).split(" ")[0]}! Você concluiu o Flight Attendant English.</h1>
+          <p className="text-[17px] leading-relaxed text-ink-2">Você completou todas as aulas e o seu acesso ao curso terminou{acesso?.expira_em ? ` em ${new Date(acesso.expira_em).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}` : ""}. Have a nice flight! ✈️</p>
+          <Link href="/comprar/english" className="inline-flex min-h-12 items-center rounded-xl border-2 border-navy px-6 font-semibold text-navy hover:bg-navy hover:text-white">Comprar novo acesso</Link>
+        </div>
+      </main>
+    );
+  }
+  const revisaoAte = pago && acesso?.concluido_em && acesso.expira_em ? acesso.expira_em : null;
   const { progresso, comProgresso } = await carregarIngles(supabase, user.id);
   const livre = profile.is_admin || !comProgresso;
 
@@ -21,13 +34,17 @@ export default async function InglesABordoPage() {
 
   return (
     <main className="bg-soft pb-20">
+      {revisaoAte && (
+        <p className="bg-[#e5f6ec] px-6 py-3 text-center text-[15px] font-semibold text-[#0f6b3a]" role="status">
+          🇬🇧 Você concluiu o curso! Seu acesso continua até {new Date(revisaoAte).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })} para revisar.
+        </p>
+      )}
       <section className="relative overflow-hidden bg-navy text-white">
         <Image src="/img/ingles/cena-01.jpg" alt="" fill priority sizes="100vw" className="object-cover opacity-30" />
         <div className="relative mx-auto flex max-w-[1100px] flex-wrap items-end justify-between gap-8 px-6 pt-8 pb-14">
           <div className="flex max-w-[640px] flex-col gap-4">
-            <Link href="/head-hunter" className="text-sm font-semibold text-[#d7dbe6] hover:text-white">← Head Hunter</Link>
-            <span className="self-start rounded-full border border-white/25 bg-white/10 px-4 py-1.5 text-sm font-semibold">Curso de inglês operacional</span>
-            <h1 className="font-display text-[34px] leading-tight font-extrabold md:text-[48px]">Inglês <span className="text-[#ff5a7a]">a bordo</span></h1>
+            <span className="self-start rounded-full border border-white/25 bg-white/10 px-4 py-1.5 text-sm font-semibold">Curso completo de inglês para aviação</span>
+            <h1 className="font-display text-[34px] leading-tight font-extrabold md:text-[48px]">Flight Attendant <span className="text-[#ff5a7a]">English</span></h1>
             <p className="text-[17px] leading-relaxed text-[#e3e6ee]">
               O inglês que o comissário usa de verdade, do briefing ao desembarque. Ouça diálogos, pratique a fala, escreva e
               teste o que aprendeu em cada aula.
@@ -41,7 +58,7 @@ export default async function InglesABordoPage() {
             <div className="h-2.5 rounded-full bg-white/20" aria-hidden="true"><div className="h-2.5 rounded-full bg-brand" style={{ width: `${pct}%` }} /></div>
             <span className="text-sm text-[#d7dbe6]">{feitas} de {total} aulas concluídas</span>
             {proxima && (
-              <Link href={`/head-hunter/ingles-a-bordo/${proxima.modulo}/${proxima.numero}`} className="mt-1 inline-flex min-h-12 items-center justify-center rounded-full bg-brand-strong px-5 font-display font-bold text-white hover:bg-brand-deep">
+              <Link href={`/english/${proxima.modulo}/${proxima.numero}`} className="mt-1 inline-flex min-h-12 items-center justify-center rounded-full bg-brand-strong px-5 font-display font-bold text-white hover:bg-brand-deep">
                 {feitas ? "Continuar" : "Começar a primeira aula"} →
               </Link>
             )}
@@ -95,7 +112,7 @@ export default async function InglesABordoPage() {
               return (
                 <li key={m.numero}>
                   {n > 0 ? (
-                    <Link href={`/head-hunter/ingles-a-bordo/${m.numero}`} className="group flex h-full flex-col overflow-hidden rounded-[22px] border border-line bg-white text-navy hover:border-navy hover:shadow-[0_18px_40px_-28px_rgba(35,42,61,.6)]">{conteudo}</Link>
+                    <Link href={`/english/${m.numero}`} className="group flex h-full flex-col overflow-hidden rounded-[22px] border border-line bg-white text-navy hover:border-navy hover:shadow-[0_18px_40px_-28px_rgba(35,42,61,.6)]">{conteudo}</Link>
                   ) : (
                     <div className="flex h-full flex-col overflow-hidden rounded-[22px] border border-line bg-white text-navy opacity-80">{conteudo}</div>
                   )}

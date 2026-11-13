@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { iniciarSimulado } from "@/app/crew-actions";
 import { Arrow } from "@/components/icons";
-import { exigirCrewSelect } from "@/lib/crew-gate";
+import { cursosDoAluno } from "@/lib/crew-gate";
+import { exigirLogin } from "@/lib/supabase/server";
 
-export const metadata: Metadata = { title: "Simulados ANAC · Head Hunter", robots: { index: false } };
+export const metadata: Metadata = { title: "Simulados ANAC grátis", description: "Simulados gratuitos no estilo da prova teórica da ANAC para comissário de voo: 4 blocos temáticos e a prova completa." };
 
 /** Os 4 blocos da prova da ANAC + a prova completa (origem = chave do simulado criado na importação) */
 const BLOCOS = [
@@ -26,21 +26,6 @@ const Icone = ({ d, cor, size = 26 }: { d: string; cor: string; size?: number })
 const duracao = (min: number | null) => (!min ? "sem limite de tempo" : min >= 60 ? `${min / 60 === Math.floor(min / 60) ? min / 60 : (min / 60).toFixed(1)} ${min >= 120 ? "horas" : "hora"}` : `${min} min`);
 const mmss = (s: number) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, "0")}`;
 const dataCurta = (iso: string) => new Date(iso).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
-
-function SemAcesso() {
-  return (
-    <main className="flex min-h-[70vh] items-center justify-center bg-soft px-6 py-16">
-      <div className="flex max-w-[560px] flex-col items-center gap-4 rounded-[24px] border border-line bg-white p-8 text-center">
-        <span aria-hidden="true" className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-brand-soft text-2xl">✈︎</span>
-        <h1 className="font-display text-2xl font-extrabold">Simulados ANAC</h1>
-        <p className="text-[16px] leading-relaxed text-ink-2">
-          Os simulados da ANAC ainda não foram liberados para a sua conta. Fale com a equipe da Cabin Crew para ter acesso.
-        </p>
-        <Link href="/head-hunter" className="inline-flex min-h-12 items-center rounded-full bg-navy px-6 font-semibold text-white">Voltar ao Head Hunter</Link>
-      </div>
-    </main>
-  );
-}
 
 function Card({ titulo, valor, destaque }: { titulo: string; valor: string; destaque?: boolean }) {
   return (
@@ -79,12 +64,9 @@ function Grafico({ pontos, minima }: { pontos: { nota: number; data: string }[];
 }
 
 export default async function SimuladosAnac() {
-  const { supabase, user, liberado } = await exigirCrewSelect("/head-hunter/anac");
-  if (!liberado) redirect("/head-hunter");
-
-  // acesso aos Simulados ANAC: liberado aluno a aluno no painel (ou para todos)
-  const { data: acesso, error: semFuncao } = await supabase.rpc("anac_liberado");
-  if (!semFuncao && !acesso) return <SemAcesso />;
+  // Simulados ANAC: grátis para qualquer pessoa cadastrada
+  const { supabase, user } = await exigirLogin("/simulados-anac");
+  const temHeadHunter = (await cursosDoAluno(supabase, user.id)).has("head-hunter");
 
   const origens = [...BLOCOS.map((b) => b.origem), COMPLETA];
   const { data: sims } = await supabase.from("simulados").select("id, origem, titulo, qtd_questoes, tempo_min, nota_minima").in("origem", origens);
@@ -99,13 +81,13 @@ export default async function SimuladosAnac() {
       : Promise.resolve({ data: [] }),
   ]);
 
-  // um simulado só aparece para o aluno se a aula dele estiver publicada
+  // a aula ligada ao simulado (só para alunos do Head Hunter voltarem para ela)
   const aulaDe = new Map<number, string>();
   for (const a of (aulas ?? []) as { id: string; simulado_id: number }[]) if (!aulaDe.has(a.simulado_id)) aulaDe.set(a.simulado_id, a.id);
   const porOrigem = new Map(simulados.map((s) => [s.origem, s]));
   const disponivel = (origem: string) => {
     const s = porOrigem.get(origem);
-    return s && aulaDe.has(s.id) ? { ...s, aula: aulaDe.get(s.id)! } : null;
+    return s ? { ...s, aula: aulaDe.get(s.id) ?? "" } : null;
   };
   const completa = disponivel(COMPLETA);
   const blocos = BLOCOS.map((b) => ({ ...b, sim: disponivel(b.origem) }));
@@ -136,8 +118,8 @@ export default async function SimuladosAnac() {
     <main className="bg-soft pb-20">
       <section className="bg-navy text-white">
         <div className="mx-auto flex max-w-[1100px] flex-col items-center gap-5 px-6 pt-8 pb-14 text-center">
-          <Link href="/head-hunter" className="self-start text-sm font-semibold text-[#d7dbe6] hover:text-white">← Head Hunter</Link>
-          <span className="rounded-full border border-white/25 bg-white/10 px-4 py-1.5 text-sm font-semibold">✈︎ Simulado oficial</span>
+          {temHeadHunter && <Link href="/head-hunter" className="self-start text-sm font-semibold text-[#d7dbe6] hover:text-white">← Head Hunter</Link>}
+          <span className="rounded-full border border-white/25 bg-white/10 px-4 py-1.5 text-sm font-semibold">✈︎ Grátis para cadastrados</span>
           <h1 className="font-display text-[34px] leading-tight font-extrabold md:text-[48px]">Simulados da banca <span className="text-[#ff5a7a]">ANAC</span></h1>
           <p className="max-w-[640px] text-[17px] leading-relaxed text-[#d7dbe6]">
             Treine para a prova teórica de Comissário de Voo com questões no estilo da banca. Estude bloco por bloco ou encare a prova completa.

@@ -12,8 +12,8 @@ export const CURSOS: Record<string, { rotulo: string; testa: (p: PessoaAluno) =>
   sem_checkin: { rotulo: "Ainda não fez o check-in", testa: (p) => !p.companhia },
   estudou: { rotulo: "Concluiu alguma aula do Head Hunter", testa: (p) => p.aulas > 0 },
   nunca_estudou: { rotulo: "Nunca estudou (nenhuma atividade)", testa: (p) => !p.ultima },
-  ingles: { rotulo: "Começou o Inglês a bordo", testa: (p) => p.ingles > 0 },
-  ingles_completo: { rotulo: "Concluiu o Inglês a bordo", testa: (p) => p.ingles >= 44 },
+  ingles: { rotulo: "Começou o Flight Attendant English", testa: (p) => p.ingles > 0 },
+  ingles_completo: { rotulo: "Concluiu o Flight Attendant English", testa: (p) => p.ingles >= 44 },
   comprou: { rotulo: "Tem compra aprovada", testa: (p) => p.compras > 0 },
   nunca_comprou: { rotulo: "Nunca comprou", testa: (p) => p.compras === 0 },
 };

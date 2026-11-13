@@ -20,6 +20,11 @@ const nextConfig: NextConfig = {
       { source: "/crew-select/:path*", destination: "/head-hunter/:path*", permanent: true },
       { source: "/admin/crew-select", destination: "/admin/head-hunter", permanent: true },
       { source: "/admin/crew-select/:path*", destination: "/admin/head-hunter/:path*", permanent: true },
+      // Flight Attendant English, Simulados ANAC e checkout ganharam endereços próprios
+      { source: "/head-hunter/ingles-a-bordo", destination: "/english", permanent: true },
+      { source: "/head-hunter/ingles-a-bordo/:path*", destination: "/english/:path*", permanent: true },
+      { source: "/head-hunter/anac", destination: "/simulados-anac", permanent: true },
+      { source: "/head-hunter/comprar", destination: "/comprar/head-hunter", permanent: true },
     ];
     return [...internos, ...["comissariadevoo.com.br", "www.comissariadevoo.com.br", "www.cabincrew.com.br"].map((host) => ({
       source: "/:path*",

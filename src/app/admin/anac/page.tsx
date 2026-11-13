@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { bloquearUsuario, excluirUsuario, liberarAnac } from "@/app/crew-actions";
-import { Card, Chave, Titulo } from "@/components/admin-ui";
+import { Titulo } from "@/components/admin-ui";
 import { Barras, Distribuicao, Funil, LinhaNota, Variacao } from "@/components/graficos";
 import { getUser } from "@/lib/supabase/server";
 
@@ -105,20 +105,11 @@ export default async function AdminAnac({ searchParams }: { searchParams: Promis
   return (
     <>
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <Titulo sub="Quem está treinando, como estão indo e quem pode acessar os Simulados ANAC.">Simulado ANAC</Titulo>
+        <Titulo sub="Quem está treinando e como estão indo nos Simulados ANAC.">Simulado ANAC</Titulo>
         {!p.semana && <span className="rounded-full bg-[#fff3e0] px-3 py-1.5 text-sm font-semibold text-[#8a4b00]">Rode o SQL 0017 para ver os gráficos</span>}
       </div>
 
-      <Card>
-        <Chave
-          chave="anac_para_todos"
-          ligado={p.para_todos}
-          titulo="Liberar para todos os alunos"
-          descricao={p.para_todos
-            ? "Ligado: qualquer aluno do Head Hunter faz os Simulados ANAC (menos os bloqueados)."
-            : `Desligado: só os ${p.com_acesso} ${p.com_acesso === 1 ? "aluno adicionado" : "alunos adicionados"} por você fazem os Simulados ANAC.`}
-        />
-      </Card>
+      <p className="rounded-2xl bg-[#e5f6ec] px-5 py-4 text-[15px] text-[#0f6b3a]">Os Simulados ANAC são <strong>grátis para qualquer pessoa cadastrada</strong> (página pública <a href="/simulados-anac" target="_blank" className="font-semibold underline">/simulados-anac</a>). A lista abaixo serve para acompanhar quem está treinando e bloquear contas, se precisar.</p>
 
       <div className="flex flex-wrap gap-3">
         <Kpi rotulo="Alunos ativos (7 dias)" valor={sem?.alunos ?? p.ativos_7d}>

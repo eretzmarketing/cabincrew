@@ -6,13 +6,13 @@ import CursoPlayer from "@/components/CursoPlayer";
 import InglesAula from "@/components/InglesAula";
 import { TODAS_AULAS, acharAula, chaveAula } from "@/lib/ingles-a-bordo";
 import { aulaLiberada, carregarIngles } from "@/lib/ingles-dados";
-import { exigirCrewSelect } from "@/lib/crew-gate";
+import { exigirCurso } from "@/lib/crew-gate";
 import { navegacaoIngles } from "@/lib/curso-navegacao";
 
 export async function generateMetadata({ params }: { params: Promise<{ modulo: string; aula: string }> }): Promise<Metadata> {
   const { modulo, aula } = await params;
   const r = acharAula(Number(modulo), Number(aula));
-  return { title: r ? `${r.aula.titulo} · Inglês a bordo` : "Inglês a bordo", robots: { index: false } };
+  return { title: r ? `${r.aula.titulo} · Flight Attendant English` : "Flight Attendant English", robots: { index: false } };
 }
 
 export default async function AulaInglesPage({ params }: { params: Promise<{ modulo: string; aula: string }> }) {
@@ -20,11 +20,11 @@ export default async function AulaInglesPage({ params }: { params: Promise<{ mod
   if (!/^\d+$/.test(modulo) || !/^\d+$/.test(aula)) notFound();
   const r = acharAula(Number(modulo), Number(aula));
   if (!r) notFound();
-  const { supabase, user, profile, liberado } = await exigirCrewSelect(`/head-hunter/ingles-a-bordo/${modulo}/${aula}`);
-  if (!liberado) redirect("/head-hunter");
+  const { supabase, user, profile, liberado } = await exigirCurso("english", `/english/${modulo}/${aula}`);
+  if (!liberado) redirect("/english");
   const { audios, progresso, comProgresso } = await carregarIngles(supabase, user.id);
   const chave = chaveAula(r.aula);
-  if (!aulaLiberada(chave, progresso, profile.is_admin || !comProgresso)) redirect(`/head-hunter/ingles-a-bordo/${modulo}`);
+  if (!aulaLiberada(chave, progresso, profile.is_admin || !comProgresso)) redirect(`/english/${modulo}`);
 
   const i = TODAS_AULAS.findIndex((a) => chaveAula(a) === chave);
   const prox = TODAS_AULAS[i + 1];
@@ -34,7 +34,7 @@ export default async function AulaInglesPage({ params }: { params: Promise<{ mod
   const feita = !!progresso[chave]?.concluida;
 
   return (
-    <CursoPlayer curso="Inglês a bordo" voltar={{ href: "/head-hunter/ingles-a-bordo", rotulo: "Inglês a bordo" }} secoes={nav.secoes} feitas={nav.feitas} total={nav.total}
+    <CursoPlayer curso="Flight Attendant English" voltar={{ href: "/english", rotulo: "Flight Attendant English" }} secoes={nav.secoes} feitas={nav.feitas} total={nav.total}
       rodape={
         <>
           {anterior ? <Link href={anterior.href} className="inline-flex min-h-12 items-center rounded-full px-3 font-semibold text-navy hover:bg-soft">← <span className="ml-1 hidden sm:inline">Anterior</span></Link> : <span />}
@@ -65,7 +65,7 @@ export default async function AulaInglesPage({ params }: { params: Promise<{ mod
           audio={audios[chave]}
           notaAnterior={progresso[chave]?.nota}
           logado={comProgresso}
-          proxima={prox ? { href: `/head-hunter/ingles-a-bordo/${prox.modulo}/${prox.numero}`, titulo: prox.titulo } : undefined}
+          proxima={prox ? { href: `/english/${prox.modulo}/${prox.numero}`, titulo: prox.titulo } : undefined}
         />
       </div>
     </CursoPlayer>

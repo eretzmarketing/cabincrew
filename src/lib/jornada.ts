@@ -44,7 +44,7 @@ const ETAPAS: Record<string, EtapaBase> = {
     id: "tecnica", titulo: "Prova técnica (ANAC)", resumo: "Conhecimentos da banca ANAC: segurança, legislação, primeiros socorros e técnicos.",
     tarefas: [
       { tipo: "treino", banco: "anac", titulo: "Treinos da banca ANAC" },
-      { tipo: "simulado", origem: "cc-anac-completo", titulo: "Simulado completo da ANAC no modo Prova real", href: "/head-hunter/anac" },
+      { tipo: "simulado", origem: "cc-anac-completo", titulo: "Simulado completo da ANAC no modo Prova real", href: "/simulados-anac" },
       { tipo: "treino", banco: "tecnico", titulo: "Questões técnicas extras" },
     ],
     dica: {
@@ -88,7 +88,7 @@ const ETAPAS: Record<string, EtapaBase> = {
 
 export const ETAPA_INGLES: EtapaBase = {
   id: "ingles", titulo: "Inglês (em paralelo)", resumo: "O idioma leva tempo: estude um pouco todo dia, desde o começo.",
-  tarefas: [{ tipo: "ingles", titulo: "Curso Inglês a bordo" }, { tipo: "treino", banco: "ingles", titulo: "Treinos de inglês" }],
+  tarefas: [{ tipo: "ingles", titulo: "Curso Flight Attendant English" }, { tipo: "treino", banco: "ingles", titulo: "Treinos de inglês" }],
   dica: {
     latam: "Na LATAM, 50% das vagas vão para quem tem inglês ICAO nível 4 ou mais.",
     gol: "A GOL pede conversação em inglês e espanhol.",
@@ -107,6 +107,7 @@ const ORDEM: Record<Companhia, string[]> = {
 export type DadosJornada = {
   companhias: Companhia[];
   anacLiberado: boolean;
+  temEnglish?: boolean;                               // Flight Attendant English é vendido à parte
   modulos: { id: number; ordem: number; titulo: string }[];
   aulas: { id: string; modulo_id: number; ordem: number; titulo: string }[];
   concluidas: Map<string, string>;                    // aula_id -> concluida_em
@@ -181,9 +182,10 @@ export function avaliar(t: Tarefa, d: DadosJornada): StatusTarefa {
       };
     }
     case "ingles": {
+      if (!d.temEnglish) return { titulo: t.titulo, href: "/planos#english", feito: false, progresso: 0, detalhe: "Curso à parte · conheça o curso completo de inglês para aviação" };
       const total = TODAS_AULAS.length;
       const f = TODAS_AULAS.filter((a) => d.ingles.get(chaveAula(a))?.concluida).length;
-      return { titulo: t.titulo, href: "/head-hunter/ingles-a-bordo", feito: total > 0 && f === total, progresso: total ? f / total : 0, detalhe: `${f} de ${total} aulas` };
+      return { titulo: t.titulo, href: "/english", feito: total > 0 && f === total, progresso: total ? f / total : 0, detalhe: `${f} de ${total} aulas` };
     }
   }
 }
@@ -255,8 +257,8 @@ function missaoDoDia(d: DadosJornada, etapas: EtapaAvaliada[], atual: number): I
   }
   const feitoAula = [...d.concluidas.values()].some((c) => diaSP(c) === d.hoje);
 
-  // 3) inglês: próxima aula do Inglês a bordo, ou um treino de inglês
-  const proxIngles = TODAS_AULAS.find((a) => !d.ingles.get(chaveAula(a))?.concluida);
+  // 3) inglês: próxima aula do Flight Attendant English, ou um treino de inglês
+  const proxIngles = d.temEnglish ? TODAS_AULAS.find((a) => !d.ingles.get(chaveAula(a))?.concluida) : undefined;
   const feitoIngles = [...d.ingles.values()].some((x) => diaSP(x.updated_at) === d.hoje) || hojeTreinos.some((t) => bancoDe(t.simulado_id) === "ingles");
 
   return [
@@ -265,7 +267,7 @@ function missaoDoDia(d: DadosJornada, etapas: EtapaAvaliada[], atual: number): I
       ? { id: "aula", titulo: `Aula: ${aula.titulo}`, detalhe: aula.modulo, feito: feitoAula, href: `/head-hunter/aula/${aula.id}` }
       : { id: "aula", titulo: "Revise um módulo", detalhe: "Você concluiu as aulas disponíveis da sua etapa.", feito: feitoAula, href: "/head-hunter#modulos" },
     proxIngles
-      ? { id: "ingles", titulo: `Inglês: ${proxIngles.titulo}`, detalhe: `Aula ${chaveAula(proxIngles)} do Inglês a bordo`, feito: feitoIngles, href: `/head-hunter/ingles-a-bordo/${proxIngles.modulo}/${proxIngles.numero}` }
+      ? { id: "ingles", titulo: `Inglês: ${proxIngles.titulo}`, detalhe: `Aula ${chaveAula(proxIngles)} do Flight Attendant English`, feito: feitoIngles, href: `/english/${proxIngles.modulo}/${proxIngles.numero}` }
       : { id: "ingles", titulo: "Treino rápido de inglês", detalhe: "10 questões com correção na hora.", feito: feitoIngles, acao: { banco: "ingles" } },
   ];
 }

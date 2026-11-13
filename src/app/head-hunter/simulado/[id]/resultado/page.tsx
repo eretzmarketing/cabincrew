@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { iniciarSimulado, iniciarTreino } from "@/app/crew-actions";
 import { Check } from "@/components/icons";
-import { exigirCrewSelect } from "@/lib/crew-gate";
+import { exigirLogin } from "@/lib/supabase/server";
 import type { QuestaoGabarito, Simulado, Tentativa } from "@/lib/crew";
 
 export const metadata: Metadata = { title: "Resultado do simulado · Head Hunter", robots: { index: false } };
@@ -15,7 +15,7 @@ export default async function ResultadoPage({ params, searchParams }: { params: 
   const { aula } = await searchParams;
   if (!UUID.test(id)) notFound();
   const aulaId = aula && UUID.test(aula) ? aula : "";
-  const { supabase } = await exigirCrewSelect(`/head-hunter/simulado/${id}/resultado`);
+  const { supabase } = await exigirLogin(`/head-hunter/simulado/${id}/resultado`);
 
   const { data: t } = await supabase.from("tentativas").select("*").eq("id", id).maybeSingle();
   const tentativa = t as Tentativa | null;
@@ -36,7 +36,7 @@ export default async function ResultadoPage({ params, searchParams }: { params: 
   const anac = origem.startsWith("cc-anac");
   const treino = origem.startsWith("cc-treino-") ? origem.slice("cc-treino-".length) : null;
   const saidas = (tentativa as Tentativa & { saidas_aba?: number }).saidas_aba ?? 0;
-  const voltar = treino ? { href: "/head-hunter#jornada", texto: "Voltar à jornada" } : anac ? { href: "/head-hunter/anac", texto: "Simulados ANAC" } : aulaId ? { href: `/head-hunter/aula/${aulaId}`, texto: "Voltar para a aula" } : null;
+  const voltar = treino === "anac" ? { href: "/simulados-anac", texto: "Simulados ANAC" } : treino ? { href: "/head-hunter#jornada", texto: "Voltar à jornada" } : anac ? { href: "/simulados-anac", texto: "Simulados ANAC" } : aulaId ? { href: `/head-hunter/aula/${aulaId}`, texto: "Voltar para a aula" } : null;
 
   // desempenho por categoria (ex.: blocos da ANAC)
   const porCategoria = new Map<string, { certas: number; total: number }>();

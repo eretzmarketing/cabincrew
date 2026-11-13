@@ -41,8 +41,8 @@ export default async function AdminCrewSelect() {
         <Chave
           chave="crew_select_aberto"
           ligado={cfg.crew_select_aberto}
-          titulo="Head Hunter liberado para todos, sem pagamento"
-          descricao="Ligado: todo cadastrado acessa os módulos publicados. Desligado: só quem comprou (ou quem você liberar na página do aluno) acessa; os demais veem a página de venda."
+          titulo="Cursos liberados para todos, sem pagamento"
+          descricao="Ligado: todo cadastrado acessa o Head Hunter e o Flight Attendant English. Desligado: só quem comprou (ou quem você liberar na página do aluno) acessa; os demais veem a página de venda."
         />
       </Card>
 

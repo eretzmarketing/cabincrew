@@ -6,14 +6,14 @@ import { getUser } from "@/lib/supabase/server";
 export const metadata: Metadata = { title: "Produtos e preços" };
 export const dynamic = "force-dynamic";
 
-type P = { slug: string; nome: string; preco: number; desconto_pix: number; descricao: string | null; ativo: boolean; dias_apos_conclusao?: number };
+type P = { slug: string; nome: string; preco: number; desconto_pix: number; descricao: string | null; ativo: boolean; dias_apos_conclusao?: number; destaque?: string | null; topicos?: string[] | null; ordem?: number };
 
 export default async function ProdutosPage() {
   const { supabase } = await getUser();
-  const { data, error } = await supabase.from("produtos").select("*").order("nome");
+  const { data, error } = await supabase.from("produtos").select("*").order("ordem");
   return (
     <>
-      <Titulo sub="O preço vale na hora no checkout. Compras já feitas não mudam.">Produtos e preços</Titulo>
+      <Titulo sub={<>O preço vale na hora no checkout e na <a href="/planos" target="_blank" className="font-semibold underline underline-offset-4">página Planos</a>. Compras já feitas não mudam. O combo libera os dois cursos.</>}>Produtos e preços</Titulo>
       {error ? <p className="rounded-2xl bg-brand-soft p-5 text-brand-deep">Rode o SQL <strong>0042_pagamentos.sql</strong> no Supabase para ativar esta página.</p> : (
         ((data ?? []) as P[]).map((p) => (
           <Card key={p.slug}>

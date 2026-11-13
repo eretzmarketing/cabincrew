@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import Prova from "@/components/Prova";
-import { exigirCrewSelect } from "@/lib/crew-gate";
+import { exigirLogin } from "@/lib/supabase/server";
 import type { QuestaoProva, Simulado, Tentativa } from "@/lib/crew";
 
 export const metadata: Metadata = { title: "Simulado · Head Hunter", robots: { index: false } };
@@ -13,8 +13,8 @@ export default async function SimuladoPage({ params, searchParams }: { params: P
   const { aula } = await searchParams;
   if (!UUID.test(id)) notFound();
   const aulaId = aula && UUID.test(aula) ? aula : "";
-  const { supabase, liberado } = await exigirCrewSelect(`/head-hunter/simulado/${id}`);
-  if (!liberado) redirect("/head-hunter");
+  // o banco só deixa abrir tentativas do próprio aluno, criadas quando ele tinha acesso (ANAC é grátis)
+  const { supabase } = await exigirLogin(`/head-hunter/simulado/${id}`);
 
   const { data: t } = await supabase.from("tentativas").select("*").eq("id", id).maybeSingle();
   const tentativa = t as Tentativa | null;
