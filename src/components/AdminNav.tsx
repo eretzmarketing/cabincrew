@@ -33,7 +33,7 @@ export const GRUPOS: Grupo[] = [
   { id: "campanhas", label: "Campanhas", itens: [{ href: "/admin/campanhas", label: "Campanhas" }] },
   {
     id: "financeiro", label: "Financeiro",
-    itens: [{ href: "/admin/compras", label: "Compras" }, { href: "/admin/produtos", label: "Produtos e preços" }],
+    itens: [{ href: "/admin/compras", label: "Compras" }, { href: "/admin/produtos", label: "Planos e preços" }],
   },
   {
     id: "site", label: "Site e comunidade",

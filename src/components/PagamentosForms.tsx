@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { adicionarAoCurso, salvarConexaoMP, salvarProduto } from "@/app/pagamentos-actions";
+import { adicionarAoCurso, criarProduto, salvarConexaoMP, salvarProduto } from "@/app/pagamentos-actions";
 
 const campo = "w-full rounded-xl border border-[#c9cedb] bg-white px-4 py-3 text-[15px] outline-none focus:border-navy";
 const btn = "inline-flex min-h-11 cursor-pointer items-center justify-center rounded-full bg-navy px-5 font-semibold text-white hover:bg-navy-deep disabled:opacity-50";
@@ -39,52 +39,98 @@ export function ConexaoMPForm({ publicKey, conectado, temSegredo }: { publicKey:
   );
 }
 
-export function ProdutoForm({ p }: { p: { slug: string; preco: number; desconto_pix: number; descricao: string | null; ativo: boolean; dias_apos_conclusao?: number; destaque?: string | null; topicos?: string[] | null } }) {
-  const [s, acao, pend] = useActionState(salvarProduto, {});
-  const [preco, setPreco] = useState(String(p.preco).replace(".", ","));
-  const [desc, setDesc] = useState(String(p.desconto_pix).replace(".", ","));
+export type Plano = {
+  slug: string; nome: string; preco: number; desconto_pix: number; descricao: string | null; ativo: boolean; dias_apos_conclusao?: number;
+  destaque?: string | null; topicos?: string[] | null; ordem?: number; inclui?: string[] | null;
+};
+
+const CURSOS = [["head-hunter", "Head Hunter"], ["english", "Flight Attendant English"]] as const;
+
+/** Campos de um plano (usados para editar e para criar). */
+function CamposPlano({ p, id, base }: { p?: Plano; id: string; base: boolean }) {
+  const [preco, setPreco] = useState(p ? String(p.preco).replace(".", ",") : "");
+  const [desc, setDesc] = useState(p ? String(p.desconto_pix).replace(".", ",") : "5");
   const n = Number(preco.replace(/\./g, "").replace(",", ".")) || 0;
   const d = Number(desc.replace(",", ".")) || 0;
   const reais = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  const rot = "text-[14px] font-semibold";
   return (
-    <form action={acao} className="flex flex-col gap-4">
-      <input type="hidden" name="slug" value={p.slug} />
-      <div className="grid gap-4 sm:grid-cols-2">
+    <>
+      <div className="grid gap-4 sm:grid-cols-[1fr_120px]">
         <div className="flex flex-col gap-1">
-          <label htmlFor={`preco-${p.slug}`} className="text-[14px] font-semibold">Preço (R$)</label>
-          <input id={`preco-${p.slug}`} name="preco" inputMode="decimal" value={preco} onChange={(e) => setPreco(e.target.value)} className={campo} />
+          <label htmlFor={`nome-${id}`} className={rot}>Nome do plano</label>
+          <input id={`nome-${id}`} name="nome" defaultValue={p?.nome} required maxLength={80} placeholder="Ex.: Head Hunter · Black Friday" className={campo} />
         </div>
         <div className="flex flex-col gap-1">
-          <label htmlFor={`pix-${p.slug}`} className="text-[14px] font-semibold">Desconto no Pix (%)</label>
-          <input id={`pix-${p.slug}`} name="desconto_pix" inputMode="decimal" value={desc} onChange={(e) => setDesc(e.target.value)} className={campo} />
+          <label htmlFor={`ordem-${id}`} className={rot}>Ordem</label>
+          <input id={`ordem-${id}`} name="ordem" type="number" min={0} max={999} defaultValue={p?.ordem ?? 10} className={campo} />
         </div>
       </div>
-      <div className="flex flex-col gap-1">
-        <label htmlFor={`dias-${p.slug}`} className="text-[14px] font-semibold">Dias de acesso depois de concluir o curso</label>
-        <input id={`dias-${p.slug}`} name="dias_apos_conclusao" type="number" min={0} max={365} defaultValue={p.dias_apos_conclusao ?? 30} className={`${campo} sm:max-w-[200px]`} />
-        <span className="text-[13px] text-muted">Tempo para o aluno revisar antes da seleção. Use 0 para encerrar no mesmo dia.</span>
+      <fieldset className="flex flex-col gap-2">
+        <legend className={`${rot} mb-1`}>Cursos que este plano libera</legend>
+        <div className="flex flex-wrap gap-2">
+          {CURSOS.map(([k, r]) => (
+            <label key={k} className={`flex min-h-11 items-center gap-2 rounded-xl border-2 border-line px-4 text-[15px] font-semibold ${base ? "opacity-70" : "cursor-pointer"}`}>
+              <input type="checkbox" name="inclui" value={k} defaultChecked={(p?.inclui ?? []).includes(k)} disabled={base} className="h-5 w-5 accent-[#1f2a44]" />{r}
+            </label>
+          ))}
+        </div>
+        {base && <span className="text-[13px] text-muted">Este é o próprio curso: sempre libera só ele.</span>}
+      </fieldset>
+      <div className="grid gap-4 sm:grid-cols-3">
+        <div className="flex flex-col gap-1">
+          <label htmlFor={`preco-${id}`} className={rot}>Preço (R$)</label>
+          <input id={`preco-${id}`} name="preco" inputMode="decimal" value={preco} onChange={(e) => setPreco(e.target.value)} placeholder="250,00" className={campo} />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label htmlFor={`pix-${id}`} className={rot}>Desconto no Pix (%)</label>
+          <input id={`pix-${id}`} name="desconto_pix" inputMode="decimal" value={desc} onChange={(e) => setDesc(e.target.value)} className={campo} />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label htmlFor={`dias-${id}`} className={rot}>Dias extras após concluir</label>
+          <input id={`dias-${id}`} name="dias_apos_conclusao" type="number" min={0} max={365} defaultValue={p?.dias_apos_conclusao ?? 30} className={campo} />
+        </div>
       </div>
       <p className="rounded-xl bg-soft px-4 py-3 text-[15px]">
         No checkout: <strong>{reais(n)}</strong> no cartão (até 12x, juros por conta do aluno) · <strong className="text-[#0f6b3a]">{reais(Math.round(n * (100 - d)) / 100)}</strong> no Pix
       </p>
       <div className="flex flex-col gap-1">
-        <label htmlFor={`desc-${p.slug}`} className="text-[14px] font-semibold">Descrição</label>
-        <textarea id={`desc-${p.slug}`} name="descricao" defaultValue={p.descricao ?? ""} rows={2} maxLength={500} className={campo} />
+        <label htmlFor={`desc-${id}`} className={rot}>Descrição <span className="font-normal text-muted">(o trecho antes dos dois-pontos vira o subtítulo do cartão)</span></label>
+        <textarea id={`desc-${id}`} name="descricao" defaultValue={p?.descricao ?? ""} rows={2} maxLength={500} className={campo} />
       </div>
       <div className="flex flex-col gap-1">
-        <label htmlFor={`top-${p.slug}`} className="text-[14px] font-semibold">Principais tópicos na página Planos <span className="font-normal text-muted">(um por linha)</span></label>
-        <textarea id={`top-${p.slug}`} name="topicos" defaultValue={(p.topicos ?? []).join("\n")} rows={6} className={campo} />
+        <label htmlFor={`top-${id}`} className={rot}>Principais tópicos na página Planos <span className="font-normal text-muted">(um por linha)</span></label>
+        <textarea id={`top-${id}`} name="topicos" defaultValue={(p?.topicos ?? []).join("\n")} rows={5} className={campo} />
       </div>
       <div className="flex flex-col gap-1">
-        <label htmlFor={`dest-${p.slug}`} className="text-[14px] font-semibold">Tarja de destaque <span className="font-normal text-muted">(opcional, ex.: Mais popular)</span></label>
-        <input id={`dest-${p.slug}`} name="destaque" defaultValue={p.destaque ?? ""} maxLength={30} className={`${campo} sm:max-w-[320px]`} />
+        <label htmlFor={`dest-${id}`} className={rot}>Tarja de destaque <span className="font-normal text-muted">(opcional, ex.: Mais popular)</span></label>
+        <input id={`dest-${id}`} name="destaque" defaultValue={p?.destaque ?? ""} maxLength={30} className={`${campo} sm:max-w-[320px]`} />
       </div>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <label className="flex min-h-11 cursor-pointer items-center gap-2 text-[15px] font-semibold">
-          <input type="checkbox" name="ativo" defaultChecked={p.ativo} className="h-5 w-5 accent-[#c8102e]" /> À venda
-        </label>
-        <button className={btn} disabled={pend}>{pend ? "Salvando…" : "Salvar"}</button>
-      </div>
+      <label className="flex min-h-11 cursor-pointer items-center gap-2 text-[15px] font-semibold">
+        <input type="checkbox" name="ativo" defaultChecked={p?.ativo ?? true} className="h-5 w-5 accent-[#c8102e]" /> Ativo (aparece em Planos e pode ser comprado)
+      </label>
+    </>
+  );
+}
+
+export function ProdutoForm({ p, base }: { p: Plano; base: boolean }) {
+  const [s, acao, pend] = useActionState(salvarProduto, {});
+  return (
+    <form action={acao} className="flex flex-col gap-4">
+      <input type="hidden" name="slug" value={p.slug} />
+      <CamposPlano p={p} id={p.slug} base={base} />
+      <div className="flex justify-end"><button className={btn} disabled={pend}>{pend ? "Salvando…" : "Salvar"}</button></div>
+      <Aviso s={s} />
+    </form>
+  );
+}
+
+export function NovoPlanoForm() {
+  const [s, acao, pend] = useActionState(criarProduto, {});
+  return (
+    <form action={acao} className="flex flex-col gap-4">
+      <CamposPlano id="novo" base={false} />
+      <div className="flex justify-end"><button className={btn} disabled={pend}>{pend ? "Criando…" : "Criar plano"}</button></div>
       <Aviso s={s} />
     </form>
   );

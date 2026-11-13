@@ -37,8 +37,8 @@ export async function POST(req: Request) {
 
   const corpo = (await req.json().catch(() => ({}))) as { produto?: string; metodo?: string; cpf?: string; cartao?: Record<string, unknown> };
   const slug = corpo.produto ?? "head-hunter";
-  const { data: prod } = await supabase.from("produtos").select("slug, nome, preco, desconto_pix, ativo, inclui").eq("slug", slug).maybeSingle();
-  if (!prod?.ativo) return NextResponse.json({ erro: "Produto indisponível." }, { status: 404 });
+  const { data: prod } = await supabase.from("produtos").select("*").eq("slug", slug).maybeSingle();
+  if (!prod?.ativo || prod.excluido) return NextResponse.json({ erro: "Produto indisponível." }, { status: 404 });
   const ativos = await cursosDoAluno(supabase, user.id);
   if (((prod.inclui as string[] | null) ?? [slug]).every((c) => ativos.has(c))) return NextResponse.json({ erro: `Você já tem acesso a ${prod.nome}.` }, { status: 409 });
 

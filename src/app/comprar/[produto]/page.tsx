@@ -17,7 +17,7 @@ export default async function ComprarPage({ params }: { params: Promise<{ produt
   const { supabase, user, profile } = await exigirLogin(`/comprar/${slug}`);
   const { data } = await supabase.from("produtos").select("*").eq("slug", slug).maybeSingle();
   const prod = data as Prod | null;
-  if (!prod) notFound();
+  if (!prod || (prod as Prod & { excluido?: boolean }).excluido) notFound();
   const ativos = await cursosDoAluno(supabase, user.id);
   const inclui = prod.inclui ?? [prod.slug];
   if (inclui.every((c) => ativos.has(c))) redirect(prod.endereco ?? "/head-hunter");

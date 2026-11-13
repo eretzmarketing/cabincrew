@@ -42,25 +42,81 @@ export async function salvarConexaoMP(_: Estado, form: FormData): Promise<Estado
   return { ok: true, msg: `Conectado à conta ${teste.conta} ✓${accessToken.startsWith("TEST-") ? " (modo de teste: nenhuma cobrança é real)" : ""}` };
 }
 
-/** Admin: preço, desconto no Pix e se o produto está à venda. */
-export async function salvarProduto(_: Estado, form: FormData): Promise<Estado> {
-  const { supabase } = await admin();
-  const slug = String(form.get("slug") ?? "");
+const CURSOS_BASE = ["head-hunter", "english"];
+const ENDERECO: Record<string, string> = { "head-hunter": "/head-hunter", english: "/english" };
+
+/** Lê e confere os campos comuns de um plano. */
+function lerPlano(form: FormData) {
+  const nome = String(form.get("nome") ?? "").trim().slice(0, 80);
   const preco = Number(String(form.get("preco") ?? "").replace(/\./g, "").replace(",", "."));
-  const desconto = Number(String(form.get("desconto_pix") ?? "0").replace(",", "."));
+  const desconto = Number(String(form.get("desconto_pix") ?? "0").replace(",", ".") || 0);
   const descricao = String(form.get("descricao") ?? "").trim().slice(0, 500);
   const dias = Number(form.get("dias_apos_conclusao") ?? 30);
+  const ordem = Number(form.get("ordem") ?? 0);
   const destaque = String(form.get("destaque") ?? "").trim().slice(0, 30) || null;
   const topicos = String(form.get("topicos") ?? "").split("\n").map((t) => t.trim()).filter(Boolean).slice(0, 12).map((t) => t.slice(0, 140));
-  if (!Number.isInteger(dias) || dias < 0 || dias > 365) return { erro: "Os dias extras após concluir vão de 0 a 365." };
-  if (!Number.isFinite(preco) || preco < 1 || preco > 100000) return { erro: "Informe um preço válido (ex.: 250,00)." };
-  if (!Number.isFinite(desconto) || desconto < 0 || desconto > 50) return { erro: "O desconto no Pix vai de 0 a 50%." };
-  const { error } = await supabase.from("produtos").update({ preco: Math.round(preco * 100) / 100, desconto_pix: desconto, dias_apos_conclusao: dias, destaque, topicos, descricao: descricao || null, ativo: form.get("ativo") === "on", updated_at: new Date().toISOString() }).eq("slug", slug);
-  if (error) return { erro: "Não foi possível salvar." };
+  const inclui = CURSOS_BASE.filter((c) => form.getAll("inclui").includes(c));
+  if (nome.length < 2) return { erro: "Dê um nome ao plano." } as const;
+  if (!Number.isFinite(preco) || preco < 1 || preco > 100000) return { erro: "Informe um preço válido (ex.: 250,00)." } as const;
+  if (!Number.isFinite(desconto) || desconto < 0 || desconto > 50) return { erro: "O desconto no Pix vai de 0 a 50%." } as const;
+  if (!Number.isInteger(dias) || dias < 0 || dias > 365) return { erro: "Os dias extras após concluir vão de 0 a 365." } as const;
+  if (!Number.isInteger(ordem) || ordem < 0 || ordem > 999) return { erro: "A ordem vai de 0 a 999." } as const;
+  return {
+    dados: {
+      nome, preco: Math.round(preco * 100) / 100, desconto_pix: desconto, dias_apos_conclusao: dias, ordem, destaque, topicos,
+      descricao: descricao || null, ativo: form.get("ativo") === "on", updated_at: new Date().toISOString(),
+    },
+    inclui,
+  } as const;
+}
+
+function revalidarPlanos() {
   revalidatePath("/admin/produtos");
   revalidatePath("/head-hunter");
   revalidatePath("/planos");
-  return { ok: true, msg: "Salvo ✓ O novo preço já vale no checkout." };
+}
+
+/** Admin: salva um plano (nome, preço, desconto no Pix, tópicos, tarja, ordem, cursos incluídos, ativo). */
+export async function salvarProduto(_: Estado, form: FormData): Promise<Estado> {
+  const { supabase } = await admin();
+  const slug = String(form.get("slug") ?? "");
+  const r = lerPlano(form);
+  if ("erro" in r) return { erro: r.erro };
+  const base = CURSOS_BASE.includes(slug);
+  if (!base && !r.inclui.length) return { erro: "Marque pelo menos um curso que este plano libera." };
+  const extra = base ? {} : { inclui: r.inclui, endereco: ENDERECO[r.inclui[0]] };
+  const { error } = await supabase.from("produtos").update({ ...r.dados, ...extra }).eq("slug", slug);
+  if (error) return { erro: error.message.includes("excluido") || error.message.includes("ordem") ? "Rode o SQL 0046_planos_editaveis.sql no Supabase." : "Não foi possível salvar." };
+  revalidarPlanos();
+  return { ok: true, msg: "Salvo ✓ Já vale na página Planos e no checkout." };
+}
+
+/** Admin: cria um plano novo (ex.: promoção, combo diferente). */
+export async function criarProduto(_: Estado, form: FormData): Promise<Estado> {
+  const { supabase } = await admin();
+  const r = lerPlano(form);
+  if ("erro" in r) return { erro: r.erro };
+  if (!r.inclui.length) return { erro: "Marque pelo menos um curso que este plano libera." };
+  const base = r.dados.nome.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 30) || "plano";
+  let slug = base;
+  for (let n = 2; n < 50; n++) {
+    const { data } = await supabase.from("produtos").select("slug").eq("slug", slug).maybeSingle();
+    if (!data) break;
+    slug = `${base}-${n}`;
+  }
+  const { error } = await supabase.from("produtos").insert({ slug, ...r.dados, inclui: r.inclui, endereco: ENDERECO[r.inclui[0]] });
+  if (error) return { erro: error.message.includes("excluido") || error.message.includes("ordem") ? "Rode o SQL 0046_planos_editaveis.sql no Supabase." : "Não foi possível criar o plano." };
+  revalidarPlanos();
+  redirect(`/admin/produtos?criado=${slug}#${slug}`);
+}
+
+/** Admin: exclui um plano (fica escondido; compras já feitas continuam registradas). */
+export async function excluirProduto(form: FormData) {
+  const { supabase } = await admin();
+  const slug = String(form.get("slug") ?? "");
+  if (!slug || CURSOS_BASE.includes(slug)) return;
+  await supabase.from("produtos").update({ excluido: true, ativo: false, updated_at: new Date().toISOString() }).eq("slug", slug);
+  revalidarPlanos();
 }
 
 /** Admin: libera ou encerra o acesso de um aluno ao Head Hunter. */

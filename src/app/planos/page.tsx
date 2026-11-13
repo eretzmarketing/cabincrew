@@ -34,8 +34,8 @@ export default async function PlanosPage() {
     supabase.from("produtos").select("*").order("ordem"),
     user ? cursosDoAluno(supabase, user.id) : Promise.resolve(new Set<string>()),
   ]);
-  const produtos = ((data ?? []) as Prod[]).filter((p) => p.ativo);
-  const precoDe = (slug: string) => Number(produtos.find((p) => p.slug === slug)?.preco ?? 0);
+  const produtos = ((data ?? []) as (Prod & { excluido?: boolean })[]).filter((p) => p.ativo && !p.excluido);
+  const precoDe = (slug: string) => Number(((data ?? []) as Prod[]).find((p) => p.slug === slug)?.preco ?? 0);
 
   return (
     <main className="bg-soft">
@@ -74,8 +74,8 @@ export default async function PlanosPage() {
               className={`relative flex scroll-mt-24 flex-col gap-5 rounded-[24px] p-6 ${escuro ? "bg-navy text-white shadow-[0_26px_60px_-30px_rgba(35,42,61,.9)] ring-4 ring-brand" : "border border-line bg-white shadow-[0_18px_40px_-30px_rgba(35,42,61,.5)]"}`}>
               {p.destaque && <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full bg-brand-strong px-4 py-1.5 font-display text-[13px] font-bold tracking-[.06em] whitespace-nowrap text-white uppercase shadow">{p.destaque}</span>}
               <div className="flex flex-col gap-1">
-                <h2 className="font-display text-[22px] leading-tight font-extrabold">{combo ? "Combo" : p.nome}</h2>
-                <p className={`text-[15px] ${escuro ? "text-[#d7dbe6]" : "text-ink-2"}`}>{combo ? p.nome : p.descricao?.split(":")[0] ?? ""}</p>
+                <h2 className="font-display text-[22px] leading-tight font-extrabold">{p.nome}</h2>
+                <p className={`text-[15px] ${escuro ? "text-[#d7dbe6]" : "text-ink-2"}`}>{p.descricao?.split(":")[0] ?? ""}</p>
               </div>
               <div className="flex flex-col">
                 {economia > 0 && <span className={`text-[15px] line-through ${escuro ? "text-[#aab3c8]" : "text-muted"}`}>{reais(separados)}</span>}
