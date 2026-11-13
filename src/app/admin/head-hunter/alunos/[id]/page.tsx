@@ -149,7 +149,7 @@ export default async function AlunoPage({ params }: { params: Promise<{ id: stri
           {l.whatsapp && whatsappConfigurado() && (
             <Card>
               <h2 className="font-display text-xl font-extrabold">Mandar mensagem</h2>
-              <p className="text-[14px] text-ink-2">Sai do seu número no Wawp e fica no histórico em Usuários → WhatsApp.</p>
+              <p className="text-[14px] text-ink-2">Sai do seu número no Wawp e fica no histórico em Configurações → WhatsApp.</p>
               <EnviarWhatsappForm alunoId={l.id} textoInicial={mensagemSugerida(l)} />
             </Card>
           )}

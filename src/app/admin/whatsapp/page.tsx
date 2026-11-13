@@ -58,7 +58,7 @@ export default async function WhatsappAdminPage() {
 
       <Card>
         <h2 className="font-display text-xl font-extrabold">Enviar um teste</h2>
-        <p className="text-[15px] text-ink-2">Mande para o seu próprio número antes de liberar os avisos. Para falar com um aluno, use o botão na página dele em <Link href="/admin/head-hunter/alunos" className="font-semibold underline underline-offset-4">Alunos</Link>.</p>
+        <p className="text-[15px] text-ink-2">Mande para o seu próprio número antes de liberar os avisos. Para falar com um aluno, use o botão na página dele em Head Hunter → <Link href="/admin/head-hunter/alunos" className="font-semibold underline underline-offset-4">Alunos</Link>.</p>
         <EnviarWhatsappForm textoInicial="Teste do Cabin Crew ✈️ Se chegou, está tudo certo!" rotulo="Enviar teste" />
       </Card>
 

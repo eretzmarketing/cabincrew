@@ -14,7 +14,6 @@ export const GRUPOS: Grupo[] = [
     itens: [
       { href: "/admin/usuarios", label: "Usuários" },
       { href: "/admin/interessados", label: "Lista de interesse" },
-      { href: "/admin/whatsapp", label: "WhatsApp" },
       { href: "/admin/contas-excluidas", label: "Contas excluídas" },
     ],
   },
@@ -42,7 +41,13 @@ export const GRUPOS: Grupo[] = [
       { href: "/admin/forum", label: "Fórum de Seleções" },
     ],
   },
-  { id: "config", label: "Configurações", itens: [{ href: "/admin/configuracoes", label: "Configurações" }] },
+  {
+    id: "config", label: "Configurações",
+    itens: [
+      { href: "/admin/configuracoes", label: "Geral" },
+      { href: "/admin/whatsapp", label: "WhatsApp" },
+    ],
+  },
 ];
 
 const TODOS = GRUPOS.flatMap((g) => g.itens);
