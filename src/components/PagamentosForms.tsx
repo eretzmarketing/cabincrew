@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { salvarConexaoMP, salvarProduto } from "@/app/pagamentos-actions";
+import { adicionarAoCurso, salvarConexaoMP, salvarProduto } from "@/app/pagamentos-actions";
 
 const campo = "w-full rounded-xl border border-[#c9cedb] bg-white px-4 py-3 text-[15px] outline-none focus:border-navy";
 const btn = "inline-flex min-h-11 cursor-pointer items-center justify-center rounded-full bg-navy px-5 font-semibold text-white hover:bg-navy-deep disabled:opacity-50";
@@ -76,6 +76,82 @@ export function ProdutoForm({ p }: { p: { slug: string; preco: number; desconto_
           <input type="checkbox" name="ativo" defaultChecked={p.ativo} className="h-5 w-5 accent-[#c8102e]" /> À venda
         </label>
         <button className={btn} disabled={pend}>{pend ? "Salvando…" : "Salvar"}</button>
+      </div>
+      <Aviso s={s} />
+    </form>
+  );
+}
+
+const ORIGENS = [
+  ["cortesia", "Cortesia", "Sem pagamento (bolsa, parceria, presente)"],
+  ["pix_direto", "Pix direto", "Pagou por Pix na sua conta"],
+  ["presencial", "Curso presencial", "Pagou no curso presencial"],
+  ["outro", "Outro", "Dinheiro, transferência, outra plataforma"],
+] as const;
+
+export function AdicionarAlunoForm({ emailInicial, nomeInicial, precoPadrao, agora, formas }: { emailInicial: string; nomeInicial: string; precoPadrao: string; agora: string; formas: Record<string, string> }) {
+  const [s, acao, pend] = useActionState(adicionarAoCurso, {});
+  const [origem, setOrigem] = useState("cortesia");
+  const [forma, setForma] = useState("pix");
+  const pago = origem !== "cortesia";
+  const rot = "text-[14px] font-semibold";
+  return (
+    <form action={acao} className="flex flex-col gap-5">
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="flex flex-col gap-1">
+          <label htmlFor="a-email" className={rot}>E-mail do aluno *</label>
+          <input id="a-email" name="email" type="email" required defaultValue={emailInicial} className={campo} aria-describedby="a-email-ajuda" />
+          <span id="a-email-ajuda" className="text-[13px] text-muted">Se ainda não tiver conta, o acesso fica reservado e libera quando ele se cadastrar com este e-mail.</span>
+        </div>
+        <div className="flex flex-col gap-1">
+          <label htmlFor="a-nome" className={rot}>Nome completo <span className="font-normal text-muted">(se não tiver conta)</span></label>
+          <input id="a-nome" name="nome" defaultValue={nomeInicial} className={campo} />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label htmlFor="a-whats" className={rot}>WhatsApp <span className="font-normal text-muted">(se não tiver conta)</span></label>
+          <input id="a-whats" name="whatsapp" inputMode="tel" placeholder="11 98177-7605" className={campo} />
+        </div>
+      </div>
+
+      <fieldset className="flex flex-col gap-2">
+        <legend className={`${rot} mb-2`}>Como ele entra no curso? *</legend>
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+          {ORIGENS.map(([k, r, d]) => (
+            <label key={k} className={`flex min-h-16 cursor-pointer flex-col justify-center rounded-2xl border-2 px-4 py-2.5 ${origem === k ? "border-navy bg-[#f4f6fb]" : "border-line"}`}>
+              <span className="flex items-center gap-2 font-display font-extrabold"><input type="radio" name="origem" value={k} checked={origem === k} onChange={() => setOrigem(k)} className="h-4 w-4 accent-[#1f2a44]" />{r}</span>
+              <span className="text-[13px] text-ink-2">{d}</span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
+
+      {pago && (
+        <div className="grid gap-4 rounded-2xl bg-soft p-4 md:grid-cols-3">
+          <p className="text-[14px] text-ink-2 md:col-span-3">Vai para o <strong>Livro de compras</strong> como prova da venda (data e hora contam para os 7 dias de arrependimento).</p>
+          <div className="flex flex-col gap-1"><label htmlFor="a-valor" className={rot}>Valor pago (R$) *</label><input id="a-valor" name="valor" inputMode="decimal" defaultValue={precoPadrao} className={campo} /></div>
+          <div className="flex flex-col gap-1">
+            <label htmlFor="a-forma" className={rot}>Forma de pagamento *</label>
+            <select id="a-forma" name="forma_pagamento" value={forma} onChange={(e) => setForma(e.target.value)} className={campo}>
+              {Object.entries(formas).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+            </select>
+          </div>
+          {forma === "cartao_credito" && <div className="flex flex-col gap-1"><label htmlFor="a-parc" className={rot}>Parcelas</label><input id="a-parc" name="parcelas" type="number" min={1} max={36} defaultValue={1} className={campo} /></div>}
+          <div className="flex flex-col gap-1"><label htmlFor="a-data" className={rot}>Data e hora do pagamento *</label><input id="a-data" name="comprada_em" type="datetime-local" defaultValue={agora} className={campo} /></div>
+          <div className="flex flex-col gap-1"><label htmlFor="a-tx" className={rot}>ID do Pix / comprovante</label><input id="a-tx" name="id_transacao" placeholder="E2E… ou nº do recibo" className={campo} /></div>
+          <div className="flex flex-col gap-1"><label htmlFor="a-doc" className={rot}>CPF <span className="font-normal text-muted">(opcional)</span></label><input id="a-doc" name="documento" className={campo} /></div>
+        </div>
+      )}
+
+      <div className="flex flex-col gap-1">
+        <label htmlFor="a-obs" className={rot}>Observação <span className="font-normal text-muted">(opcional)</span></label>
+        <input id="a-obs" name="observacao" placeholder={pago ? "Ex.: turma presencial de novembro, São Paulo" : "Ex.: bolsa para aluna destaque"} className={campo} />
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <label className="flex min-h-11 cursor-pointer items-center gap-2 text-[15px] font-semibold">
+          <input type="checkbox" name="avisar" defaultChecked className="h-5 w-5 accent-[#c8102e]" /> Avisar o aluno no WhatsApp
+        </label>
+        <button className={btn} disabled={pend}>{pend ? "Liberando…" : "Liberar acesso ao Head Hunter"}</button>
       </div>
       <Aviso s={s} />
     </form>

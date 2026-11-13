@@ -3,6 +3,10 @@
 import { randomBytes } from "node:crypto";
 import { chmod, writeFile } from "node:fs/promises";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { FORMAS } from "@/lib/compras";
+import { SITE } from "@/lib/mercadopago";
+import { enviarWhatsapp, preencher } from "@/lib/whatsapp";
 import { ARQUIVO_MP, configMP, hashChave, testarTokenMP } from "@/lib/mercadopago";
 import { getUser } from "@/lib/supabase/server";
 
@@ -68,4 +72,113 @@ export async function alterarAcesso(form: FormData) {
     await supabase.from("acessos").update({ status: "revogado", encerrado_em: new Date().toISOString(), motivo: "encerrado pelo administrador" }).eq("user_id", userId).eq("produto", "head-hunter");
   }
   revalidatePath(`/admin/head-hunter/alunos/${userId}`);
+}
+
+const ORIGENS: Record<string, { rotulo: string; plataforma: string }> = {
+  cortesia: { rotulo: "Cortesia", plataforma: "" },
+  pix_direto: { rotulo: "Pix direto", plataforma: "Pix direto" },
+  presencial: { rotulo: "Curso presencial", plataforma: "Curso presencial" },
+  outro: { rotulo: "Outro pagamento por fora", plataforma: "Pagamento por fora" },
+};
+
+/** Número com DDI: sem "+", considera Brasil (55). */
+function normalizarTelefone(v: string) {
+  const d = v.replace(/\D/g, "");
+  if (!d) return null;
+  if (v.trim().startsWith("+")) return d.length >= 10 ? `+${d}` : null;
+  if (d.length === 10 || d.length === 11) return `+55${d}`;
+  if (d.startsWith("55") && (d.length === 12 || d.length === 13)) return `+${d}`;
+  return null;
+}
+
+/** Converte "2026-11-12T14:30" (horário de Brasília) para data com fuso. */
+function dataBrasilia(v: string) {
+  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(v)) return null;
+  const d = new Date(`${v}:00-03:00`);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
+}
+
+/**
+ * Admin: adiciona um aluno ao Head Hunter (cortesia ou pagamento feito fora do site).
+ * Pagamento por fora entra no Livro de compras. Sem conta no site, o acesso fica reservado pelo e-mail.
+ */
+export async function adicionarAoCurso(_: Estado, form: FormData): Promise<Estado> {
+  const { supabase, user } = await admin();
+  const t = (k: string, max = 200) => String(form.get(k) ?? "").trim().slice(0, max);
+  const email = t("email").toLowerCase();
+  const origem = t("origem");
+  const o = ORIGENS[origem];
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return { erro: "Informe o e-mail do aluno." };
+  if (!o) return { erro: "Escolha se é cortesia ou pagamento por fora." };
+
+  const { data: achados } = await supabase.rpc("admin_hh_alunos", { p_busca: email });
+  const aluno = ((achados ?? []) as { id: string; nome: string | null; apelido: string | null; email: string | null; whatsapp: string | null }[])
+    .find((a) => (a.email ?? "").toLowerCase() === email);
+  const nome = t("nome", 120) || aluno?.nome || aluno?.apelido || "";
+  const telInformado = t("whatsapp", 30);
+  const whatsapp = telInformado ? normalizarTelefone(telInformado) : aluno?.whatsapp ?? null;
+  if (telInformado && !whatsapp) return { erro: "WhatsApp inválido. Use DDD + número (ex.: 11 98177-7605) ou +DDI para outros países." };
+  if (!aluno && nome.length < 3) return { erro: "Este e-mail ainda não tem conta no site: informe o nome completo." };
+  if (aluno) {
+    const { data: ac } = await supabase.from("acessos").select("status, expira_em").eq("user_id", aluno.id).eq("produto", "head-hunter").maybeSingle();
+    if (ac?.status === "ativo" && (!ac.expira_em || Date.parse(ac.expira_em) > Date.now())) return { erro: "Este aluno já tem acesso ativo ao Head Hunter." };
+  }
+
+  // pagamento por fora: entra no Livro de compras
+  let compraId: number | null = null;
+  if (origem !== "cortesia") {
+    const valor = Number(t("valor").replace(/\./g, "").replace(",", "."));
+    const forma = t("forma_pagamento");
+    const comprada = dataBrasilia(t("comprada_em"));
+    if (!Number.isFinite(valor) || valor < 0) return { erro: "Informe o valor pago (ex.: 250,00)." };
+    if (!FORMAS[forma]) return { erro: "Escolha a forma de pagamento." };
+    if (!comprada) return { erro: "Informe a data e a hora do pagamento." };
+    const { data: c, error } = await supabase.from("compras").insert({
+      user_id: aluno?.id ?? null, nome, email, whatsapp, documento: t("documento", 30) || null, produto: "Head Hunter",
+      valor, forma_pagamento: forma, parcelas: forma === "cartao_credito" ? Number(t("parcelas")) || 1 : null,
+      plataforma: o.plataforma, id_transacao: t("id_transacao", 120) || null, status: "aprovada",
+      comprada_em: comprada, liberada_em: new Date().toISOString(), observacao: t("observacao", 1000) || null, criado_por: user!.id,
+    }).select("id").single();
+    if (error) return { erro: error.code === "23505" ? "Já existe uma compra com este ID de transação." : "Não foi possível registrar a compra." };
+    compraId = c.id as number;
+  }
+
+  const motivo = `${o.rotulo}${t("observacao", 120) && origem === "cortesia" ? `: ${t("observacao", 120)}` : ""} (liberado pelo administrador)`;
+  if (aluno) {
+    const { error } = await supabase.from("acessos").upsert({
+      user_id: aluno.id, produto: "head-hunter", status: "ativo", compra_id: compraId, liberado_em: new Date().toISOString(),
+      encerrado_em: null, concluido_em: null, expira_em: null, motivo,
+    });
+    if (error) return { erro: "Não foi possível liberar o acesso." };
+  } else {
+    const { error } = await supabase.from("acessos_pendentes").upsert({ email, produto: "head-hunter", compra_id: compraId, motivo, nome, whatsapp, criado_por: user!.id, criado_em: new Date().toISOString() });
+    if (error) return { erro: error.message.includes("acessos_pendentes") ? "Rode o SQL 0043_acesso_manual.sql no Supabase." : "Não foi possível reservar o acesso." };
+  }
+
+  // aviso no WhatsApp
+  let avisado = "";
+  if (form.get("avisar") === "on" && whatsapp) {
+    const { data: m } = await supabase.from("whatsapp_modelos").select("texto, ativo").eq("evento", "acesso_liberado").maybeSingle();
+    if (m?.ativo) {
+      const texto = preencher(m.texto, {
+        nome: nome.split(" ")[0],
+        passo: aluno ? "É só entrar com o seu e-mail e começar pelo check-in:" : `Crie a sua conta com o e-mail ${email} e o acesso aparece na hora:`,
+        endereco: aluno ? `${SITE}/head-hunter` : `${SITE}/entrar`,
+      });
+      const r = await enviarWhatsapp(whatsapp, texto);
+      await supabase.from("whatsapp_envios").insert({ user_id: aluno?.id ?? null, evento: "acesso_liberado", ref: `${email}-${Date.now()}`, telefone: whatsapp, texto, status: r.ok ? "enviada" : r.status, erro: r.ok ? null : r.erro });
+      avisado = r.ok ? " Aviso enviado no WhatsApp ✓" : ` (WhatsApp não enviado: ${r.erro})`;
+    }
+  }
+  revalidatePath("/admin/head-hunter/alunos");
+  if (aluno) redirect(`/admin/head-hunter/alunos/${aluno.id}?ok=acesso`);
+  return { ok: true, msg: `Acesso reservado para ${email}. Assim que a pessoa criar a conta com esse e-mail, o Head Hunter é liberado sozinho.${avisado}` };
+}
+
+/** Admin: cancela um acesso reservado (pessoa sem conta). */
+export async function cancelarAcessoPendente(form: FormData) {
+  const { supabase } = await admin();
+  const email = String(form.get("email") ?? "").toLowerCase();
+  if (email) await supabase.from("acessos_pendentes").delete().eq("email", email);
+  revalidatePath("/admin/head-hunter/alunos/adicionar");
 }

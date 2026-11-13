@@ -168,9 +168,9 @@ export default async function AlunoPage({ params }: { params: Promise<{ id: stri
               <input type="hidden" name="user_id" value={l.id} />
               {acesso?.status === "ativo"
                 ? <button name="acao" value="encerrar" className="min-h-11 cursor-pointer rounded-full border-2 border-line px-4 text-[14px] font-semibold text-brand-deep hover:border-brand-deep">Encerrar acesso</button>
-                : <button name="acao" value="liberar" className="min-h-11 cursor-pointer rounded-full bg-navy px-4 text-[14px] font-semibold text-white hover:bg-navy-deep">{acesso ? "Liberar de novo" : "Liberar acesso"}</button>}
+                : <Link href={`/admin/head-hunter/alunos/adicionar?email=${encodeURIComponent(l.email ?? "")}`} className="inline-flex min-h-11 items-center rounded-full bg-navy px-4 text-[14px] font-semibold text-white hover:bg-navy-deep">{acesso ? "Liberar de novo" : "Liberar acesso"}</Link>}
             </form>
-            <span className="text-[13px] text-muted">Compras pelo Mercado Pago liberam sozinhas. Use para vendas por fora do site ou cortesias.</span>
+            <span className="text-[13px] text-muted">Compras pelo Mercado Pago liberam sozinhas. Para cortesia, Pix direto ou curso presencial, use Liberar acesso.</span>
           </Card>
 
           <Card>

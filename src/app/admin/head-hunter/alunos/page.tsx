@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Numero, Titulo, btnSecundario } from "@/components/admin-ui";
+import { Numero, Titulo, btnPrimario, btnSecundario } from "@/components/admin-ui";
 import {
   SITUACOES, TOTAL_INGLES, diasParaMeta, linkWhatsapp, mensagemSugerida, nomeAluno, nomeCompanhia, quando, riscos, situacao,
   type LinhaAluno, type Situacao,
@@ -53,7 +53,10 @@ export default async function AlunosHeadHunterPage({ searchParams }: { searchPar
     <>
       <div className="flex flex-wrap items-end justify-between gap-4">
         <Titulo sub="Quem está estudando, quem parou e quem precisa de um empurrãozinho. Clique no nome para ver a jornada completa.">Alunos do Head Hunter</Titulo>
-        <a href="/admin/head-hunter/alunos/csv" download className={btnSecundario}>⬇ Exportar (CSV)</a>
+        <div className="flex flex-wrap gap-2">
+          <a href="/admin/head-hunter/alunos/csv" download className={btnSecundario}>⬇ Exportar (CSV)</a>
+          <Link href="/admin/head-hunter/alunos/adicionar" className={btnPrimario}>+ Adicionar aluno</Link>
+        </div>
       </div>
 
       {error ? (
