@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
-import BotaoWhatsapp from "@/components/BotaoWhatsapp";
+import AcoesAluno from "@/components/AcoesAluno";
+import AvatarAluno from "@/components/AvatarAluno";
 import Link from "next/link";
 import { Numero, Titulo, btnPrimario, btnSecundario } from "@/components/admin-ui";
 import {
-  SITUACOES, TOTAL_INGLES, diasParaMeta, mensagemSugerida, nomeAluno, nomeCompanhia, quando, riscos, situacao,
+  SITUACOES, diasParaMeta, mensagemSugerida, nomeAluno, quando, riscos, situacao,
   type LinhaAluno, type Situacao,
 } from "@/lib/painel-alunos";
-import { getUser } from "@/lib/supabase/server";
+import { avatarUrl, getUser } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Alunos do Head Hunter" };
 export const dynamic = "force-dynamic";
@@ -28,8 +29,8 @@ const ORDENS: { id: string; rotulo: string }[] = [
 ];
 const LIMITE = 300;
 
-export default async function AlunosHeadHunterPage({ searchParams }: { searchParams: Promise<{ q?: string; s?: string; o?: string }> }) {
-  const { q = "", s = "todos", o = "ultima" } = await searchParams;
+export default async function AlunosHeadHunterPage({ searchParams }: { searchParams: Promise<{ q?: string; s?: string; o?: string; excluido?: string }> }) {
+  const { q = "", s = "todos", o = "ultima", excluido } = await searchParams;
   const { supabase } = await getUser();
   const { data, error } = await supabase.rpc("admin_hh_alunos", { p_busca: q.trim().slice(0, 60) });
   const todos = (data ?? []) as LinhaAluno[];
@@ -50,10 +51,26 @@ export default async function AlunosHeadHunterPage({ searchParams }: { searchPar
   lista = lista.slice(0, LIMITE);
   const link = (p: Record<string, string>) => `/admin/head-hunter/alunos?${new URLSearchParams({ ...(q ? { q } : {}), s, o, ...p })}`;
 
+  // foto e cursos ativos dos alunos mostrados
+  const ids = lista.map((l) => l.id);
+  const extras = new Map<string, { avatar_em: string | null; cursos: string[] }>();
+  if (ids.length) {
+    const [{ data: fotos }, { data: acs }] = await Promise.all([
+      supabase.from("profiles").select("id, avatar_em").in("id", ids),
+      supabase.from("acessos").select("user_id, produto, status, expira_em").in("user_id", ids),
+    ]);
+    for (const f of (fotos ?? []) as { id: string; avatar_em: string | null }[]) extras.set(f.id, { avatar_em: f.avatar_em, cursos: [] });
+    const agora = new Date().toISOString();
+    for (const a of (acs ?? []) as { user_id: string; produto: string; status: string; expira_em: string | null }[]) {
+      if (a.status === "ativo" && (!a.expira_em || a.expira_em > agora)) extras.get(a.user_id)?.cursos.push(a.produto);
+    }
+  }
+
   return (
     <>
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <Titulo sub="Quem está estudando, quem parou e quem precisa de um empurrãozinho. Clique no nome para ver a jornada completa.">Alunos do Head Hunter</Titulo>
+        <Titulo sub="Quem está estudando, quem parou e quem precisa de um empurrãozinho. O olho abre a ficha completa do aluno.">Alunos do Head Hunter</Titulo>
+      {excluido && <p role="status" className="rounded-2xl bg-[#e5f6ec] px-5 py-4 font-semibold text-[#0f6b3a]">Conta de {excluido} excluída. O registro ficou em <Link href="/admin/contas-excluidas" className="underline">Usuários › Contas excluídas</Link>.</p>}
         <div className="flex flex-wrap gap-2">
           <a href="/admin/head-hunter/alunos/csv" download className={btnSecundario}>⬇ Exportar (CSV)</a>
           <Link href="/admin/head-hunter/alunos/adicionar" className={btnPrimario}>+ Adicionar aluno</Link>
@@ -105,63 +122,37 @@ export default async function AlunosHeadHunterPage({ searchParams }: { searchPar
             </form>
           </div>
 
-          <div className="overflow-x-auto rounded-2xl border border-line bg-white">
-            <table className="w-full min-w-[940px] text-left text-[14px]">
-              <thead className="border-b border-line text-[13px] text-muted">
-                <tr>
-                  <th className="p-3 font-semibold">Aluno</th>
-                  <th className="p-3 font-semibold">Situação</th>
-                  <th className="p-3 font-semibold">Alvo</th>
-                  <th className="p-3 font-semibold" title="Dias com estudo nos últimos 14 dias">Dias ativos (14d)</th>
-                  <th className="p-3 font-semibold">Aulas</th>
-                  <th className="p-3 font-semibold" title="Quantidade de treinos e média dos últimos 30 dias">Treinos</th>
-                  <th className="p-3 font-semibold" title="Simulados no modo Prova real: melhor nota">Prova real</th>
-                  <th className="p-3 font-semibold">Inglês</th>
-                  <th className="p-3 font-semibold">Pontos</th>
-                </tr>
-              </thead>
-              <tbody>
-                {lista.map((l) => {
-                  const st = situacao(l);
-                  const rs = riscos(l);
-                  const faltam = diasParaMeta(l);
-                  return (
-                    <tr key={l.id} className="border-b border-[#eceef3] align-top last:border-0">
-                      <td className="p-3">
-                        <span className="flex items-start justify-between gap-2">
-                          <Link href={`/admin/head-hunter/alunos/${l.id}`} className="font-semibold text-navy underline-offset-4 hover:underline">{nomeAluno(l)}</Link>
-                          <BotaoWhatsapp telefone={l.whatsapp} nome={nomeAluno(l)} userId={l.id} tamanho="sm" sugestoes={[{ rotulo: "Sugerida para a situação do aluno", texto: mensagemSugerida(l) }]} />
-                        </span>
-                        {l.bloqueado && <span className="ml-2 rounded-full bg-brand-soft px-2 py-0.5 text-xs font-semibold text-brand-deep">bloqueado</span>}
-                        <span className="block text-[13px] text-muted">{l.email ?? ""}</span>
-                        {rs.length > 0 && <span className="mt-1 block text-[13px] font-semibold text-brand-strong">⚠ {rs.join(" · ")}</span>}
-                      </td>
-                      <td className="p-3">
-                        <span className={`inline-block rounded-full px-2.5 py-0.5 text-[13px] font-semibold whitespace-nowrap ${SITUACOES[st].cor}`}>{SITUACOES[st].rotulo}</span>
-                        <span className="block pt-1 text-[13px] text-muted">{quando(l.ultima)}</span>
-                      </td>
-                      <td className="p-3">
-                        {nomeCompanhia(l.companhia) ?? <span className="text-muted">sem check-in</span>}
-                        {faltam !== null && <span className={`block text-[13px] ${faltam < 0 ? "text-muted" : faltam <= 30 ? "font-semibold text-brand-strong" : "text-muted"}`}>{faltam < 0 ? "data passou" : `seleção em ${faltam} d`}</span>}
-                      </td>
-                      <td className="p-3">
-                        <span className="font-semibold">{l.dias_14}</span>
-                        <span className="mt-1 block h-1.5 w-20 rounded-full bg-[#eceef3]" aria-hidden="true"><span className="block h-1.5 rounded-full bg-navy" style={{ width: `${(l.dias_14 / 14) * 100}%` }} /></span>
-                      </td>
-                      <td className="p-3">{l.aulas}</td>
-                      <td className="p-3">{l.treinos}{l.media_treino_30 !== null && <span className={`block text-[13px] ${l.media_treino_30 >= 80 ? "text-[#0f6b3a]" : "text-muted"}`}>média {l.media_treino_30}%</span>}</td>
-                      <td className="p-3">{l.provas ? <>{l.melhor_prova}%<span className="block text-[13px] text-muted">{l.provas} feita{l.provas > 1 ? "s" : ""}</span></> : "—"}</td>
-                      <td className="p-3">{l.ingles}/{TOTAL_INGLES}</td>
-                      <td className="p-3 font-semibold">{l.pontos_semana}</td>
-                    </tr>
-                  );
-                })}
-                {!lista.length && <tr><td colSpan={9} className="p-6 text-center text-ink-2">Nenhum aluno nesta lista.</td></tr>}
-              </tbody>
-            </table>
-          </div>
+          <ul className="flex flex-col divide-y divide-[#eceef3] rounded-2xl border border-line bg-white">
+            {lista.map((l) => {
+              const st = situacao(l);
+              const rs = riscos(l);
+              const foto = avatarUrl(l.id, extras.get(l.id)?.avatar_em ?? null);
+              const cursos = extras.get(l.id)?.cursos ?? [];
+              const nome = nomeAluno(l);
+              return (
+                <li key={l.id} className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
+                  <Link href={`/admin/head-hunter/alunos/${l.id}`} className="flex min-w-0 flex-[1_1_260px] items-center gap-3" aria-label={`Ver ficha de ${nome}`}>
+                    <AvatarAluno src={foto} nome={nome} />
+                    <span className="flex min-w-0 flex-col">
+                      <span className="truncate font-semibold text-navy">{nome}{l.bloqueado && <span className="ml-2 rounded-full bg-brand-soft px-2 py-0.5 align-middle text-[11px] font-bold text-brand-deep">BANIDO</span>}</span>
+                      <span className="truncate text-[13px] text-muted">{l.email ?? ""}</span>
+                    </span>
+                  </Link>
+                  <span className="flex min-w-[150px] flex-col">
+                    <span className={`self-start rounded-full px-2.5 py-0.5 text-[12px] font-semibold whitespace-nowrap ${SITUACOES[st].cor}`}>{SITUACOES[st].rotulo}</span>
+                    <span className="pt-0.5 text-[12px] text-muted">{rs.length ? <span className="font-semibold text-brand-strong">⚠ {rs[0]}</span> : quando(l.ultima)}</span>
+                  </span>
+                  <span className="flex min-w-[90px] gap-1" aria-label="Cursos">
+                    {cursos.map((c) => <span key={c} title={c === "english" ? "Flight Attendant English" : "Head Hunter"} className="rounded-md bg-[#eef1ff] px-1.5 py-0.5 text-[11px] font-bold text-navy">{c === "english" ? "EN" : "HH"}</span>)}
+                  </span>
+                  <AcoesAluno aluno={{ id: l.id, nome, email: l.email, whatsapp: l.whatsapp, bloqueado: l.bloqueado }}
+                    sugestoes={[{ rotulo: "Sugerida para a situação do aluno", texto: mensagemSugerida(l) }]} />
+                </li>
+              );
+            })}
+            {!lista.length && <li className="p-6 text-center text-ink-2">Nenhum aluno nesta lista.</li>}
+          </ul>
           {total > LIMITE && <p className="text-sm text-muted">Mostrando {LIMITE} de {total}. Use a busca, os filtros ou exporte o CSV para ver todos.</p>}
-          <p className="text-sm text-muted">O ícone do WhatsApp abre um popup para enviar pelo seu número no Wawp: a mensagem sugerida para a situação do aluno, um modelo (com imagem) ou texto livre.</p>
         </>
       )}
     </>

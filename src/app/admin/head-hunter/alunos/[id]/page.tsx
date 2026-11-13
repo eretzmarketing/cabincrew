@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import BotaoWhatsapp from "@/components/BotaoWhatsapp";
+import AcoesAluno from "@/components/AcoesAluno";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Card, Numero, Titulo } from "@/components/admin-ui";
@@ -57,7 +57,8 @@ export default async function AlunoPage({ params }: { params: Promise<{ id: stri
         <Titulo sub={<>{l.email ?? "sem e-mail"}{l.whatsapp && <> · {l.whatsapp}</>} · cadastro em {new Date(l.cadastro).toLocaleDateString("pt-BR")}</>}>
           {nomeAluno(l)} <span className={`ml-2 inline-block rounded-full px-3 py-1 align-middle text-sm font-semibold ${SITUACOES[st].cor}`}>{SITUACOES[st].rotulo}</span>
         </Titulo>
-        <BotaoWhatsapp telefone={l.whatsapp} nome={nomeAluno(l)} userId={l.id} sugestoes={[{ rotulo: "Sugerida para a situação do aluno", texto: mensagemSugerida(l) }]} />
+        <AcoesAluno aluno={{ id: l.id, nome: nomeAluno(l), email: l.email, whatsapp: l.whatsapp, bloqueado: l.bloqueado }} verFicha={false} voltarPara="/admin/head-hunter/alunos"
+          sugestoes={[{ rotulo: "Sugerida para a situação do aluno", texto: mensagemSugerida(l) }]} />
       </div>
 
       {rs.length > 0 && (

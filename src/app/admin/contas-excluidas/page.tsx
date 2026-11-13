@@ -5,14 +5,14 @@ import { getUser } from "@/lib/supabase/server";
 export const metadata: Metadata = { title: "Contas excluídas" };
 export const dynamic = "force-dynamic";
 
-type Linha = { id: number; user_id: string; nome: string | null; email: string | null; whatsapp: string | null; escola: string | null; cadastro_em: string | null; excluida_em: string; ciente_sem_reembolso: boolean; ip: string | null };
+type Linha = { id: number; user_id: string; nome: string | null; email: string | null; whatsapp: string | null; escola: string | null; cadastro_em: string | null; excluida_em: string; ciente_sem_reembolso: boolean; ip: string | null; excluida_por?: string; motivo?: string | null };
 
 const dataHora = (v: string | null) => (v ? new Date(v).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" }) : "—");
 
 export default async function ContasExcluidasPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   const { q = "" } = await searchParams;
   const { supabase } = await getUser();
-  let consulta = supabase.from("contas_excluidas").select("id, user_id, nome, email, whatsapp, escola, cadastro_em, excluida_em, ciente_sem_reembolso, ip").order("excluida_em", { ascending: false }).limit(500);
+  let consulta = supabase.from("contas_excluidas").select("*").order("excluida_em", { ascending: false }).limit(500);
   const busca = q.trim().replace(/[%,()]/g, "").slice(0, 60);
   if (busca) consulta = consulta.or(`nome.ilike.%${busca}%,email.ilike.%${busca}%,whatsapp.ilike.%${busca}%`);
   const { data, error } = await consulta;
@@ -43,6 +43,7 @@ export default async function ContasExcluidasPage({ searchParams }: { searchPara
                   <th className="p-3 font-semibold">E-mail</th>
                   <th className="p-3 font-semibold">WhatsApp</th>
                   <th className="p-3 font-semibold">Cadastro em</th>
+                  <th className="p-3 font-semibold">Quem excluiu</th>
                   <th className="p-3 font-semibold">Ciente sem reembolso</th>
                   <th className="p-3 font-semibold">IP</th>
                 </tr>
@@ -55,11 +56,12 @@ export default async function ContasExcluidasPage({ searchParams }: { searchPara
                     <td className="p-3">{l.email ?? "—"}</td>
                     <td className="p-3 whitespace-nowrap">{l.whatsapp ?? "—"}</td>
                     <td className="p-3 whitespace-nowrap">{dataHora(l.cadastro_em)}</td>
-                    <td className="p-3">{l.ciente_sem_reembolso ? "Sim" : "Não"}</td>
+                    <td className="p-3">{l.excluida_por === "admin" ? "Administrador" : "O próprio aluno"}{l.motivo && <span className="block text-[12px] text-muted">{l.motivo}</span>}</td>
+                    <td className="p-3">{l.excluida_por === "admin" ? "—" : l.ciente_sem_reembolso ? "Sim" : "Não"}</td>
                     <td className="p-3 text-[13px] text-muted">{l.ip ?? "—"}</td>
                   </tr>
                 ))}
-                {!linhas.length && <tr><td colSpan={7} className="p-6 text-center text-ink-2">{busca ? "Nada encontrado." : "Nenhuma conta excluída até agora."}</td></tr>}
+                {!linhas.length && <tr><td colSpan={8} className="p-6 text-center text-ink-2">{busca ? "Nada encontrado." : "Nenhuma conta excluída até agora."}</td></tr>}
               </tbody>
             </table>
           </div>
