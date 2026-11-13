@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { Check } from "@/components/icons";
+import CursoPlayer from "@/components/CursoPlayer";
+import { Arrow, Check } from "@/components/icons";
 import { exigirCrewSelect } from "@/lib/crew-gate";
+import { navegacaoHeadHunter } from "@/lib/curso-navegacao";
 import { TIPO_AULA, duracao, numeroModulo, type Aula, type Modulo } from "@/lib/crew";
 
 export const metadata: Metadata = { title: "Módulo · Head Hunter", robots: { index: false } };
@@ -13,21 +15,30 @@ export default async function ModuloPage({ params }: { params: Promise<{ id: str
   if (!liberado) redirect("/head-hunter");
   if (!/^\d+$/.test(id)) notFound();
 
-  const [{ data: modulo }, { data: aulas }, { data: feitas }] = await Promise.all([
+  const [{ data: modulo }, { data: aulas }, { data: feitas }, nav] = await Promise.all([
     supabase.from("modulos").select("*").eq("id", Number(id)).maybeSingle(),
     supabase.from("aulas").select("id, modulo_id, ordem, titulo, tipo, resumo, duracao_min, publicado").eq("modulo_id", Number(id)).eq("publicado", true).order("ordem"),
     supabase.from("progresso").select("aula_id").eq("user_id", user.id),
+    navegacaoHeadHunter(supabase, user.id, { moduloId: Number(id) }),
   ]);
   const m = modulo as Modulo | null;
   if (!m) notFound();
   // no módulo com a página Simulados ANAC, os simulados ficam lá (não repetem na lista de aulas)
   const lista = ((aulas ?? []) as Aula[]).filter((a) => !(m?.recurso === "anac" && a.tipo === "simulado"));
   const concluidas = new Set((feitas ?? []).map((f) => f.aula_id));
+  const primeira = lista.find((a) => !concluidas.has(a.id)) ?? lista[0];
 
   return (
-    <main className="bg-soft px-6 py-10 pb-20">
-      <div className="mx-auto flex max-w-[860px] flex-col gap-6">
-        <Link href="/head-hunter" className="text-sm font-semibold text-muted hover:text-navy">← Todos os módulos</Link>
+    <CursoPlayer curso="Head Hunter" voltar={{ href: "/head-hunter", rotulo: "Painel do Head Hunter" }} secoes={nav.secoes} feitas={nav.feitas} total={nav.total}
+      rodape={primeira ? (
+        <>
+          <span className="text-[14px] text-muted">{lista.filter((a) => concluidas.has(a.id)).length} de {lista.length} aulas concluídas</span>
+          <Link href={`/head-hunter/aula/${primeira.id}`} className="inline-flex min-h-12 items-center gap-2 rounded-full bg-brand-strong px-6 font-display font-bold text-white hover:bg-brand-deep">
+            {lista.some((a) => concluidas.has(a.id)) ? "Continuar" : "Começar o módulo"} <Arrow size={16} />
+          </Link>
+        </>
+      ) : undefined}>
+      <div className="flex flex-col gap-6">
         <div className="flex flex-col gap-2">
           <span className="font-display text-sm font-bold tracking-[.08em] text-[#b0002a] uppercase">Módulo {numeroModulo(m.ordem)}{m.fase ? ` · ${m.fase}` : ""}</span>
           <h1 className="font-display text-[30px] leading-tight font-extrabold md:text-[36px]">{m.titulo}</h1>
@@ -104,6 +115,6 @@ export default async function ModuloPage({ params }: { params: Promise<{ id: str
           </ol>
         )}
       </div>
-    </main>
+    </CursoPlayer>
   );
 }

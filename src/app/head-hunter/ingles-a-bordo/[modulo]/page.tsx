@@ -2,9 +2,11 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import CursoPlayer from "@/components/CursoPlayer";
 import { MODULOS_INGLES, NOTA_MINIMA, chaveAula } from "@/lib/ingles-a-bordo";
 import { aulaLiberada, carregarIngles } from "@/lib/ingles-dados";
 import { exigirCrewSelect } from "@/lib/crew-gate";
+import { navegacaoIngles } from "@/lib/curso-navegacao";
 
 export const metadata: Metadata = { title: "Inglês a bordo · Head Hunter", robots: { index: false } };
 
@@ -16,13 +18,22 @@ export default async function ModuloInglesPage({ params }: { params: Promise<{ m
   if (!liberado) redirect("/head-hunter");
   const { progresso, comProgresso } = await carregarIngles(supabase, user.id);
   const livre = profile.is_admin || !comProgresso;
+  const nav = navegacaoIngles(progresso, livre, { modulo: m.numero });
+  const daqui = nav.secoes.find((x) => x.atual)?.itens ?? [];
+  const seguir = daqui.find((x) => !x.feita && !x.bloqueada) ?? daqui[0];
 
   return (
-    <main className="bg-soft pb-20">
-      <section className="relative overflow-hidden bg-navy text-white">
-        <Image src={m.foto} alt="" fill priority sizes="100vw" className="object-cover opacity-30" />
-        <div className="relative mx-auto flex max-w-[900px] flex-col gap-3 px-6 pt-8 pb-12">
-          <Link href="/head-hunter/ingles-a-bordo" className="text-sm font-semibold text-[#d7dbe6] hover:text-white">← Inglês a bordo</Link>
+    <CursoPlayer curso="Inglês a bordo" voltar={{ href: "/head-hunter/ingles-a-bordo", rotulo: "Inglês a bordo" }} secoes={nav.secoes} feitas={nav.feitas} total={nav.total}
+      rodape={seguir && !seguir.bloqueada ? (
+        <>
+          <span className="text-[14px] text-muted">{daqui.filter((x) => x.feita).length} de {daqui.length} aulas concluídas</span>
+          <Link href={seguir.href} className="inline-flex min-h-12 items-center gap-2 rounded-full bg-brand-strong px-6 font-display font-bold text-white hover:bg-brand-deep">{daqui.some((x) => x.feita) ? "Continuar" : "Começar o módulo"} →</Link>
+        </>
+      ) : undefined}>
+     <div className="flex flex-col gap-6">
+      <section className="relative overflow-hidden rounded-[24px] bg-navy text-white">
+        <Image src={m.foto} alt="" fill priority sizes="(min-width: 1024px) 880px, 100vw" className="object-cover opacity-30" />
+        <div className="relative flex flex-col gap-3 px-6 pt-10 pb-10 md:px-9">
           <span className="font-display text-sm font-bold tracking-[.08em] text-[#ffb3c4] uppercase">Módulo {m.numero}</span>
           <h1 className="font-display text-[32px] leading-tight font-extrabold md:text-[42px]">{m.titulo}</h1>
           <p lang="en" className="text-[17px] font-semibold text-[#d7dbe6]">{m.tituloEn}</p>
@@ -30,7 +41,7 @@ export default async function ModuloInglesPage({ params }: { params: Promise<{ m
         </div>
       </section>
 
-      <ol className="mx-auto flex max-w-[900px] flex-col gap-3 px-4 pt-8 md:px-6">
+      <ol className="flex flex-col gap-3">
         {m.aulas.map((a) => {
           const k = chaveAula(a);
           const p = progresso[k];
@@ -67,6 +78,7 @@ export default async function ModuloInglesPage({ params }: { params: Promise<{ m
           );
         })}
       </ol>
-    </main>
+     </div>
+    </CursoPlayer>
   );
 }

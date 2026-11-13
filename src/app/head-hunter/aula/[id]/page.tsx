@@ -3,8 +3,10 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import Conteudo from "@/components/Conteudo";
 import { alternarAulaConcluida, iniciarSimulado } from "@/app/crew-actions";
+import CursoPlayer from "@/components/CursoPlayer";
 import { Arrow, Check } from "@/components/icons";
 import { exigirCrewSelect } from "@/lib/crew-gate";
+import { navegacaoHeadHunter } from "@/lib/curso-navegacao";
 import { TIPO_AULA, duracao, numeroModulo, videoEmbed, type Aula, type Modulo, type Simulado, type Tentativa } from "@/lib/crew";
 
 export const metadata: Metadata = { title: "Aula · Head Hunter", robots: { index: false } };
@@ -22,9 +24,8 @@ export default async function AulaPage({ params, searchParams }: { params: Promi
   const aula = data as Aula | null;
   if (!aula || (!aula.publicado && !profile.is_admin)) notFound();
 
-  const [{ data: modulo }, { data: irmas }, { data: feita }, simRes, tentRes] = await Promise.all([
+  const [{ data: modulo }, { data: feita }, simRes, tentRes, nav] = await Promise.all([
     supabase.from("modulos").select("*").eq("id", aula.modulo_id).single(),
-    supabase.from("aulas").select("id, ordem, titulo").eq("modulo_id", aula.modulo_id).eq("publicado", true).order("ordem"),
     supabase.from("progresso").select("aula_id").eq("user_id", user.id).eq("aula_id", aula.id).maybeSingle(),
     aula.simulado_id
       ? supabase.from("simulados").select("*").eq("id", aula.simulado_id).maybeSingle()
@@ -32,33 +33,59 @@ export default async function AulaPage({ params, searchParams }: { params: Promi
     aula.simulado_id
       ? supabase.from("tentativas").select("*").eq("user_id", user.id).eq("simulado_id", aula.simulado_id).order("iniciada_em", { ascending: false }).limit(10)
       : Promise.resolve({ data: [] }),
+    navegacaoHeadHunter(supabase, user.id, { aulaId: id }),
   ]);
   const simulado = simRes.data as Simulado | null;
   const tentativas = (tentRes.data ?? []) as Tentativa[];
   const m = modulo as Modulo;
-  const lista = irmas ?? [];
-  const pos = lista.findIndex((a) => a.id === aula.id);
-  const anterior = pos > 0 ? lista[pos - 1] : null;
-  const proxima = pos >= 0 && pos < lista.length - 1 ? lista[pos + 1] : null;
+  const { anterior, proxima } = nav;
+  const proximaId = proxima?.href.split("/").pop() ?? "";
   const concluida = !!feita;
   const embed = videoEmbed(aula.video_url);
 
-  return (
-    <main className="bg-soft px-6 py-10 pb-20">
-      <article className="mx-auto flex max-w-[860px] flex-col gap-6">
-        <Link href={`/head-hunter/modulo/${m.id}`} className="text-sm font-semibold text-muted hover:text-navy">
-          ← Módulo {numeroModulo(m.ordem)} · {m.titulo}
-        </Link>
+  const rodape = (
+    <>
+      {anterior ? (
+        <Link href={anterior.href} className="inline-flex min-h-12 items-center rounded-full px-3 font-semibold text-navy hover:bg-soft">← <span className="ml-1 hidden sm:inline">Anterior</span></Link>
+      ) : <span />}
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        <form action={alternarAulaConcluida}>
+          <input type="hidden" name="aula_id" value={aula.id} />
+          <input type="hidden" name="concluida" value={String(concluida)} />
+          <input type="hidden" name="proxima" value={concluida ? "" : proximaId} />
+          {concluida ? (
+            <button type="submit" aria-pressed="true" title="Clique para desmarcar"
+              className="inline-flex min-h-12 cursor-pointer items-center gap-2 rounded-full border-2 border-[#0f6b3a] bg-[#e5f6ec] px-5 font-semibold text-[#0f6b3a]">
+              <Check size={18} /> Concluída
+            </button>
+          ) : (
+            <button type="submit" className="inline-flex min-h-12 cursor-pointer items-center gap-2 rounded-full bg-brand-strong px-6 font-display font-bold text-white hover:bg-brand-deep">
+              {proxima ? <>Concluir e próxima <Arrow size={16} /></> : <><Check size={18} /> Concluir aula</>}
+            </button>
+          )}
+        </form>
+        {concluida && proxima && (
+          <Link href={proxima.href} className="inline-flex min-h-12 items-center gap-2 rounded-full bg-navy px-6 font-display font-bold text-white hover:bg-navy-deep">Próxima <Arrow size={16} /></Link>
+        )}
+      </div>
+    </>
+  );
 
+  return (
+    <CursoPlayer curso="Head Hunter" voltar={{ href: "/head-hunter", rotulo: "Painel do Head Hunter" }} secoes={nav.secoes} feitas={nav.feitas} total={nav.total} rodape={rodape}>
+      <article className="flex flex-col gap-6">
         {!aula.publicado && (
           <p className="rounded-xl border border-[#ffe0b2] bg-[#fff3e0] px-4 py-3 text-sm text-[#8a4b00]">Rascunho: só administradores veem esta aula.</p>
         )}
 
         <header className="flex flex-col gap-2">
+          <span className="text-sm font-semibold text-muted">
+            Módulo {numeroModulo(m.ordem)} · {m.titulo}
+          </span>
           <span className="text-sm font-semibold text-[#b0002a]">
             {TIPO_AULA[aula.tipo]}{aula.duracao_min ? ` · ${duracao(aula.duracao_min)}` : ""}
           </span>
-          <h1 className="font-display text-[30px] leading-tight font-extrabold md:text-[36px]">{aula.titulo}</h1>
+          <h1 className="font-display text-[30px] leading-tight font-extrabold md:text-[38px]">{aula.titulo}</h1>
           {aula.resumo && <p className="text-[17px] leading-relaxed text-ink-2">{aula.resumo}</p>}
         </header>
 
@@ -91,33 +118,8 @@ export default async function AulaPage({ params, searchParams }: { params: Promi
             Baixar material de apoio <span aria-hidden="true">↓</span>
           </a>
         )}
-
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line pt-6">
-          <form action={alternarAulaConcluida}>
-            <input type="hidden" name="aula_id" value={aula.id} />
-            <input type="hidden" name="concluida" value={String(concluida)} />
-            <input type="hidden" name="proxima" value={proxima?.id ?? ""} />
-            <button
-              type="submit"
-              aria-pressed={concluida}
-              className={`inline-flex min-h-12 cursor-pointer items-center gap-2 rounded-full px-6 font-display font-bold ${
-                concluida ? "border-2 border-[#0f6b3a] bg-[#e5f6ec] text-[#0f6b3a]" : "bg-brand-strong text-white hover:bg-brand-deep"
-              }`}
-            >
-              <Check size={18} /> {concluida ? "Aula concluída" : proxima ? "Concluir e ir para a próxima" : "Marcar como concluída"}
-            </button>
-          </form>
-          <nav aria-label="Navegação entre aulas" className="flex gap-2">
-            {anterior && (
-              <Link href={`/head-hunter/aula/${anterior.id}`} className="inline-flex min-h-12 items-center rounded-full border-2 border-line bg-white px-5 font-semibold text-navy hover:border-navy">← Anterior</Link>
-            )}
-            {proxima && (
-              <Link href={`/head-hunter/aula/${proxima.id}`} className="inline-flex min-h-12 items-center gap-2 rounded-full border-2 border-line bg-white px-5 font-semibold text-navy hover:border-navy">Próxima <Arrow size={16} /></Link>
-            )}
-          </nav>
-        </div>
       </article>
-    </main>
+    </CursoPlayer>
   );
 }
 
