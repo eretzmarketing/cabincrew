@@ -9,7 +9,7 @@ export default function TermosPage() {
   return (
     <PaginaLegal titulo="Termos de Uso">
       <h2>1. Quem somos</h2>
-      <p>A plataforma <strong>{EMPRESA.marca}</strong> ({EMPRESA.site}) é mantida por <strong>{EMPRESA.razaoSocial}</strong>, CNPJ {EMPRESA.cnpj}, com sede em {EMPRESA.endereco} (“Cabin Crew”, “nós”). Contato: {EMPRESA.email} · WhatsApp {EMPRESA.whatsapp}.</p>
+      <p>A plataforma <strong>{EMPRESA.marca}</strong> ({EMPRESA.site}) {EMPRESA.razaoSocial ? <>é mantida por <strong>{EMPRESA.razaoSocial}</strong>{EMPRESA.cnpj ? `, CNPJ ${EMPRESA.cnpj}` : ""}, com endereço em </> : "tem endereço em "}{EMPRESA.endereco} (“Cabin Crew”, “nós”). Contato: <a href={`mailto:${EMPRESA.email}`}>{EMPRESA.email}</a> · WhatsApp <a href={EMPRESA.whatsappLink}>{EMPRESA.whatsapp}</a>.</p>
 
       <h2>2. Aceite</h2>
       <p>Ao criar uma conta ou comprar um curso, você declara que leu e concorda com estes Termos, com a <Link href="/privacidade">Política de Privacidade</Link>, com a <Link href="/reembolso">Política de Reembolso</Link> e com as <Link href="/regras">Regras do fórum</Link>. Registramos a data, a hora, o endereço IP e a versão dos textos aceitos. Se não concordar, não use a plataforma.</p>

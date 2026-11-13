@@ -11,7 +11,7 @@ export default function PrivacidadePage() {
       <p>Esta política explica como tratamos os seus dados pessoais, conforme a Lei Geral de Proteção de Dados (Lei 13.709/2018, LGPD).</p>
 
       <h2>1. Quem é o controlador</h2>
-      <p><strong>{EMPRESA.razaoSocial}</strong>, CNPJ {EMPRESA.cnpj}, {EMPRESA.endereco}. Encarregado pelo tratamento de dados (DPO): {EMPRESA.encarregado} · {EMPRESA.email}.</p>
+      <p><strong>{EMPRESA.razaoSocial || EMPRESA.marca}</strong>{EMPRESA.cnpj ? `, CNPJ ${EMPRESA.cnpj}` : ""}, {EMPRESA.endereco}. Contato para assuntos de privacidade e proteção de dados{EMPRESA.encarregado ? ` (encarregado: ${EMPRESA.encarregado})` : ""}: <a href={`mailto:${EMPRESA.email}`}>{EMPRESA.email}</a>.</p>
 
       <h2>2. Dados que coletamos</h2>
       <ul>
@@ -61,7 +61,7 @@ export default function PrivacidadePage() {
       </ul>
 
       <h2>7. Seus direitos</h2>
-      <p>Você pode pedir confirmação e acesso aos seus dados, correção, anonimização, portabilidade, informação sobre compartilhamento, revogação de consentimento e exclusão. Muita coisa você mesmo faz em <Link href="/conta">Minha conta</Link> (dados, foto, senha e exclusão da conta). Para os demais pedidos, escreva para {EMPRESA.email}. Você também pode reclamar à Autoridade Nacional de Proteção de Dados (ANPD).</p>
+      <p>Você pode pedir confirmação e acesso aos seus dados, correção, anonimização, portabilidade, informação sobre compartilhamento, revogação de consentimento e exclusão. Muita coisa você mesmo faz em <Link href="/conta">Minha conta</Link> (dados, foto, senha e exclusão da conta). Para os demais pedidos, escreva para <a href={`mailto:${EMPRESA.email}`}>{EMPRESA.email}</a>. Você também pode reclamar à Autoridade Nacional de Proteção de Dados (ANPD).</p>
 
       <h2>8. Segurança</h2>
       <p>Usamos conexão criptografada (HTTPS), senhas com criptografia, controle de acesso por usuário e registros de alteração em dados sensíveis, como compras. Nenhum sistema é 100% seguro: se houver um incidente relevante, avisaremos os afetados e a ANPD.</p>

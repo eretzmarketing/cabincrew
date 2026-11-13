@@ -13,7 +13,7 @@ export default function ReembolsoPage() {
 
       <h2>2. Como pedir</h2>
       <ol>
-        <li>Envie o pedido dentro do prazo pelo WhatsApp {EMPRESA.whatsapp} ou pelo e-mail {EMPRESA.email}.</li>
+        <li>Envie o pedido dentro do prazo pelo WhatsApp <a href={EMPRESA.whatsappLink}>{EMPRESA.whatsapp}</a> ou pelo e-mail <a href={`mailto:${EMPRESA.email}`}>{EMPRESA.email}</a>.</li>
         <li>Informe o nome completo, o e-mail da conta e, se tiver, o ID da transação do Mercado Pago (aparece no comprovante).</li>
         <li>Respondemos com a confirmação do pedido. Vale a data e a hora em que a mensagem chegou até nós.</li>
       </ol>
