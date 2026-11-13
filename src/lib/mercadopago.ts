@@ -104,6 +104,7 @@ export async function registrarPagamento(pg: Pagamento): Promise<{ situacao: str
       total_pago: pg.transaction_details?.total_paid_amount ?? pg.transaction_amount,
       parcelas: pg.installments ?? null, user_id: ref.userId, produto: ref.produto,
       aprovado_em: pg.date_approved ?? null, cpf: pg.payer?.identification?.number ?? null,
+      cupom: (pg.metadata?.cupom as string | null) ?? null, desconto_cupom: (pg.metadata?.desconto_cupom as number | null) ?? null,
     },
   });
   if (error) { console.error("[mercadopago] não foi possível registrar o pagamento", pg.id, error.message); return { situacao: "erro", erro: error.message }; }

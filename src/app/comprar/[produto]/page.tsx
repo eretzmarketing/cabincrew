@@ -3,7 +3,9 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import Checkout from "@/components/Checkout";
 import { cursosDoAluno } from "@/lib/crew-gate";
-import { configMP, precoPor } from "@/lib/mercadopago";
+import { normalizarCupom } from "@/lib/cupons";
+import { validarCupom } from "@/lib/cupons-servidor";
+import { configMP } from "@/lib/mercadopago";
 import { exigirLogin } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Checkout", robots: { index: false } };
@@ -11,10 +13,12 @@ export const dynamic = "force-dynamic";
 
 type Prod = { slug: string; nome: string; preco: number; desconto_pix: number; ativo: boolean; dias_apos_conclusao: number | null; inclui: string[] | null; endereco: string | null };
 
-export default async function ComprarPage({ params }: { params: Promise<{ produto: string }> }) {
+export default async function ComprarPage({ params, searchParams }: { params: Promise<{ produto: string }>; searchParams: Promise<{ cupom?: string }> }) {
   const { produto: slug } = await params;
+  const { cupom: codigo } = await searchParams;
   if (!/^[a-z0-9-]{2,40}$/.test(slug)) notFound();
-  const { supabase, user, profile } = await exigirLogin(`/comprar/${slug}`);
+  const cupomUrl = normalizarCupom(codigo ?? "");
+  const { supabase, user, profile } = await exigirLogin(`/comprar/${slug}${cupomUrl ? `?cupom=${cupomUrl}` : ""}`);
   const { data } = await supabase.from("produtos").select("*").eq("slug", slug).maybeSingle();
   const prod = data as Prod | null;
   if (!prod || (prod as Prod & { excluido?: boolean }).excluido) notFound();
@@ -23,6 +27,7 @@ export default async function ComprarPage({ params }: { params: Promise<{ produt
   if (inclui.every((c) => ativos.has(c))) redirect(prod.endereco ?? "/head-hunter");
   const jaTem = inclui.filter((c) => ativos.has(c));
   const cfg = configMP();
+  const { cupom, erro: erroCupom } = await validarCupom(supabase, cupomUrl, slug);
 
   return (
     <main className="bg-soft">
@@ -40,11 +45,12 @@ export default async function ComprarPage({ params }: { params: Promise<{ produt
         ) : (
           <Checkout
             publicKey={cfg.publicKey}
-            produto={{
-              slug: prod.slug, nome: prod.nome, endereco: prod.endereco ?? "/head-hunter",
-              preco: precoPor(Number(prod.preco), Number(prod.desconto_pix), "cartao"), pix: precoPor(Number(prod.preco), Number(prod.desconto_pix), "pix"),
+            base={{
+              slug: prod.slug, nome: prod.nome, endereco: prod.endereco ?? "/head-hunter", precoBase: Number(prod.preco),
               descontoPix: Number(prod.desconto_pix), diasExtras: Number(prod.dias_apos_conclusao ?? 30),
             }}
+            cupomInicial={cupom}
+            erroCupomInicial={cupomUrl && !cupom ? erroCupom : undefined}
             email={user.email ?? ""}
             nome={profile.nome ?? profile.apelido}
           />

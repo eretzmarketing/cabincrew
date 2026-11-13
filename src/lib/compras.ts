@@ -1,5 +1,6 @@
 /** Livro de compras: tipos, rótulos e prazo de arrependimento (CDC, art. 49: 7 dias). */
 export type Compra = {
+  cupom?: string | null; desconto_cupom?: number | null;
   id: number; user_id: string | null; nome: string; email: string | null; whatsapp: string | null; documento: string | null;
   produto: string; valor: number; moeda: string; forma_pagamento: string; parcelas: number | null; plataforma: string;
   id_transacao: string | null; status: string; comprada_em: string; liberada_em: string | null; observacao: string | null;

@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Check } from "@/components/icons";
 import { cursosDoAluno } from "@/lib/crew-gate";
+import { normalizarCupom, precosFinais, rotuloCupom, type Cupom } from "@/lib/cupons";
+import { validarCupom } from "@/lib/cupons-servidor";
 import { getUser } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
@@ -28,13 +30,22 @@ function Topicos({ itens, claro }: { itens: string[]; claro?: boolean }) {
   );
 }
 
-export default async function PlanosPage() {
+export default async function PlanosPage({ searchParams }: { searchParams: Promise<{ cupom?: string }> }) {
+  const codigo = normalizarCupom((await searchParams).cupom ?? "");
   const { supabase, user } = await getUser();
   const [{ data }, ativos] = await Promise.all([
     supabase.from("produtos").select("*").order("ordem"),
     user ? cursosDoAluno(supabase, user.id) : Promise.resolve(new Set<string>()),
   ]);
   const produtos = ((data ?? []) as (Prod & { excluido?: boolean })[]).filter((p) => p.ativo && !p.excluido);
+  // cupom do link (?cupom=ESCOLA10): vale só nos planos permitidos
+  const cupons = new Map<string, Cupom>();
+  let erroCupom = "";
+  if (codigo) {
+    const rs = await Promise.all(produtos.map(async (p) => [p.slug, await validarCupom(supabase, codigo, p.slug)] as const));
+    for (const [slug, r] of rs) if (r.cupom) cupons.set(slug, r.cupom); else erroCupom ||= r.erro ?? "";
+  }
+  const comCodigo = (slug: string) => (cupons.has(slug) ? `?cupom=${codigo}` : "");
   const precoDe = (slug: string) => Number(((data ?? []) as Prod[]).find((p) => p.slug === slug)?.preco ?? 0);
 
   return (
@@ -47,7 +58,16 @@ export default async function PlanosPage() {
         </div>
       </section>
 
-      <div className="mx-auto -mt-20 grid max-w-[1240px] items-stretch gap-5 px-4 pb-16 sm:grid-cols-2 xl:grid-cols-4 md:px-6">
+      {codigo && (
+        <div className="mx-auto -mt-14 mb-8 max-w-[760px] px-4">
+          {cupons.size ? (
+            <p role="status" className="rounded-2xl bg-[#e5f6ec] px-5 py-3 text-center text-[15px] font-semibold text-[#0f6b3a] shadow">🏷️ Cupom <strong>{codigo}</strong> aplicado: {rotuloCupom([...cupons.values()][0])}{cupons.size < produtos.length ? " nos planos marcados" : ""}.</p>
+          ) : (
+            <p role="alert" className="rounded-2xl bg-white px-5 py-3 text-center text-[15px] font-semibold text-brand-deep shadow">Cupom {codigo}: {erroCupom || "inválido."}</p>
+          )}
+        </div>
+      )}
+      <div className={`mx-auto ${codigo ? "" : "-mt-20"} grid max-w-[1240px] items-stretch gap-5 px-4 pb-16 sm:grid-cols-2 xl:grid-cols-4 md:px-6`}>
         {/* Simulados ANAC: sempre grátis */}
         <article id="anac" className="flex scroll-mt-24 flex-col gap-5 rounded-[24px] border border-line bg-white p-6 shadow-[0_18px_40px_-30px_rgba(35,42,61,.5)]">
           <div className="flex flex-col gap-1">
@@ -67,7 +87,10 @@ export default async function PlanosPage() {
           const temTudo = (p.inclui ?? [p.slug]).every((c) => ativos.has(c));
           const separados = combo ? (p.inclui ?? []).reduce((s, c) => s + precoDe(c), 0) : 0;
           const economia = separados - Number(p.preco);
-          const pix = Math.round(Number(p.preco) * (100 - Number(p.desconto_pix))) / 100;
+          const cupom = cupons.get(p.slug) ?? null;
+          const precos = precosFinais(Number(p.preco), Number(p.desconto_pix), cupom);
+          const pix = precos.pix;
+          const riscado = cupom ? Number(p.preco) : economia > 0 ? separados : 0;
           const escuro = combo;
           return (
             <article key={p.slug} id={ANCORA[p.slug] ?? p.slug}
@@ -78,8 +101,9 @@ export default async function PlanosPage() {
                 <p className={`text-[15px] ${escuro ? "text-[#d7dbe6]" : "text-ink-2"}`}>{p.descricao?.split(":")[0] ?? ""}</p>
               </div>
               <div className="flex flex-col">
-                {economia > 0 && <span className={`text-[15px] line-through ${escuro ? "text-[#aab3c8]" : "text-muted"}`}>{reais(separados)}</span>}
-                <strong className="font-display text-[40px] leading-none font-extrabold">{reais(p.preco)}</strong>
+                {riscado > 0 && <span className={`text-[15px] line-through ${escuro ? "text-[#aab3c8]" : "text-muted"}`}>{reais(riscado)}</span>}
+                <strong className="font-display text-[40px] leading-none font-extrabold">{reais(precos.cartao)}</strong>
+                {cupom && <span className="mt-1 self-start rounded-full bg-[#fff3c4] px-3 py-1 text-[13px] font-bold text-[#7a5a00]">🏷️ {cupom.codigo}</span>}
                 <span className={`pt-1 text-[14px] ${escuro ? "text-[#d7dbe6]" : "text-muted"}`}>em até 12x no cartão{Number(p.desconto_pix) > 0 ? ` · ${reais(pix)} no Pix` : ""}</span>
                 {economia > 0 && <span className="mt-2 self-start rounded-full bg-[#e5f6ec] px-3 py-1 text-[13px] font-bold text-[#0f6b3a]">Economize {reais(economia)}</span>}
               </div>
@@ -87,7 +111,7 @@ export default async function PlanosPage() {
               {temTudo ? (
                 <Link href={p.endereco ?? "/head-hunter"} className="mt-auto inline-flex min-h-13 items-center justify-center rounded-xl bg-[#0f6b3a] px-6 py-3 font-display text-[16px] font-bold text-white">Você já tem · Acessar</Link>
               ) : (
-                <Link href={`/comprar/${p.slug}`} className={`mt-auto inline-flex min-h-13 items-center justify-center rounded-xl px-6 py-3 font-display text-[16px] font-bold text-white ${escuro ? "bg-brand-strong hover:bg-brand" : "bg-navy hover:bg-navy-deep"}`}>Acessar agora</Link>
+                <Link href={`/comprar/${p.slug}${comCodigo(p.slug)}`} className={`mt-auto inline-flex min-h-13 items-center justify-center rounded-xl px-6 py-3 font-display text-[16px] font-bold text-white ${escuro ? "bg-brand-strong hover:bg-brand" : "bg-navy hover:bg-navy-deep"}`}>Acessar agora</Link>
               )}
             </article>
           );

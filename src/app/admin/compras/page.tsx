@@ -12,7 +12,7 @@ export default async function ComprasPage({ searchParams }: { searchParams: Prom
   const { supabase } = await getUser();
   let c = supabase.from("compras").select("*").order("comprada_em", { ascending: false }).limit(500);
   const busca = q.trim().replace(/[%,()]/g, "").slice(0, 60);
-  if (busca) c = c.or(`nome.ilike.%${busca}%,email.ilike.%${busca}%,whatsapp.ilike.%${busca}%,id_transacao.ilike.%${busca}%,documento.ilike.%${busca}%`);
+  if (busca) c = c.or(`nome.ilike.%${busca}%,email.ilike.%${busca}%,whatsapp.ilike.%${busca}%,id_transacao.ilike.%${busca}%,cupom.ilike.%${busca}%,documento.ilike.%${busca}%`);
   if (STATUS_COMPRA[s]) c = c.eq("status", s);
   const { data, error } = await c;
   const lista = (data ?? []) as Compra[];
@@ -42,7 +42,7 @@ export default async function ComprasPage({ searchParams }: { searchParams: Prom
 
           <form className="flex flex-wrap gap-2" role="search">
             <label htmlFor="busca" className="sr-only">Buscar</label>
-            <input id="busca" name="q" defaultValue={q} placeholder="Nome, e-mail, WhatsApp, CPF ou ID da transação" className="min-h-12 flex-[1_1_280px] rounded-xl border border-[#c9cedb] bg-white px-4 text-[15px]" />
+            <input id="busca" name="q" defaultValue={q} placeholder="Nome, e-mail, WhatsApp, CPF, ID da transação ou cupom" className="min-h-12 flex-[1_1_280px] rounded-xl border border-[#c9cedb] bg-white px-4 text-[15px]" />
             <label htmlFor="st" className="sr-only">Status</label>
             <select id="st" name="s" defaultValue={s} className="min-h-12 rounded-xl border border-[#c9cedb] bg-white px-3 text-[15px]">
               <option value="">Todos os status</option>

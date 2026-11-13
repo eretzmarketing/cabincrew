@@ -59,6 +59,7 @@ export default async function CompraPage({ params }: { params: Promise<{ id: str
             {linha("Forma de pagamento", `${FORMAS[c.forma_pagamento] ?? c.forma_pagamento}${c.parcelas ? ` · ${c.parcelas}x` : ""}`)}
             {linha("Plataforma", c.plataforma)}
             {linha("ID da transação", <span className="break-all">{c.id_transacao ?? "—"}</span>)}
+            {c.cupom && linha("Cupom", <>{c.cupom}{c.desconto_cupom ? ` (${Number(c.desconto_cupom).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })} de desconto)` : ""}</>)}
           </div>
           {c.observacao && <p className="rounded-xl bg-soft px-4 py-3 text-[14px] whitespace-pre-line">{c.observacao}</p>}
         </Card>

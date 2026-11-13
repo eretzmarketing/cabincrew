@@ -1,6 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
-import { configMP, criarPagamento, precoPor, referencia, registrarPagamento, URL_WEBHOOK } from "@/lib/mercadopago";
+import { precosFinais } from "@/lib/cupons";
+import { validarCupom } from "@/lib/cupons-servidor";
+import { configMP, criarPagamento, referencia, registrarPagamento, URL_WEBHOOK } from "@/lib/mercadopago";
 import { cursosDoAluno } from "@/lib/crew-gate";
 import { getUser } from "@/lib/supabase/server";
 
@@ -35,18 +37,23 @@ export async function POST(req: Request) {
   const { supabase, user, profile } = await getUser();
   if (!user || !profile) return NextResponse.json({ erro: "Entre na sua conta para comprar." }, { status: 401 });
 
-  const corpo = (await req.json().catch(() => ({}))) as { produto?: string; metodo?: string; cpf?: string; cartao?: Record<string, unknown> };
+  const corpo = (await req.json().catch(() => ({}))) as { produto?: string; metodo?: string; cpf?: string; cupom?: string; cartao?: Record<string, unknown> };
   const slug = corpo.produto ?? "head-hunter";
   const { data: prod } = await supabase.from("produtos").select("*").eq("slug", slug).maybeSingle();
   if (!prod?.ativo || prod.excluido) return NextResponse.json({ erro: "Produto indisponível." }, { status: 404 });
   const ativos = await cursosDoAluno(supabase, user.id);
   if (((prod.inclui as string[] | null) ?? [slug]).every((c) => ativos.has(c))) return NextResponse.json({ erro: `Você já tem acesso a ${prod.nome}.` }, { status: 409 });
 
+  // cupom conferido de novo aqui: o preço nunca vem do navegador
+  const { cupom, erro: erroCupom } = await validarCupom(supabase, corpo.cupom, slug);
+  if (corpo.cupom && !cupom) return NextResponse.json({ erro: erroCupom ?? "Cupom inválido." }, { status: 400 });
+  const precos = precosFinais(Number(prod.preco), Number(prod.desconto_pix), cupom);
+
   const nome = String(profile.nome || profile.apelido || "").trim();
   const [primeiro, ...resto] = nome.split(" ");
   const base = {
     description: prod.nome, external_reference: referencia(slug, user.id), notification_url: URL_WEBHOOK,
-    statement_descriptor: "CABINCREW", metadata: { produto: slug, user_id: user.id },
+    statement_descriptor: "CABINCREW", metadata: { produto: slug, user_id: user.id, cupom: cupom?.codigo ?? null, desconto_cupom: precos.descontoCupom || null },
   };
 
   try {
@@ -54,7 +61,7 @@ export async function POST(req: Request) {
       const cpf = so(corpo.cpf);
       if (cpf.length !== 11) return NextResponse.json({ erro: "Informe um CPF válido." }, { status: 400 });
       const pg = await criarPagamento({
-        ...base, transaction_amount: precoPor(Number(prod.preco), Number(prod.desconto_pix), "pix"), payment_method_id: "pix",
+        ...base, transaction_amount: precos.pix, payment_method_id: "pix",
         date_of_expiration: expiraEm30min(),
         payer: { email: user.email, first_name: primeiro || undefined, last_name: resto.join(" ") || undefined, identification: { type: "CPF", number: cpf } },
       }, randomUUID());
@@ -66,7 +73,7 @@ export async function POST(req: Request) {
       const c = corpo.cartao as { token?: string; issuer_id?: string | number; payment_method_id?: string; installments?: number; payer?: { email?: string; identification?: { type?: string; number?: string } } };
       if (!c.token || !c.payment_method_id) return NextResponse.json({ erro: "Dados do cartão incompletos." }, { status: 400 });
       const pg = await criarPagamento({
-        ...base, transaction_amount: precoPor(Number(prod.preco), Number(prod.desconto_pix), "cartao"),
+        ...base, transaction_amount: precos.cartao,
         token: c.token, installments: Math.max(1, Math.min(12, Number(c.installments) || 1)), payment_method_id: c.payment_method_id,
         issuer_id: c.issuer_id ? Number(c.issuer_id) : undefined,
         payer: { email: c.payer?.email || user.email, first_name: primeiro || undefined, last_name: resto.join(" ") || undefined, identification: c.payer?.identification },

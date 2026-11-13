@@ -3,7 +3,10 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
-type Produto = { slug: string; nome: string; endereco: string; preco: number; pix: number; descontoPix: number; diasExtras: number };
+import { precosFinais, normalizarCupom, rotuloCupom, type Cupom } from "@/lib/cupons";
+
+type Base = { slug: string; nome: string; endereco: string; precoBase: number; descontoPix: number; diasExtras: number };
+type Produto = Base & { preco: number; pix: number; cupom: string | null; descontoCupom: number };
 type Pix = { id: number; codigo?: string; imagem?: string; link?: string; valor: number; criado: number };
 
 const reais = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -31,8 +34,13 @@ async function pagar(dados: Record<string, unknown>) {
   return (await r.json().catch(() => ({ erro: "Falha de conexão." }))) as { id?: number; status?: string; mensagem?: string; erro?: string; pix?: { codigo?: string; imagem?: string; link?: string }; valor?: number };
 }
 
-export default function Checkout({ publicKey, produto, email, nome }: { publicKey: string; produto: Produto; email: string; nome: string }) {
+export default function Checkout({ publicKey, base, email, nome, cupomInicial, erroCupomInicial }: {
+  publicKey: string; base: Base; email: string; nome: string; cupomInicial: Cupom | null; erroCupomInicial?: string;
+}) {
   const [metodo, setMetodo] = useState<"pix" | "cartao">("pix");
+  const [cupom, setCupom] = useState<Cupom | null>(cupomInicial);
+  const p = precosFinais(base.precoBase, base.descontoPix, cupom);
+  const produto: Produto = { ...base, preco: p.cartao, pix: p.pix, cupom: cupom?.codigo ?? null, descontoCupom: p.descontoCupom };
   const [aprovado, setAprovado] = useState(false);
   const [analise, setAnalise] = useState(false);
 
@@ -70,7 +78,7 @@ export default function Checkout({ publicKey, produto, email, nome }: { publicKe
             </button>
           ))}
         </div>
-        {metodo === "pix" ? <PagarPix produto={produto} aoAprovar={() => setAprovado(true)} /> : <PagarCartao publicKey={publicKey} produto={produto} email={email} aoAprovar={() => setAprovado(true)} aoAnalisar={() => setAnalise(true)} />}
+        {metodo === "pix" ? <PagarPix key={produto.cupom ?? "-"} produto={produto} aoAprovar={() => setAprovado(true)} /> : <PagarCartao publicKey={publicKey} produto={produto} email={email} aoAprovar={() => setAprovado(true)} aoAnalisar={() => setAnalise(true)} />}
       </section>
 
       <aside className="flex flex-col gap-4 rounded-[22px] bg-navy p-6 text-white lg:sticky lg:top-24">
@@ -79,7 +87,9 @@ export default function Checkout({ publicKey, produto, email, nome }: { publicKe
           <strong className="font-display text-xl">{produto.nome}</strong>
           <span className="font-display text-xl font-extrabold">{reais(metodo === "pix" ? produto.pix : produto.preco)}</span>
         </div>
-        {metodo === "pix" && produto.descontoPix > 0 && <p className="text-[14px] text-[#bfe9cf]">Você economiza {reais(produto.preco - produto.pix)} no Pix.</p>}
+        {produto.descontoCupom > 0 && <p className="text-[14px] text-[#bfe9cf]">Cupom {produto.cupom}: {reais(produto.descontoCupom)} de desconto{produto.precoBase !== produto.preco ? ` (de ${reais(produto.precoBase)})` : ""}.</p>}
+        {metodo === "pix" && produto.descontoPix > 0 && <p className="text-[14px] text-[#bfe9cf]">Você economiza mais {reais(produto.preco - produto.pix)} no Pix.</p>}
+        <CampoCupom produto={base.slug} cupom={cupom} setCupom={setCupom} erroInicial={erroCupomInicial} />
         {metodo === "cartao" && <p className="text-[14px] text-[#d7dbe6]">No parcelamento, os juros do cartão são calculados pelo Mercado Pago e aparecem antes de você confirmar.</p>}
         <ul className="flex flex-col gap-1.5 border-t border-white/15 pt-4 text-[14px] text-[#d7dbe6]">
           <li>✓ Acesso liberado na hora após a aprovação</li>
@@ -117,7 +127,7 @@ function PagarPix({ produto, aoAprovar }: { produto: Produto; aoAprovar: () => v
   async function gerar(e: React.FormEvent) {
     e.preventDefault();
     setErro(""); setPend(true);
-    const r = await pagar({ produto: produto.slug, metodo: "pix", cpf });
+    const r = await pagar({ produto: produto.slug, metodo: "pix", cpf, cupom: produto.cupom });
     setPend(false);
     if (r.erro || !r.id) return setErro(r.erro ?? "Não foi possível gerar o Pix.");
     setPix({ id: r.id, ...r.pix, valor: r.valor ?? produto.pix, criado: Date.now() });
@@ -180,7 +190,7 @@ function PagarCartao({ publicKey, produto, email, aoAprovar, aoAnalisar }: { pub
           onError: (e: unknown) => console.error("[checkout]", e),
           onSubmit: async (dados: Record<string, unknown>) => {
             setErro("");
-            const r = await pagar({ produto: produto.slug, metodo: "cartao", cartao: dados });
+            const r = await pagar({ produto: produto.slug, metodo: "cartao", cartao: dados, cupom: produto.cupom });
             if (r.status === "approved" || r.status === "authorized") { fns.current.aoAprovar(); return; }
             if (r.status === "in_process" || r.status === "pending") { fns.current.aoAnalisar(); return; }
             setErro(r.mensagem ?? r.erro ?? "Pagamento não aprovado. Tente outro cartão ou o Pix.");
@@ -191,7 +201,7 @@ function PagarCartao({ publicKey, produto, email, aoAprovar, aoAnalisar }: { pub
       if (!ativo) ctl.unmount();
     }).catch(() => { setCarregando(false); setErro("Não foi possível carregar o pagamento com cartão. Recarregue a página ou use o Pix."); });
     return () => { ativo = false; ctl?.unmount(); };
-  }, [publicKey, produto.preco, produto.slug, email]);
+  }, [publicKey, produto.preco, produto.slug, produto.cupom, email]);
 
   return (
     <div className="flex flex-col gap-3">
@@ -199,5 +209,43 @@ function PagarCartao({ publicKey, produto, email, aoAprovar, aoAnalisar }: { pub
       {erro && <p role="alert" className="rounded-xl bg-brand-soft px-4 py-2.5 text-[14px] text-brand-deep">{erro}</p>}
       <div id="cartao-mp" />
     </div>
+  );
+}
+
+function CampoCupom({ produto, cupom, setCupom, erroInicial }: { produto: string; cupom: Cupom | null; setCupom: (c: Cupom | null) => void; erroInicial?: string }) {
+  const [aberto, setAberto] = useState(!!erroInicial);
+  const [codigo, setCodigo] = useState("");
+  const [erro, setErro] = useState(erroInicial ?? "");
+  const [pend, setPend] = useState(false);
+
+  async function aplicar(e: React.FormEvent) {
+    e.preventDefault();
+    const c = normalizarCupom(codigo);
+    if (!c) return setErro("Digite o cupom.");
+    setPend(true); setErro("");
+    const r = await fetch(`/api/cupom?produto=${encodeURIComponent(produto)}&codigo=${encodeURIComponent(c)}`).then((x) => x.json()).catch(() => ({ erro: "Falha de conexão." }));
+    setPend(false);
+    if (r.cupom) { setCupom(r.cupom); setCodigo(""); setAberto(false); } else setErro(r.erro ?? "Cupom inválido.");
+  }
+
+  if (cupom) {
+    return (
+      <div className="flex items-center justify-between gap-2 rounded-xl bg-white/10 px-3 py-2 text-[14px]" role="status">
+        <span>🏷️ <strong>{cupom.codigo}</strong> · {rotuloCupom(cupom)}</span>
+        <button type="button" onClick={() => setCupom(null)} className="min-h-9 cursor-pointer px-1 font-semibold text-[#d7dbe6] underline underline-offset-4 hover:text-white">Remover</button>
+      </div>
+    );
+  }
+  if (!aberto) return <button type="button" onClick={() => setAberto(true)} className="min-h-10 cursor-pointer self-start text-[14px] font-semibold text-white underline underline-offset-4">Tenho um cupom de desconto</button>;
+  return (
+    <form onSubmit={aplicar} className="flex flex-col gap-2">
+      <label htmlFor="cupom" className="text-[14px] font-semibold">Cupom de desconto</label>
+      <div className="flex gap-2">
+        <input id="cupom" value={codigo} onChange={(e) => setCodigo(normalizarCupom(e.target.value))} autoComplete="off" placeholder="EX.: ESCOLA10"
+          className="min-h-11 w-full min-w-0 rounded-xl border border-white/30 bg-white px-3 font-semibold tracking-wide text-ink uppercase outline-none" aria-describedby={erro ? "cupom-erro" : undefined} />
+        <button disabled={pend} className="min-h-11 shrink-0 cursor-pointer rounded-xl bg-brand-strong px-4 font-semibold text-white disabled:opacity-60">{pend ? "…" : "Aplicar"}</button>
+      </div>
+      {erro && <p id="cupom-erro" role="alert" className="text-[14px] font-semibold text-[#ffb3c0]">{erro}</p>}
+    </form>
   );
 }
