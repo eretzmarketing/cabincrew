@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
+import BotaoWhatsapp from "@/components/BotaoWhatsapp";
 import Link from "next/link";
 import { Numero, Titulo, btnPrimario, btnSecundario } from "@/components/admin-ui";
 import {
-  SITUACOES, TOTAL_INGLES, diasParaMeta, linkWhatsapp, mensagemSugerida, nomeAluno, nomeCompanhia, quando, riscos, situacao,
+  SITUACOES, TOTAL_INGLES, diasParaMeta, mensagemSugerida, nomeAluno, nomeCompanhia, quando, riscos, situacao,
   type LinhaAluno, type Situacao,
 } from "@/lib/painel-alunos";
 import { getUser } from "@/lib/supabase/server";
@@ -124,15 +125,16 @@ export default async function AlunosHeadHunterPage({ searchParams }: { searchPar
                   const st = situacao(l);
                   const rs = riscos(l);
                   const faltam = diasParaMeta(l);
-                  const wa = linkWhatsapp(l.whatsapp, mensagemSugerida(l));
                   return (
                     <tr key={l.id} className="border-b border-[#eceef3] align-top last:border-0">
                       <td className="p-3">
-                        <Link href={`/admin/head-hunter/alunos/${l.id}`} className="font-semibold text-navy underline-offset-4 hover:underline">{nomeAluno(l)}</Link>
+                        <span className="flex items-start justify-between gap-2">
+                          <Link href={`/admin/head-hunter/alunos/${l.id}`} className="font-semibold text-navy underline-offset-4 hover:underline">{nomeAluno(l)}</Link>
+                          <BotaoWhatsapp telefone={l.whatsapp} nome={nomeAluno(l)} userId={l.id} tamanho="sm" sugestoes={[{ rotulo: "Sugerida para a situação do aluno", texto: mensagemSugerida(l) }]} />
+                        </span>
                         {l.bloqueado && <span className="ml-2 rounded-full bg-brand-soft px-2 py-0.5 text-xs font-semibold text-brand-deep">bloqueado</span>}
                         <span className="block text-[13px] text-muted">{l.email ?? ""}</span>
                         {rs.length > 0 && <span className="mt-1 block text-[13px] font-semibold text-brand-strong">⚠ {rs.join(" · ")}</span>}
-                        {wa && <a href={wa} target="_blank" rel="noreferrer" className="mt-1.5 inline-flex min-h-9 items-center rounded-full border border-[#25d366] px-3 text-[13px] font-semibold text-[#128c4a] hover:bg-[#e9fbf0]">WhatsApp</a>}
                       </td>
                       <td className="p-3">
                         <span className={`inline-block rounded-full px-2.5 py-0.5 text-[13px] font-semibold whitespace-nowrap ${SITUACOES[st].cor}`}>{SITUACOES[st].rotulo}</span>
@@ -159,7 +161,7 @@ export default async function AlunosHeadHunterPage({ searchParams }: { searchPar
             </table>
           </div>
           {total > LIMITE && <p className="text-sm text-muted">Mostrando {LIMITE} de {total}. Use a busca, os filtros ou exporte o CSV para ver todos.</p>}
-          <p className="text-sm text-muted">O botão de WhatsApp abre uma mensagem pronta conforme a situação do aluno; você pode editar antes de enviar.</p>
+          <p className="text-sm text-muted">O ícone do WhatsApp abre um popup para enviar pelo seu número no Wawp: a mensagem sugerida para a situação do aluno, um modelo (com imagem) ou texto livre.</p>
         </>
       )}
     </>

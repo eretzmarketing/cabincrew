@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getUser } from "@/lib/supabase/server";
 import { chmod, unlink, writeFile } from "node:fs/promises";
-import { ARQUIVO_CONEXAO, GATILHOS, conexaoWhatsapp, enviarWhatsapp, preencher, testarConexao } from "@/lib/whatsapp";
+import { ARQUIVO_CONEXAO, GATILHOS, conexaoWhatsapp, enviarWhatsapp, preencher, testarConexao, urlPublicaMidia } from "@/lib/whatsapp";
 
 type Estado = { ok?: boolean; msg?: string; erro?: string };
 
@@ -123,4 +123,32 @@ export async function reenviarWhatsapp(id: number): Promise<Estado> {
   });
   revalidatePath("/admin/whatsapp");
   return r.ok ? { ok: true, msg: "Reenviada ✓" } : { erro: `Não foi enviada: ${r.erro}` };
+}
+
+/** Admin: modelos de mensagem (os mesmos das campanhas) para o popup de envio. */
+export async function listarModelosParaEnvio(): Promise<{ id: number; nome: string; texto: string; imagem: string | null }[]> {
+  const { supabase } = await admin();
+  const { data } = await supabase.from("whatsapp_templates").select("id, nome, texto, imagem").order("updated_at", { ascending: false });
+  return (data ?? []) as { id: number; nome: string; texto: string; imagem: string | null }[];
+}
+
+/** Admin: envia uma mensagem avulsa (texto livre ou modelo, com imagem opcional) pelo Wawp e registra no histórico. */
+export async function enviarMensagemAvulsa(d: { telefone: string; userId?: string | null; nome?: string; texto: string; imagem?: string | null }): Promise<Estado> {
+  const { supabase } = await admin();
+  const digitos = String(d.telefone ?? "").replace(/\D/g, "");
+  if (digitos.length < 10) return { erro: "Número de WhatsApp inválido." };
+  const texto = preencher(String(d.texto ?? "").trim(), { nome: String(d.nome ?? "").split(" ")[0] }).replace(/(Olá|Oi), !/g, "$1!");
+  if (texto.length < 2) return { erro: "Escreva a mensagem." };
+  if (texto.length > 3000) return { erro: "A mensagem passou de 3.000 caracteres." };
+  const imagem = d.imagem && /^imagens\/whatsapp\/[a-f0-9]{16}\.jpg$/.test(d.imagem) ? d.imagem : null;
+  if (imagem && texto.length > 1024) return { erro: "Com imagem, o texto pode ter no máximo 1.024 caracteres." };
+  const userId = d.userId && /^[0-9a-f-]{36}$/i.test(d.userId) ? d.userId : null;
+
+  const r = await enviarWhatsapp(digitos, texto, imagem ? urlPublicaMidia(imagem) : null);
+  await supabase.from("whatsapp_envios").insert({
+    user_id: userId, evento: "manual", ref: `avulsa-${Date.now()}`,
+    telefone: `+${digitos}`, texto, status: r.ok ? "enviada" : r.status, erro: r.ok ? null : r.erro,
+  });
+  revalidatePath("/admin/whatsapp");
+  return r.ok ? { ok: true, msg: "Mensagem enviada ✓" } : { erro: `Não foi enviada: ${r.erro}` };
 }

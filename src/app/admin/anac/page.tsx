@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import BotaoWhatsapp from "@/components/BotaoWhatsapp";
 import Link from "next/link";
 import { bloquearUsuario, excluirUsuario, liberarAnac } from "@/app/crew-actions";
 import { Titulo } from "@/components/admin-ui";
@@ -266,9 +267,9 @@ export default async function AdminAnac({ searchParams }: { searchParams: Promis
                     </span>
                   </span>
                   <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${a.motivo === "média baixa" ? "bg-brand-soft text-brand-deep" : "bg-[#fff3e0] text-[#8a4b00]"}`}>{a.motivo}</span>
-                  {a.whatsapp && (
-                    <a href={`https://wa.me/${a.whatsapp.replace("+", "")}`} target="_blank" rel="noreferrer" className="inline-flex min-h-10 items-center rounded-full border border-line px-3 text-sm font-semibold hover:bg-soft">WhatsApp</a>
-                  )}
+                  <BotaoWhatsapp telefone={a.whatsapp} nome={a.nome ?? "Aluno"} userId={a.id} tamanho="sm"
+                    sugestoes={[{ rotulo: "Incentivo nos Simulados ANAC", texto: `Oi, {nome}! Aqui é o Daniel, do Cabin Crew. Vi seus Simulados ANAC: ${a.motivo === "média baixa" ? "sua média ainda está abaixo de 70%. Que tal revisar o bloco com mais erros e refazer? Estou aqui para ajudar!" : "faz um tempo que você não treina. Bora fazer um simulado hoje? ✈️"}
+👉 {link}/simulados-anac` }]} />
                 </li>
               ))}
             </ul>

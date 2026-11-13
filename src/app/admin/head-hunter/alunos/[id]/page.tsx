@@ -1,15 +1,14 @@
 import type { Metadata } from "next";
+import BotaoWhatsapp from "@/components/BotaoWhatsapp";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Card, Numero, Titulo } from "@/components/admin-ui";
-import { EnviarWhatsappForm } from "@/components/WhatsappForms";
-import { whatsappConfigurado } from "@/lib/whatsapp";
 import { BANCOS } from "@/lib/crew";
 import { META, maiorSequencia } from "@/lib/jornada";
 import { carregarJornada } from "@/lib/jornada-dados";
 import { calcularMedalhas } from "@/lib/medalhas";
 import {
-  SITUACOES, TOTAL_INGLES, dataCurta, diasParaMeta, linkWhatsapp, mensagemSugerida, nomeAluno, nomeCompanhia, quando, riscos, situacao,
+  SITUACOES, TOTAL_INGLES, dataCurta, diasParaMeta, mensagemSugerida, nomeAluno, nomeCompanhia, quando, riscos, situacao,
   type LinhaAluno,
 } from "@/lib/painel-alunos";
 import { getUser } from "@/lib/supabase/server";
@@ -36,7 +35,6 @@ export default async function AlunoPage({ params }: { params: Promise<{ id: stri
   const st = situacao(l);
   const rs = riscos(l);
   const faltam = diasParaMeta({ data_meta: dataMeta });
-  const wa = linkWhatsapp(l.whatsapp, mensagemSugerida(l));
   const medalhas = calcularMedalhas(dados, jornada);
 
   // desempenho por banco (treinos e simulados de um banco só)
@@ -59,7 +57,7 @@ export default async function AlunoPage({ params }: { params: Promise<{ id: stri
         <Titulo sub={<>{l.email ?? "sem e-mail"}{l.whatsapp && <> · {l.whatsapp}</>} · cadastro em {new Date(l.cadastro).toLocaleDateString("pt-BR")}</>}>
           {nomeAluno(l)} <span className={`ml-2 inline-block rounded-full px-3 py-1 align-middle text-sm font-semibold ${SITUACOES[st].cor}`}>{SITUACOES[st].rotulo}</span>
         </Titulo>
-        {wa && <a href={wa} target="_blank" rel="noreferrer" className="inline-flex min-h-12 items-center rounded-full bg-[#25d366] px-5 font-semibold text-[#0b3d20] hover:brightness-95">Chamar no WhatsApp</a>}
+        <BotaoWhatsapp telefone={l.whatsapp} nome={nomeAluno(l)} userId={l.id} sugestoes={[{ rotulo: "Sugerida para a situação do aluno", texto: mensagemSugerida(l) }]} />
       </div>
 
       {rs.length > 0 && (
@@ -147,14 +145,6 @@ export default async function AlunoPage({ params }: { params: Promise<{ id: stri
               </ul>
             )}
           </Card>
-
-          {l.whatsapp && whatsappConfigurado() && (
-            <Card>
-              <h2 className="font-display text-xl font-extrabold">Mandar mensagem</h2>
-              <p className="text-[14px] text-ink-2">Sai do seu número no Wawp e fica no histórico em Configurações → WhatsApp.</p>
-              <EnviarWhatsappForm alunoId={l.id} textoInicial={mensagemSugerida(l)} />
-            </Card>
-          )}
 
           <Card>
             <h2 className="font-display text-xl font-extrabold">Acesso aos cursos</h2>

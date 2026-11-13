@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import BotaoWhatsapp from "@/components/BotaoWhatsapp";
 import Link from "next/link";
 import { alterarAdmin } from "@/app/crew-actions";
 import { Titulo, btnSecundario } from "@/components/admin-ui";
@@ -64,7 +65,7 @@ export default async function UsuariosPage({ searchParams }: { searchParams: Pro
                   {u.is_admin && <span className="ml-2 rounded-full bg-navy px-2 py-0.5 text-xs font-semibold text-white">admin</span>}
                 </td>
                 <td className="p-3">
-                  {u.whatsapp ? <a href={`https://wa.me/${u.whatsapp.replace("+", "")}`} target="_blank" rel="noreferrer">{u.whatsapp}</a> : "—"}
+                  {u.whatsapp ? <span className="flex items-center gap-2 whitespace-nowrap">{u.whatsapp}<BotaoWhatsapp telefone={u.whatsapp} nome={u.nome ?? "Usuário"} userId={u.id} tamanho="sm" /></span> : "—"}
                 </td>
                 <td className="p-3">{u.escola ?? "—"}</td>
                 <td className="p-3">{u.pontos}</td>

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import BotaoWhatsapp from "@/components/BotaoWhatsapp";
 import { excluirInteressado } from "@/app/crew-actions";
 import { Titulo, btnSecundario } from "@/components/admin-ui";
 import { getUser } from "@/lib/supabase/server";
@@ -47,7 +48,7 @@ export default async function InteressadosPage() {
               <tr key={i.id} className="border-b border-[#eceef3] last:border-0">
                 <td className="p-3 font-semibold">{i.nome}</td>
                 <td className="p-3 whitespace-nowrap">
-                  <a href={`https://wa.me/${i.telefone.replace("+", "")}`} target="_blank" rel="noreferrer">{telefoneLegivel(i.telefone)}</a>
+                  <span className="flex items-center gap-2">{telefoneLegivel(i.telefone)}<BotaoWhatsapp telefone={i.telefone} nome={i.nome} tamanho="sm" /></span>
                 </td>
                 <td className="p-3">{paisPorIso(i.pais)?.nome ?? i.pais}</td>
                 <td className="p-3 whitespace-nowrap">{new Date(i.created_at).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Sao_Paulo" })}</td>
