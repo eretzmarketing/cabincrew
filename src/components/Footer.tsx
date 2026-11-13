@@ -17,6 +17,7 @@ export default async function Footer() {
               <strong className="font-display text-white">Head Hunter</strong>
               <Link href="/planos" className="hover:text-white">Planos</Link>
               <Link href="/simulados-anac" className="hover:text-white">Simulados ANAC grátis</Link>
+              <Link href="/autenticar" className="hover:text-white">Autenticar certificado</Link>
               <Link href="/head-hunter" className="hover:text-white">Área do aluno</Link>
               <Link href="/conta" className="hover:text-white">Minha conta</Link>
             </div>

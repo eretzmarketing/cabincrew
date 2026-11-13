@@ -17,7 +17,7 @@ async function admin() {
 const num = (v: unknown, min: number, max: number, padrao: number) => { const n = Number(v); return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : padrao; };
 
 /** Admin: salva o modelo de certificado de um curso (imagem, tamanho e campos). */
-export async function salvarModeloCertificado(curso: string, m: { imagem: string | null; largura: number; altura: number; campos: Campo[]; ativo: boolean }): Promise<Estado> {
+export async function salvarModeloCertificado(curso: string, m: { imagem: string | null; largura: number; altura: number; campos: Campo[]; ativo: boolean; carga_horaria?: string | null; descricao?: string | null }): Promise<Estado> {
   const { supabase } = await admin();
   if (!CURSOS.includes(curso)) return { erro: "Curso inválido." };
   if (m.imagem && !/^imagens\/certificados\/[a-f0-9]{16}\.jpg$/.test(m.imagem)) return { erro: "Imagem inválida. Envie de novo." };
@@ -31,8 +31,9 @@ export async function salvarModeloCertificado(curso: string, m: { imagem: string
   const { error } = await supabase.from("certificado_modelos").upsert({
     curso, imagem: m.imagem, largura: Math.round(num(m.largura, 100, 10000, 3508)), altura: Math.round(num(m.altura, 100, 10000, 2480)),
     campos, ativo: !!m.ativo, updated_at: new Date().toISOString(),
+    carga_horaria: String(m.carga_horaria ?? "").trim().slice(0, 60) || null, descricao: String(m.descricao ?? "").trim().slice(0, 1000) || null,
   });
-  if (error) return { erro: error.message.includes("certificado_modelos") ? "Rode o SQL 0049_certificados.sql no Supabase." : "Não foi possível salvar." };
+  if (error) return { erro: error.message.includes("carga_horaria") || error.message.includes("descricao") ? "Rode o SQL 0050_autenticar_certificado.sql no Supabase." : error.message.includes("certificado_modelos") ? "Rode o SQL 0049_certificados.sql no Supabase." : "Não foi possível salvar." };
   revalidatePath("/admin/certificados");
   return { ok: true, msg: "Modelo salvo ✓" };
 }

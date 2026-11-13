@@ -14,8 +14,8 @@ export type Campo = {
   largura: number;            // largura máxima do texto, em % da largura
   visivel: boolean;
 };
-export type Modelo = { curso: string; imagem: string | null; largura: number; altura: number; campos: Campo[]; ativo?: boolean };
-export type Dados = { nome: string; curso: string; concluido_em: string; nota: number | null; codigo: string };
+export type Modelo = { curso: string; imagem: string | null; largura: number; altura: number; campos: Campo[]; ativo?: boolean; carga_horaria?: string | null; descricao?: string | null };
+export type Dados = { nome: string; curso: string; concluido_em: string; nota: number | null; codigo: string; carga?: string | null };
 
 export const CURSOS_CERT: Record<string, string> = { "head-hunter": "Head Hunter", english: "Flight Attendant English" };
 export const NOMES_CURSO_CERT: Record<string, string> = {
@@ -49,7 +49,8 @@ export function textoDoCampo(c: Campo, d: Dados, site: string) {
     .replaceAll("{data}", dataExtenso(d.concluido_em))
     .replaceAll("{nota}", d.nota == null ? "—" : Number(d.nota).toLocaleString("pt-BR", { maximumFractionDigits: 1 }))
     .replaceAll("{codigo}", d.codigo)
-    .replaceAll("{link}", `${site.replace(/^https?:\/\//, "")}/certificado/${d.codigo}`);
+    .replaceAll("{carga}", d.carga || "")
+    .replaceAll("{link}", `${site.replace(/^https?:\/\//, "")}/autenticar`);
 }
 
 export const EXEMPLO: Dados = { nome: "Ana Beatriz Carvalho Lima", curso: "", concluido_em: "2026-11-13T15:00:00-03:00", nota: 87.5, codigo: "AB12CD34" };

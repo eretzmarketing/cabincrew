@@ -11,6 +11,8 @@ const rot = "text-[13px] font-semibold";
 export default function EditorCertificado({ inicial, site }: { inicial: Modelo; site: string }) {
   const [m, setM] = useState<Modelo>({ ...inicial, campos: inicial.campos?.length ? inicial.campos : CAMPOS_PADRAO });
   const [ativo, setAtivo] = useState(inicial.ativo !== false);
+  const [carga, setCarga] = useState(inicial.carga_horaria ?? "");
+  const [descricao, setDescricao] = useState(inicial.descricao ?? "");
   const [sel, setSel] = useState<string | null>("nome");
   const [res, setRes] = useState<{ msg?: string; erro?: string }>({});
   const [enviando, setEnviando] = useState(false);
@@ -53,7 +55,7 @@ export default function EditorCertificado({ inicial, site }: { inicial: Modelo; 
     setSel(id);
   }
   const faltando = (["nome", "curso", "data", "nota", "codigo"] as CampoId[]).filter((t) => !m.campos.some((c) => c.tipo === t));
-  const dados = { ...EXEMPLO, curso: NOMES_CURSO_CERT[m.curso] ?? m.curso };
+  const dados = { ...EXEMPLO, curso: NOMES_CURSO_CERT[m.curso] ?? m.curso, carga };
 
   return (
     <div className="grid gap-5 xl:grid-cols-[1fr_320px]">
@@ -78,6 +80,14 @@ export default function EditorCertificado({ inicial, site }: { inicial: Modelo; 
       </div>
 
       <aside className="flex flex-col gap-4 rounded-2xl border border-line bg-white p-4 xl:sticky xl:top-24 xl:self-start">
+        <div className="flex flex-col gap-2 border-b border-line pb-3">
+          <label className={`flex flex-col gap-1 ${rot}`}>Carga horária <span className="font-normal text-muted">(ex.: 40 horas · use {"{carga}"} no certificado)</span>
+            <input value={carga} onChange={(e) => setCarga(e.target.value)} maxLength={60} className={campo} />
+          </label>
+          <label className={`flex flex-col gap-1 ${rot}`}>Descrição do curso <span className="font-normal text-muted">(aparece na autenticação)</span>
+            <textarea rows={3} value={descricao} onChange={(e) => setDescricao(e.target.value)} maxLength={1000} className={campo} />
+          </label>
+        </div>
         <div className="flex flex-col gap-1">
           <span className={rot}>Campos</span>
           <div className="flex flex-wrap gap-1.5">
@@ -91,7 +101,7 @@ export default function EditorCertificado({ inicial, site }: { inicial: Modelo; 
         </div>
         {atual ? (
           <div className="flex flex-col gap-3">
-            <label className={`flex flex-col gap-1 ${rot}`}>Texto <span className="font-normal text-muted">{"{nome} {curso} {data} {nota} {codigo} {link}"}</span>
+            <label className={`flex flex-col gap-1 ${rot}`}>Texto <span className="font-normal text-muted">{"{nome} {curso} {data} {nota} {carga} {codigo} {link}"}</span>
               <textarea rows={2} value={atual.texto} onChange={(e) => mudar(atual.id, { texto: e.target.value })} className={campo} />
             </label>
             <div className="grid grid-cols-2 gap-2">
@@ -135,7 +145,7 @@ export default function EditorCertificado({ inicial, site }: { inicial: Modelo; 
         <div className="flex flex-col gap-2 border-t border-line pt-3">
           <label className="flex min-h-10 cursor-pointer items-center gap-2 text-[14px] font-semibold"><input type="checkbox" checked={ativo} onChange={(e) => setAtivo(e.target.checked)} className="h-5 w-5 accent-[#c8102e]" /> Alunos podem emitir</label>
           <div className="flex flex-wrap gap-2">
-            <button type="button" disabled={pend} onClick={() => iniciar(async () => setRes(await salvarModeloCertificado(m.curso, { imagem: m.imagem, largura: m.largura, altura: m.altura, campos: m.campos, ativo })))}
+            <button type="button" disabled={pend} onClick={() => iniciar(async () => setRes(await salvarModeloCertificado(m.curso, { imagem: m.imagem, largura: m.largura, altura: m.altura, campos: m.campos, ativo, carga_horaria: carga, descricao })))}
               className="min-h-11 flex-1 cursor-pointer rounded-full bg-navy px-5 font-semibold text-white disabled:opacity-50">{pend ? "Salvando…" : "Salvar"}</button>
             <button type="button" onClick={() => { setM((x) => ({ ...x, campos: CAMPOS_PADRAO })); setSel("nome"); }} className="min-h-11 cursor-pointer rounded-full border border-line px-4 text-[13px] font-semibold">Posições padrão</button>
           </div>
