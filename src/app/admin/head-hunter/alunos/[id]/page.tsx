@@ -13,6 +13,7 @@ import {
   type LinhaAluno,
 } from "@/lib/painel-alunos";
 import { getUser } from "@/lib/supabase/server";
+import { STATUS_COMPRA, dataHoraBR, dinheiro, fimArrependimento, type Compra } from "@/lib/compras";
 
 export const metadata: Metadata = { title: "Aluno · Head Hunter" };
 export const dynamic = "force-dynamic";
@@ -21,10 +22,11 @@ export default async function AlunoPage({ params }: { params: Promise<{ id: stri
   const { id } = await params;
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
   const { supabase } = await getUser();
-  const [{ data: linha }, { dados, dataMeta, jornada }, { data: recentes }] = await Promise.all([
+  const [{ data: linha }, { dados, dataMeta, jornada }, { data: recentes }, { data: comprasAluno }] = await Promise.all([
     supabase.rpc("admin_hh_alunos", { p_busca: "", p_id: id }),
     carregarJornada(supabase, id),
     supabase.from("tentativas").select("nota, iniciada_em, finalizada_em, saidas_aba, simulados(titulo, origem)").eq("user_id", id).order("iniciada_em", { ascending: false }).limit(15),
+    supabase.from("compras").select("*").eq("user_id", id).order("comprada_em", { ascending: false }),
   ]);
   const l = ((linha ?? []) as LinhaAluno[])[0];
   if (!l) notFound();
@@ -151,6 +153,23 @@ export default async function AlunoPage({ params }: { params: Promise<{ id: stri
               <EnviarWhatsappForm alunoId={l.id} textoInicial={mensagemSugerida(l)} />
             </Card>
           )}
+
+          <Card>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 className="font-display text-xl font-extrabold">Compras</h2>
+              <Link href="/admin/compras/nova" className="text-sm font-semibold underline underline-offset-4">+ Registrar</Link>
+            </div>
+            {!(comprasAluno ?? []).length ? <p className="text-[15px] text-ink-2">Nenhuma compra registrada.</p> : (
+              <ul className="flex flex-col gap-2 text-[14px]">
+                {((comprasAluno ?? []) as Compra[]).map((c) => (
+                  <li key={c.id} className="border-t border-[#eceef3] pt-2 first:border-0 first:pt-0">
+                    <Link href={`/admin/compras/${c.id}`} className="font-semibold text-navy underline-offset-4 hover:underline">{c.produto} · {dinheiro(Number(c.valor), c.moeda)}</Link>
+                    <span className="block text-muted">{dataHoraBR(c.comprada_em)} · {STATUS_COMPRA[c.status]?.rotulo ?? c.status} · arrependimento {fimArrependimento(c.comprada_em) > new Date() ? "em aberto" : "encerrado"}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Card>
 
           <Card>
             <h2 className="font-display text-xl font-extrabold">Medalhas</h2>
