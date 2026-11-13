@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getUser } from "@/lib/supabase/server";
 import { chmod, unlink, writeFile } from "node:fs/promises";
-import { ARQUIVO_CONEXAO, conexaoWhatsapp, enviarWhatsapp, preencher, testarConexao } from "@/lib/whatsapp";
+import { ARQUIVO_CONEXAO, GATILHOS, conexaoWhatsapp, enviarWhatsapp, preencher, testarConexao } from "@/lib/whatsapp";
 
 type Estado = { ok?: boolean; msg?: string; erro?: string };
 
@@ -18,9 +18,21 @@ export async function salvarModeloWhatsapp(_: Estado, form: FormData): Promise<E
   const { supabase } = await admin();
   const evento = String(form.get("evento") ?? "");
   const texto = String(form.get("texto") ?? "").trim();
-  if (!/^[a-z_]{3,40}$/.test(evento)) return { erro: "Modelo inválido." };
+  if (!/^[a-z0-9_]{3,40}$/.test(evento)) return { erro: "Modelo inválido." };
   if (texto.length < 5 || texto.length > 3000) return { erro: "Escreva a mensagem (até 3.000 caracteres)." };
-  const { error } = await supabase.from("whatsapp_modelos").update({ texto, ativo: form.get("ativo") === "on", updated_at: new Date().toISOString() }).eq("evento", evento);
+  const dados: Record<string, unknown> = { texto, ativo: form.get("ativo") === "on", updated_at: new Date().toISOString() };
+  const titulo = String(form.get("titulo") ?? "").trim();
+  const gatilho = String(form.get("gatilho") ?? "");
+  if (titulo) {
+    if (titulo.length < 2 || titulo.length > 60) return { erro: "Dê um nome ao aviso (até 60 caracteres)." };
+    dados.titulo = titulo;
+  }
+  if (gatilho) {
+    if (!GATILHOS[gatilho]) return { erro: "Escolha quando o aviso é enviado." };
+    dados.gatilho = gatilho;
+    dados.quando = GATILHOS[gatilho] + ".";
+  }
+  const { error } = await supabase.from("whatsapp_modelos").update(dados).eq("evento", evento);
   if (error) return { erro: "Não foi possível salvar." };
   revalidatePath("/admin/whatsapp");
   return { ok: true, msg: "Salvo." };
@@ -71,4 +83,44 @@ export async function salvarConexaoWhatsapp(_: Estado, form: FormData): Promise<
   await chmod(ARQUIVO_CONEXAO, 0o600).catch(() => {});
   revalidatePath("/admin/whatsapp");
   return { ok: true, msg: "Conectado ✓ Mande um teste abaixo para confirmar." };
+}
+
+/** Admin: cria um novo aviso automático, disparado num dos momentos dos avisos padrão. */
+export async function criarAvisoPersonalizado(_: Estado, form: FormData): Promise<Estado> {
+  const { supabase } = await admin();
+  const titulo = String(form.get("titulo") ?? "").trim();
+  const gatilho = String(form.get("gatilho") ?? "");
+  const texto = String(form.get("texto") ?? "").trim();
+  if (titulo.length < 2 || titulo.length > 60) return { erro: "Dê um nome ao aviso (ex.: Dica do comandante)." };
+  if (!GATILHOS[gatilho]) return { erro: "Escolha quando o aviso é enviado." };
+  if (texto.length < 5 || texto.length > 3000) return { erro: "Escreva a mensagem (até 3.000 caracteres)." };
+  const evento = "p_" + crypto.randomUUID().replace(/-/g, "").slice(0, 10);
+  const { error } = await supabase.from("whatsapp_modelos").insert({
+    evento, titulo, quando: GATILHOS[gatilho] + ".", texto, ativo: form.get("ativo") === "on", gatilho, personalizado: true,
+  });
+  if (error) return { erro: error.message.includes("gatilho") ? "Rode o SQL 0041_avisos_personalizados.sql no Supabase." : "Não foi possível criar o aviso." };
+  revalidatePath("/admin/whatsapp");
+  return { ok: true, msg: "Aviso criado ✓" };
+}
+
+/** Admin: exclui um aviso personalizado (os avisos padrão só podem ser desligados). */
+export async function excluirAvisoPersonalizado(form: FormData) {
+  const { supabase } = await admin();
+  const evento = String(form.get("evento") ?? "");
+  if (/^p_[a-z0-9]{10}$/.test(evento)) await supabase.from("whatsapp_modelos").delete().eq("evento", evento).eq("personalizado", true);
+  revalidatePath("/admin/whatsapp");
+}
+
+/** Admin: reenvia uma mensagem do histórico, com o mesmo texto, e registra o reenvio. */
+export async function reenviarWhatsapp(id: number): Promise<Estado> {
+  const { supabase } = await admin();
+  const { data: e } = await supabase.from("whatsapp_envios").select("user_id, evento, telefone, texto").eq("id", id).maybeSingle();
+  if (!e?.telefone || !e.texto) return { erro: "Esta mensagem não tem texto salvo para reenviar." };
+  const r = await enviarWhatsapp(e.telefone, e.texto);
+  await supabase.from("whatsapp_envios").insert({
+    user_id: e.user_id, evento: e.evento, ref: `reenvio-${id}-${Date.now()}`,
+    telefone: e.telefone, texto: e.texto, status: r.ok ? "enviada" : r.status, erro: r.ok ? null : r.erro,
+  });
+  revalidatePath("/admin/whatsapp");
+  return r.ok ? { ok: true, msg: "Reenviada ✓" } : { erro: `Não foi enviada: ${r.erro}` };
 }

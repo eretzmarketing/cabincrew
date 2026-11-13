@@ -86,15 +86,34 @@ export function preencher(texto: string, vars: Record<string, string | number | 
  * Aviso automático para o aluno logado (boas-vindas, módulo concluído…).
  * Roda depois da resposta (não atrasa a página), uma única vez por evento/ref, e só se o aluno não desligou os avisos.
  */
+/** Momentos em que um aviso pode disparar (os avisos personalizados escolhem um destes). */
+export const GATILHOS: Record<string, string> = {
+  interessado: "Quando alguém entra na lista da página Em breve",
+  boas_vindas: "Logo depois do cadastro no site",
+  checkin: "No primeiro check-in do Head Hunter",
+  modulo_concluido: "Quando o aluno conclui um módulo do Head Hunter",
+  ingles_modulo: "Quando o aluno conclui um módulo do Inglês a bordo",
+  ingles_concluido: "Quando o aluno conclui o Inglês a bordo inteiro",
+  jornada_concluida: "Quando o aluno conclui toda a jornada do Head Hunter",
+};
+
+/** O aviso padrão do momento e os avisos personalizados ligados a ele (o padrão primeiro). */
+async function comPersonalizados(supabase: SupabaseClient, evento: string) {
+  const { data, error } = await supabase.rpc("whatsapp_personalizados", { p_gatilho: evento });
+  return error ? [evento] : [evento, ...((data ?? []) as string[])];
+}
+
 export function avisarAluno(supabase: SupabaseClient, evento: string, vars: Record<string, string | number | undefined> = {}, ref = "") {
   if (!whatsappConfigurado()) return;
   after(async () => {
-    const { data } = await supabase.rpc("whatsapp_reservar", { p_evento: evento, p_ref: ref });
-    const r = ((data ?? []) as { envio_id: number; telefone: string; nome: string; texto: string }[])[0];
-    if (!r) return;
-    const texto = preencher(r.texto, { ...vars, nome: r.nome });
-    const res = await enviarWhatsapp(r.telefone, texto);
-    await supabase.rpc("whatsapp_resultado", { p_id: r.envio_id, p_status: res.ok ? "enviada" : res.status, p_texto: texto, p_erro: res.ok ? null : res.erro });
+    for (const ev of await comPersonalizados(supabase, evento)) {
+      const { data } = await supabase.rpc("whatsapp_reservar", { p_evento: ev, p_ref: ref });
+      const r = ((data ?? []) as { envio_id: number; telefone: string; nome: string; texto: string }[])[0];
+      if (!r) continue;
+      const texto = preencher(r.texto, { ...vars, nome: r.nome });
+      const res = await enviarWhatsapp(r.telefone, texto);
+      await supabase.rpc("whatsapp_resultado", { p_id: r.envio_id, p_status: res.ok ? "enviada" : res.status, p_texto: texto, p_erro: res.ok ? null : res.erro });
+    }
   });
 }
 
@@ -112,8 +131,10 @@ export async function enviarReservaPublica(supabase: SupabaseClient, r: Reserva 
 export function avisarInteressado(supabase: SupabaseClient, telefone: string) {
   if (!whatsappConfigurado()) return;
   after(async () => {
-    const { data } = await supabase.rpc("whatsapp_reservar_interessado", { p_telefone: telefone });
-    await enviarReservaPublica(supabase, ((data ?? []) as Reserva[])[0]);
+    for (const ev of await comPersonalizados(supabase, "interessado")) {
+      const { data } = await supabase.rpc("whatsapp_reservar_interessado", ev === "interessado" ? { p_telefone: telefone } : { p_telefone: telefone, p_evento: ev });
+      await enviarReservaPublica(supabase, ((data ?? []) as Reserva[])[0]);
+    }
   });
 }
 
