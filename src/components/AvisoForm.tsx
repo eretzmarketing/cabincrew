@@ -77,7 +77,7 @@ export default function AvisoForm() {
               minLength={3}
               maxLength={120}
               autoComplete="name"
-              placeholder="Como está no seu documento"
+              placeholder="Seu nome completo"
               className="min-h-14 rounded-xl border border-[#c9cedb] bg-white px-4 text-[16px] text-navy placeholder:text-[#8a90a2]"
             />
           </div>
