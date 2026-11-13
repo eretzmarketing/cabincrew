@@ -317,7 +317,9 @@ export async function excluirMinhaConta(_: FormState, form: FormData): Promise<F
   if (form.get("ciente") !== "on") return { erro: "Marque que você está ciente de que perde o acesso, sem reembolso." };
 
   await supabase.storage.from("avatares").remove([`${user.id}/avatar.webp`]).catch(() => {}); // foto de perfil
-  const { data, error } = await supabase.rpc("excluir_minha_conta");
+  const h = await headers();
+  const ip = (h.get("x-forwarded-for") ?? "").split(",")[0].trim() || h.get("x-real-ip") || null;
+  const { data, error } = await supabase.rpc("excluir_minha_conta", { p_ip: ip, p_navegador: h.get("user-agent") });
   if (error) {
     console.error("[excluir_minha_conta]", error.message);
     return { erro: "Não foi possível excluir agora. Tente de novo em instantes." };

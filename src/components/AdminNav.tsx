@@ -15,6 +15,7 @@ export const GRUPOS: Grupo[] = [
       { href: "/admin/usuarios", label: "Usuários" },
       { href: "/admin/interessados", label: "Lista de interesse" },
       { href: "/admin/whatsapp", label: "WhatsApp" },
+      { href: "/admin/contas-excluidas", label: "Contas excluídas" },
     ],
   },
   {
