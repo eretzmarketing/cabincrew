@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 import { criarCampanha, enviarProximo, mudarStatusCampanha, salvarTemplate, type Contagem } from "@/app/campanhas-actions";
@@ -157,7 +158,7 @@ export function SelecaoPublico({ fonte, pessoas, templates }: {
             <button type="button" onClick={baixarCsv} className="inline-flex min-h-11 cursor-pointer items-center rounded-full border-2 border-navy px-5 font-semibold text-navy hover:bg-soft">⬇ Exportar seleção (CSV)</button>
           </div>
           {!templates.length ? (
-            <p className="text-[15px] text-ink-2">Crie um modelo de mensagem primeiro em <a href="/admin/campanhas/modelos" className="font-semibold underline">Modelos</a>.</p>
+            <p className="text-[15px] text-ink-2">Crie um modelo de mensagem primeiro em <Link href="/admin/campanhas/modelos" className="font-semibold underline">Modelos</Link>.</p>
           ) : (
             <form action={acao} className="grid gap-5 lg:grid-cols-[1fr_340px]">
               <div className="flex flex-col gap-4">
