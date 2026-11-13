@@ -30,6 +30,7 @@ export const GRUPOS: Grupo[] = [
       { href: "/admin/ingles", label: "Inglês a bordo" },
     ],
   },
+  { id: "campanhas", label: "Campanhas", itens: [{ href: "/admin/campanhas", label: "Campanhas" }] },
   {
     id: "financeiro", label: "Financeiro",
     itens: [{ href: "/admin/compras", label: "Compras" }],

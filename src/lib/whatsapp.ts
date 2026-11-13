@@ -52,7 +52,7 @@ export async function testarConexao(instancia: string, token: string): Promise<s
 }
 
 /** Envia um texto para um número (com DDI, ex.: +5511999999999). Confere antes se o número tem WhatsApp. */
-export async function enviarWhatsapp(telefone: string, texto: string): Promise<ResultadoEnvio> {
+export async function enviarWhatsapp(telefone: string, texto: string, imagemUrl?: string | null): Promise<ResultadoEnvio> {
   if (!whatsappConfigurado()) return { ok: false, status: "erro", erro: "WhatsApp não configurado no servidor" };
   const numero = telefone.replace(/\D/g, "");
   if (numero.length < 10) return { ok: false, status: "sem_whatsapp", erro: "número inválido" };
@@ -60,7 +60,14 @@ export async function enviarWhatsapp(telefone: string, texto: string): Promise<R
     const c = (await chamar(`/v2/contacts/check-exists?phone=${numero}`)) as { exists?: boolean; jid?: string };
     if (c.exists === false) return { ok: false, status: "sem_whatsapp", erro: "este número não tem WhatsApp" };
     const chatId = c.jid && c.jid.endsWith("@c.us") ? c.jid : `${numero}@c.us`;
-    await chamar("/v2/send/text", { method: "POST", body: JSON.stringify({ chatId, message: texto.slice(0, 4000) }) });
+    if (imagemUrl) {
+      const png = /\.png($|\?)/i.test(imagemUrl);
+      await chamar("/v2/send/image", { method: "POST", body: JSON.stringify({
+        chatId, "file[url]": imagemUrl, "file[filename]": png ? "imagem.png" : "imagem.jpg", "file[mimetype]": png ? "image/png" : "image/jpeg", caption: texto.slice(0, 1024),
+      }) });
+    } else {
+      await chamar("/v2/send/text", { method: "POST", body: JSON.stringify({ chatId, message: texto.slice(0, 4000) }) });
+    }
     return { ok: true };
   } catch (e) {
     return { ok: false, status: "erro", erro: (e as Error).message.slice(0, 400) };
@@ -68,6 +75,9 @@ export async function enviarWhatsapp(telefone: string, texto: string): Promise<R
 }
 
 /** Troca {nome}, {link} e outras variáveis do modelo. */
+/** Endereço público de um arquivo da pasta de mídia (o Wawp baixa a imagem por este link). */
+export const urlPublicaMidia = (relativo: string) => `${SITE}/midia/${relativo}`;
+
 export function preencher(texto: string, vars: Record<string, string | number | undefined>) {
   return texto.replace(/\{(\w+)\}/g, (_, k: string) => (k === "link" ? SITE : String(vars[k] ?? ""))).trim();
 }
