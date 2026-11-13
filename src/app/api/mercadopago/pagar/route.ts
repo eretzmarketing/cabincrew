@@ -38,8 +38,8 @@ export async function POST(req: Request) {
   const slug = corpo.produto ?? "head-hunter";
   const { data: prod } = await supabase.from("produtos").select("slug, nome, preco, desconto_pix, ativo").eq("slug", slug).maybeSingle();
   if (!prod?.ativo) return NextResponse.json({ erro: "Produto indisponível." }, { status: 404 });
-  const { data: acesso } = await supabase.from("acessos").select("status").eq("user_id", user.id).eq("produto", slug).maybeSingle();
-  if (acesso?.status === "ativo") return NextResponse.json({ erro: "Você já tem acesso ao Head Hunter." }, { status: 409 });
+  const { data: acesso } = await supabase.from("acessos").select("status, expira_em").eq("user_id", user.id).eq("produto", slug).maybeSingle();
+  if (acesso?.status === "ativo" && (!acesso.expira_em || Date.parse(acesso.expira_em) > Date.now())) return NextResponse.json({ erro: "Você já tem acesso ao Head Hunter." }, { status: 409 });
 
   const nome = String(profile.nome || profile.apelido || "").trim();
   const [primeiro, ...resto] = nome.split(" ");

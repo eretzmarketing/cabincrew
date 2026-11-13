@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
-type Produto = { slug: string; nome: string; preco: number; pix: number; descontoPix: number };
+type Produto = { slug: string; nome: string; preco: number; pix: number; descontoPix: number; diasExtras: number };
 type Pix = { id: number; codigo?: string; imagem?: string; link?: string; valor: number; criado: number };
 
 const reais = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -83,7 +83,7 @@ export default function Checkout({ publicKey, produto, email, nome }: { publicKe
         {metodo === "cartao" && <p className="text-[14px] text-[#d7dbe6]">No parcelamento, os juros do cartão são calculados pelo Mercado Pago e aparecem antes de você confirmar.</p>}
         <ul className="flex flex-col gap-1.5 border-t border-white/15 pt-4 text-[14px] text-[#d7dbe6]">
           <li>✓ Acesso liberado na hora após a aprovação</li>
-          <li>✓ Acesso até você concluir toda a jornada</li>
+          <li>✓ Acesso até você concluir toda a jornada{produto.diasExtras > 0 ? `, mais ${produto.diasExtras} dias para revisar` : ""}</li>
           <li>✓ 7 dias de garantia, conforme o Código de Defesa do Consumidor</li>
         </ul>
         <span className="text-[12px] text-[#aab3c8]">Pagamento processado pelo Mercado Pago. Os dados do cartão não passam pelo site da Cabin Crew.</span>

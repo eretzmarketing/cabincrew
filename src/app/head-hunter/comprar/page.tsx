@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 export default async function ComprarPage() {
   const { supabase, user, profile, pago } = await exigirCrewSelect("/head-hunter/comprar");
   if (pago) redirect("/head-hunter");
-  const { data: prod } = await supabase.from("produtos").select("slug, nome, preco, desconto_pix, ativo").eq("slug", "head-hunter").maybeSingle();
+  const { data: prod } = await supabase.from("produtos").select("slug, nome, preco, desconto_pix, ativo, dias_apos_conclusao").eq("slug", "head-hunter").maybeSingle();
   const cfg = configMP();
 
   return (
@@ -29,7 +29,7 @@ export default async function ComprarPage() {
         ) : (
           <Checkout
             publicKey={cfg.publicKey}
-            produto={{ slug: prod.slug, nome: prod.nome, preco: precoPor(Number(prod.preco), Number(prod.desconto_pix), "cartao"), pix: precoPor(Number(prod.preco), Number(prod.desconto_pix), "pix"), descontoPix: Number(prod.desconto_pix) }}
+            produto={{ slug: prod.slug, nome: prod.nome, preco: precoPor(Number(prod.preco), Number(prod.desconto_pix), "cartao"), pix: precoPor(Number(prod.preco), Number(prod.desconto_pix), "pix"), descontoPix: Number(prod.desconto_pix), diasExtras: Number(prod.dias_apos_conclusao ?? 30) }}
             email={user.email ?? ""}
             nome={profile.nome ?? profile.apelido}
           />

@@ -13,11 +13,11 @@ export const metadata: Metadata = { title: "Head Hunter", robots: { index: false
 
 export default async function CrewSelectPage({ searchParams }: { searchParams: Promise<{ erro?: string }> }) {
   const { erro } = await searchParams;
-  const { supabase, user, profile, liberado, acesso, pago } = await exigirCrewSelect("/head-hunter");
+  const { supabase, user, profile, liberado, acesso, pago, encerrado } = await exigirCrewSelect("/head-hunter");
 
   if (!liberado) {
-    if (acesso?.status === "concluido") return <Concluido nome={profile.nome ?? profile.apelido} em={acesso.encerrado_em} />;
-    const { data: prod } = await supabase.from("produtos").select("nome, descricao, preco, desconto_pix, ativo").eq("slug", "head-hunter").maybeSingle();
+    if (encerrado) return <Concluido nome={profile.nome ?? profile.apelido} em={acesso?.expira_em ?? acesso?.encerrado_em ?? null} />;
+    const { data: prod } = await supabase.from("produtos").select("nome, descricao, preco, desconto_pix, ativo, dias_apos_conclusao").eq("slug", "head-hunter").maybeSingle();
     return <Venda nome={profile.nome ?? profile.apelido} prod={prod} revogado={acesso?.status === "revogado"} />;
   }
 
@@ -54,15 +54,23 @@ export default async function CrewSelectPage({ searchParams }: { searchParams: P
   // jornada completa: parabéns no WhatsApp (uma única vez)
   if (jornada.etapas.some((e) => !e.vazia) && jornada.etapas.every((e) => e.vazia || e.feita)) {
     avisarAluno(supabase, "jornada_concluida");
-    // acesso comprado termina quando o aluno conclui toda a jornada
-    if (pago && !profile.is_admin) {
-      const { data: encerrou } = await supabase.rpc("hh_concluir_acesso");
-      if (encerrou) return <Concluido nome={profile.nome ?? profile.apelido} em={new Date().toISOString()} />;
+    // acesso comprado: ao concluir a jornada começam os dias extras para revisar
+    if (pago && !acesso?.concluido_em && !profile.is_admin) {
+      const { data: fim } = await supabase.rpc("hh_concluir_acesso");
+      if (acesso && fim) { acesso.concluido_em = new Date().toISOString(); acesso.expira_em = fim as string; }
     }
   }
+  const revisaoAte = pago && acesso?.concluido_em && acesso.expira_em ? acesso.expira_em : null;
 
   return (
     <main className="bg-soft">
+      {revisaoAte && (
+        <div className="bg-[#e5f6ec] text-[#0f6b3a]" role="status">
+          <p className="mx-auto max-w-[1200px] px-6 py-3 text-[15px] font-semibold">
+            👑 Você concluiu toda a jornada! Seu acesso continua até {new Date(revisaoAte).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })} para você revisar antes da seleção.
+          </p>
+        </div>
+      )}
       <section className="bg-navy text-white">
         <div className="mx-auto flex max-w-[1200px] flex-wrap items-center justify-between gap-8 px-6 py-12">
           <div className="flex max-w-[640px] flex-col gap-3">
@@ -180,7 +188,7 @@ export default async function CrewSelectPage({ searchParams }: { searchParams: P
   );
 }
 
-type Prod = { nome: string; descricao: string | null; preco: number; desconto_pix: number; ativo: boolean } | null;
+type Prod = { nome: string; descricao: string | null; preco: number; desconto_pix: number; ativo: boolean; dias_apos_conclusao?: number } | null;
 const reais = (v: number) => Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 function Venda({ nome, prod, revogado }: { nome: string; prod: Prod; revogado: boolean }) {
@@ -197,7 +205,7 @@ function Venda({ nome, prod, revogado }: { nome: string; prod: Prod; revogado: b
           {revogado && <p className="rounded-xl bg-[#fff8e6] px-4 py-3 text-[15px] text-[#7a5a00]">Seu acesso anterior foi encerrado. Para voltar a estudar, faça uma nova compra.</p>}
           <p className="text-[17px] leading-relaxed text-ink-2">{prod?.descricao ?? "Preparatório completo para a seleção de comissário(a) de voo."}</p>
           <ul className="flex flex-col gap-2 text-[16px]">
-            {["Jornada personalizada para a companhia que você quer", "Aulas, simulados no estilo das seleções e dinâmicas de grupo", "Treino de entrevista, vídeo de apresentação e Inglês a bordo com áudio", "Acesso até você concluir toda a jornada"].map((t) => (
+            {["Jornada personalizada para a companhia que você quer", "Aulas, simulados no estilo das seleções e dinâmicas de grupo", "Treino de entrevista, vídeo de apresentação e Inglês a bordo com áudio", (prod?.dias_apos_conclusao ?? 30) > 0 ? `Acesso até você concluir toda a jornada, mais ${prod?.dias_apos_conclusao ?? 30} dias para revisar` : "Acesso até você concluir toda a jornada"].map((t) => (
               <li key={t} className="flex gap-2"><span className="text-brand-strong"><Check /></span>{t}</li>
             ))}
           </ul>
@@ -225,7 +233,7 @@ function Concluido({ nome, em }: { nome: string; em: string | null }) {
         <span aria-hidden="true" className="text-[64px] leading-none">👑</span>
         <h1 className="font-display text-[34px] leading-tight font-extrabold">Parabéns, {nome.split(" ")[0]}! Você concluiu o Head Hunter.</h1>
         <p className="text-[17px] leading-relaxed text-ink-2">
-          Você completou toda a jornada{em ? ` em ${new Date(em).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}` : ""} e o seu acesso ao curso foi encerrado. Agora é com você: chegue confiante na seleção. Boa sorte! ✈️
+          Você completou toda a jornada e o seu acesso ao curso terminou{em ? ` em ${new Date(em).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}` : ""}. Agora é com você: chegue confiante na seleção. Boa sorte! ✈️
         </p>
         <p className="text-[15px] text-muted">Quer revisar tudo antes da prova? Você pode comprar um novo acesso.</p>
         <Link href="/head-hunter/comprar" className="inline-flex min-h-12 items-center rounded-xl border-2 border-navy px-6 font-semibold text-navy hover:bg-navy hover:text-white">Comprar novo acesso</Link>

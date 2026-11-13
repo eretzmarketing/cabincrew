@@ -39,7 +39,7 @@ export function ConexaoMPForm({ publicKey, conectado, temSegredo }: { publicKey:
   );
 }
 
-export function ProdutoForm({ p }: { p: { slug: string; preco: number; desconto_pix: number; descricao: string | null; ativo: boolean } }) {
+export function ProdutoForm({ p }: { p: { slug: string; preco: number; desconto_pix: number; descricao: string | null; ativo: boolean; dias_apos_conclusao?: number } }) {
   const [s, acao, pend] = useActionState(salvarProduto, {});
   const [preco, setPreco] = useState(String(p.preco).replace(".", ","));
   const [desc, setDesc] = useState(String(p.desconto_pix).replace(".", ","));
@@ -58,6 +58,11 @@ export function ProdutoForm({ p }: { p: { slug: string; preco: number; desconto_
           <label htmlFor={`pix-${p.slug}`} className="text-[14px] font-semibold">Desconto no Pix (%)</label>
           <input id={`pix-${p.slug}`} name="desconto_pix" inputMode="decimal" value={desc} onChange={(e) => setDesc(e.target.value)} className={campo} />
         </div>
+      </div>
+      <div className="flex flex-col gap-1">
+        <label htmlFor={`dias-${p.slug}`} className="text-[14px] font-semibold">Dias de acesso depois de concluir a jornada</label>
+        <input id={`dias-${p.slug}`} name="dias_apos_conclusao" type="number" min={0} max={365} defaultValue={p.dias_apos_conclusao ?? 30} className={`${campo} sm:max-w-[200px]`} />
+        <span className="text-[13px] text-muted">Tempo para o aluno revisar antes da seleção. Use 0 para encerrar no mesmo dia.</span>
       </div>
       <p className="rounded-xl bg-soft px-4 py-3 text-[15px]">
         No checkout: <strong>{reais(n)}</strong> no cartão (até 12x, juros por conta do aluno) · <strong className="text-[#0f6b3a]">{reais(Math.round(n * (100 - d)) / 100)}</strong> no Pix

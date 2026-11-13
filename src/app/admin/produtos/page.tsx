@@ -6,11 +6,11 @@ import { getUser } from "@/lib/supabase/server";
 export const metadata: Metadata = { title: "Produtos e preços" };
 export const dynamic = "force-dynamic";
 
-type P = { slug: string; nome: string; preco: number; desconto_pix: number; descricao: string | null; ativo: boolean };
+type P = { slug: string; nome: string; preco: number; desconto_pix: number; descricao: string | null; ativo: boolean; dias_apos_conclusao?: number };
 
 export default async function ProdutosPage() {
   const { supabase } = await getUser();
-  const { data, error } = await supabase.from("produtos").select("slug, nome, preco, desconto_pix, descricao, ativo").order("nome");
+  const { data, error } = await supabase.from("produtos").select("*").order("nome");
   return (
     <>
       <Titulo sub="O preço vale na hora no checkout. Compras já feitas não mudam.">Produtos e preços</Titulo>

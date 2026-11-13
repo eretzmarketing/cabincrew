@@ -45,9 +45,11 @@ export async function salvarProduto(_: Estado, form: FormData): Promise<Estado> 
   const preco = Number(String(form.get("preco") ?? "").replace(/\./g, "").replace(",", "."));
   const desconto = Number(String(form.get("desconto_pix") ?? "0").replace(",", "."));
   const descricao = String(form.get("descricao") ?? "").trim().slice(0, 500);
+  const dias = Number(form.get("dias_apos_conclusao") ?? 30);
+  if (!Number.isInteger(dias) || dias < 0 || dias > 365) return { erro: "Os dias extras após concluir vão de 0 a 365." };
   if (!Number.isFinite(preco) || preco < 1 || preco > 100000) return { erro: "Informe um preço válido (ex.: 250,00)." };
   if (!Number.isFinite(desconto) || desconto < 0 || desconto > 50) return { erro: "O desconto no Pix vai de 0 a 50%." };
-  const { error } = await supabase.from("produtos").update({ preco: Math.round(preco * 100) / 100, desconto_pix: desconto, descricao: descricao || null, ativo: form.get("ativo") === "on", updated_at: new Date().toISOString() }).eq("slug", slug);
+  const { error } = await supabase.from("produtos").update({ preco: Math.round(preco * 100) / 100, desconto_pix: desconto, dias_apos_conclusao: dias, descricao: descricao || null, ativo: form.get("ativo") === "on", updated_at: new Date().toISOString() }).eq("slug", slug);
   if (error) return { erro: "Não foi possível salvar." };
   revalidatePath("/admin/produtos");
   revalidatePath("/head-hunter");
@@ -61,7 +63,7 @@ export async function alterarAcesso(form: FormData) {
   const acao = String(form.get("acao") ?? "");
   if (!/^[0-9a-f-]{36}$/i.test(userId)) return;
   if (acao === "liberar") {
-    await supabase.from("acessos").upsert({ user_id: userId, produto: "head-hunter", status: "ativo", liberado_em: new Date().toISOString(), encerrado_em: null, motivo: "liberado pelo administrador" });
+    await supabase.from("acessos").upsert({ user_id: userId, produto: "head-hunter", status: "ativo", liberado_em: new Date().toISOString(), encerrado_em: null, concluido_em: null, expira_em: null, motivo: "liberado pelo administrador" });
   } else if (acao === "encerrar") {
     await supabase.from("acessos").update({ status: "revogado", encerrado_em: new Date().toISOString(), motivo: "encerrado pelo administrador" }).eq("user_id", userId).eq("produto", "head-hunter");
   }

@@ -23,6 +23,8 @@ create policy "produtos: admin" on produtos for all to authenticated using (is_a
 grant select on produtos to anon, authenticated;
 grant insert, update on produtos to authenticated;
 
+alter table produtos add column if not exists dias_apos_conclusao integer not null default 30 check (dias_apos_conclusao between 0 and 365);
+
 insert into produtos (slug, nome, descricao, preco, desconto_pix) values
   ('head-hunter', 'Head Hunter', 'Preparatório completo para a seleção de comissário(a) de voo: jornada personalizada, simulados, dinâmicas, entrevista e Inglês a bordo.', 250, 5)
 on conflict (slug) do nothing;
@@ -38,6 +40,8 @@ create table if not exists acessos (
   motivo       text,
   primary key (user_id, produto)
 );
+alter table acessos add column if not exists concluido_em timestamptz;   -- concluiu toda a jornada
+alter table acessos add column if not exists expira_em timestamptz;      -- fim dos dias extras para revisar
 alter table acessos enable row level security;
 drop policy if exists "acessos: o proprio" on acessos;
 create policy "acessos: o proprio" on acessos for select to authenticated using (user_id = auth.uid() or is_admin());
@@ -54,7 +58,8 @@ language sql stable security definer set search_path = public as $$
       not esta_bloqueado(p_user)
       and (
         coalesce((select valor = 'true'::jsonb from configuracoes where chave = 'crew_select_aberto'), false)
-        or exists (select 1 from acessos where user_id = p_user and produto = 'head-hunter' and status = 'ativo')
+        or exists (select 1 from acessos where user_id = p_user and produto = 'head-hunter' and status = 'ativo'
+                   and (expira_em is null or expira_em > now()))
       )
     )
   );
@@ -62,15 +67,23 @@ $$;
 revoke all on function hh_tem_acesso(uuid) from public, anon;
 grant execute on function hh_tem_acesso(uuid) to authenticated;
 
--- O aluno concluiu toda a jornada: o acesso ao curso termina
-create or replace function hh_concluir_acesso() returns boolean
-language sql security definer set search_path = public as $$
-  with x as (
-    update acessos set status = 'concluido', encerrado_em = now(), motivo = 'concluiu toda a jornada'
-     where user_id = auth.uid() and produto = 'head-hunter' and status = 'ativo'
-    returning 1)
-  select exists (select 1 from x);
-$$;
+-- O aluno concluiu toda a jornada: o acesso continua por mais alguns dias (para revisar) e depois termina.
+-- Devolve a data em que o acesso termina (ou nada, se não havia acesso comprado ativo).
+drop function if exists hh_concluir_acesso();
+create or replace function hh_concluir_acesso() returns timestamptz
+language plpgsql security definer set search_path = public as $$
+declare v_dias int; v_fim timestamptz;
+begin
+  select coalesce(dias_apos_conclusao, 30) into v_dias from produtos where slug = 'head-hunter';
+  update acessos a
+     set concluido_em = now(), expira_em = now() + make_interval(days => coalesce(v_dias, 30)),
+         status = case when coalesce(v_dias, 30) = 0 then 'concluido' else a.status end,
+         encerrado_em = case when coalesce(v_dias, 30) = 0 then now() else a.encerrado_em end,
+         motivo = 'concluiu toda a jornada'
+   where a.user_id = auth.uid() and a.produto = 'head-hunter' and a.status = 'ativo' and a.concluido_em is null
+  returning a.expira_em into v_fim;
+  return v_fim;
+end $$;
 revoke all on function hh_concluir_acesso() from public, anon;
 grant execute on function hh_concluir_acesso() to authenticated;
 
@@ -180,7 +193,8 @@ begin
     insert into acessos (user_id, produto, status, compra_id)
     values (v_user, v_prod.slug, 'ativo', v_compra.id)
     on conflict (user_id, produto) do update
-      set status = 'ativo', compra_id = excluded.compra_id, liberado_em = now(), encerrado_em = null, motivo = null
+      set status = 'ativo', compra_id = excluded.compra_id, liberado_em = now(), encerrado_em = null, motivo = null,
+          concluido_em = null, expira_em = null
       where acessos.compra_id is distinct from excluded.compra_id;
     -- confirmação no WhatsApp (uma vez por compra)
     select m.texto into v_texto from whatsapp_modelos m where m.evento = 'compra_aprovada' and m.ativo;

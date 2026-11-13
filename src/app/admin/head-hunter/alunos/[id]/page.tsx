@@ -28,7 +28,7 @@ export default async function AlunoPage({ params }: { params: Promise<{ id: stri
     carregarJornada(supabase, id),
     supabase.from("tentativas").select("nota, iniciada_em, finalizada_em, saidas_aba, simulados(titulo, origem)").eq("user_id", id).order("iniciada_em", { ascending: false }).limit(15),
     supabase.from("compras").select("*").eq("user_id", id).order("comprada_em", { ascending: false }),
-    supabase.from("acessos").select("status, liberado_em, encerrado_em, motivo").eq("user_id", id).eq("produto", "head-hunter").maybeSingle(),
+    supabase.from("acessos").select("*").eq("user_id", id).eq("produto", "head-hunter").maybeSingle(),
   ]);
   const l = ((linha ?? []) as LinhaAluno[])[0];
   if (!l) notFound();
@@ -161,6 +161,7 @@ export default async function AlunoPage({ params }: { params: Promise<{ id: stri
             <p className="text-[15px]">
               {!acesso ? "Sem acesso comprado." : acesso.status === "ativo" ? <><strong className="text-[#0f6b3a]">Ativo</strong> desde {dataHoraBR(acesso.liberado_em)}</>
                 : <><strong>{acesso.status === "concluido" ? "Concluído" : "Encerrado"}</strong> em {acesso.encerrado_em ? dataHoraBR(acesso.encerrado_em) : "—"}</>}
+              {acesso?.concluido_em && <span className="block text-[14px]">Concluiu a jornada em {dataHoraBR(acesso.concluido_em)}{acesso.expira_em ? ` · acesso até ${dataHoraBR(acesso.expira_em)}` : ""}</span>}
               {acesso?.motivo && <span className="block text-[13px] text-muted">{acesso.motivo}</span>}
             </p>
             <form action={alterarAcesso} className="flex flex-wrap gap-2">
