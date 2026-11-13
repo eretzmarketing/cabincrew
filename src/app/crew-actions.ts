@@ -1,6 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { avisarAluno } from "@/lib/whatsapp";
+import { COMPANHIAS } from "@/lib/jornada";
+import { TODAS_AULAS, MODULOS_INGLES, chaveAula } from "@/lib/ingles-a-bordo";
 import { redirect } from "next/navigation";
 import { getUser } from "@/lib/supabase/server";
 import type { FormState } from "@/app/actions";
@@ -24,9 +27,25 @@ export async function alternarAulaConcluida(form: FormData) {
     return;
   }
   await supabase.from("progresso").upsert({ aula_id: aulaId, user_id: user.id }, { ignoreDuplicates: true });
+  await avisarSeModuloConcluido(supabase, user.id, aulaId);
   revalidatePath("/head-hunter", "layout");
   const proxima = String(form.get("proxima") ?? "");
   if (UUID.test(proxima)) redirect(`/head-hunter/aula/${proxima}`);
+}
+
+/** Se a aula fechou o módulo (todas as aulas publicadas concluídas), manda os parabéns no WhatsApp. */
+async function avisarSeModuloConcluido(supabase: Awaited<ReturnType<typeof getUser>>["supabase"], userId: string, aulaId: string) {
+  const { data: a } = await supabase.from("aulas").select("modulo_id").eq("id", aulaId).maybeSingle();
+  if (!a) return;
+  const [{ data: m }, { data: aulas }, { data: feitas }] = await Promise.all([
+    supabase.from("modulos").select("id, titulo, recurso").eq("id", a.modulo_id).maybeSingle(),
+    supabase.from("aulas").select("id, tipo").eq("modulo_id", a.modulo_id).eq("publicado", true),
+    supabase.from("progresso").select("aula_id").eq("user_id", userId),
+  ]);
+  if (!m) return;
+  const ok = new Set((feitas ?? []).map((f) => f.aula_id as string));
+  const lista = (aulas ?? []).filter((x) => !(m.recurso === "anac" && x.tipo === "simulado"));
+  if (lista.length && lista.every((x) => ok.has(x.id))) avisarAluno(supabase, "modulo_concluido", { modulo: m.titulo }, String(m.id));
 }
 
 /* ---------- Administrador ---------- */
@@ -579,6 +598,13 @@ export async function salvarQuizIngles(aula: string, nota: number): Promise<{ ok
     .from("ingles_progresso")
     .upsert({ user_id: user.id, aula, nota: melhor, concluida, updated_at: new Date().toISOString() }, { onConflict: "user_id,aula" });
   revalidatePath("/head-hunter/ingles-a-bordo", "layout");
+  if (!error && concluida) {
+    const { data: prog } = await supabase.from("ingles_progresso").select("aula").eq("user_id", user.id).eq("concluida", true);
+    const ok = new Set((prog ?? []).map((x) => x.aula as string));
+    const mod = MODULOS_INGLES.find((m) => m.aulas.some((x) => chaveAula(x) === aula));
+    if (mod && mod.aulas.every((x) => ok.has(chaveAula(x)))) avisarAluno(supabase, "ingles_modulo", { numero: mod.numero, modulo: mod.titulo }, String(mod.numero));
+    if (TODAS_AULAS.every((x) => ok.has(chaveAula(x)))) avisarAluno(supabase, "ingles_concluido");
+  }
   return { ok: !error, concluida, melhor };
 }
 
@@ -657,6 +683,7 @@ export async function salvarCheckin(_: unknown, form: FormData): Promise<{ erro?
   const data = String(form.get("data_meta") ?? "");
   const { error } = await supabase.rpc("salvar_checkin", { p_companhias: lista, p_data: /^\d{4}-\d{2}-\d{2}$/.test(data) ? data : null });
   if (error) return { erro: "Não foi possível salvar agora. Tente de novo." };
+  avisarAluno(supabase, "checkin", { companhia: COMPANHIAS.find((c) => c.slug === lista[0])?.nome ?? "companhia dos seus sonhos" });
   revalidatePath("/head-hunter", "layout");
   redirect("/head-hunter#jornada");
 }

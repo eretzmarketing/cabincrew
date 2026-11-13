@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Card, Numero, Titulo } from "@/components/admin-ui";
+import { EnviarWhatsappForm } from "@/components/WhatsappForms";
+import { whatsappConfigurado } from "@/lib/whatsapp";
 import { BANCOS } from "@/lib/crew";
 import { META, maiorSequencia } from "@/lib/jornada";
 import { carregarJornada } from "@/lib/jornada-dados";
@@ -141,6 +143,14 @@ export default async function AlunoPage({ params }: { params: Promise<{ id: stri
               </ul>
             )}
           </Card>
+
+          {l.whatsapp && whatsappConfigurado() && (
+            <Card>
+              <h2 className="font-display text-xl font-extrabold">Mandar mensagem</h2>
+              <p className="text-[14px] text-ink-2">Sai do seu número no Wawp e fica no histórico em Usuários → WhatsApp.</p>
+              <EnviarWhatsappForm alunoId={l.id} textoInicial={mensagemSugerida(l)} />
+            </Card>
+          )}
 
           <Card>
             <h2 className="font-display text-xl font-extrabold">Medalhas</h2>

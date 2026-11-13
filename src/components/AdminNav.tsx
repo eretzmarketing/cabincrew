@@ -14,6 +14,7 @@ export const GRUPOS: Grupo[] = [
     itens: [
       { href: "/admin/usuarios", label: "Usuários" },
       { href: "/admin/interessados", label: "Lista de interesse" },
+      { href: "/admin/whatsapp", label: "WhatsApp" },
     ],
   },
   {

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { avisarAluno } from "@/lib/whatsapp";
 import Image from "next/image";
 import Link from "next/link";
 import { Arrow, Check } from "@/components/icons";
@@ -45,6 +46,9 @@ export default async function CrewSelectPage({ searchParams }: { searchParams: P
   const continuar = lista.find((m) => porModulo.get(m.id)?.proxima);
   const continuarAula = continuar ? porModulo.get(continuar.id)?.proxima : undefined;
   const primeiroNome = (profile.nome ?? profile.apelido).split(" ")[0];
+
+  // jornada completa: parabéns no WhatsApp (uma única vez)
+  if (jornada.etapas.some((e) => !e.vazia) && jornada.etapas.every((e) => e.vazia || e.feita)) avisarAluno(supabase, "jornada_concluida");
 
   return (
     <main className="bg-soft">

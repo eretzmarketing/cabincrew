@@ -1,0 +1,71 @@
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { after } from "next/server";
+
+/**
+ * WhatsApp pelo Wawp (https://api.wawp.net). O ID da instância e o token ficam só no servidor,
+ * em .env.local (WAWP_INSTANCE_ID e WAWP_ACCESS_TOKEN), gravados pelo deploy/configurar-whatsapp.sh.
+ */
+const API = process.env.WAWP_API_BASE || "https://api.wawp.net";
+const INSTANCIA = process.env.WAWP_INSTANCE_ID ?? "";
+const TOKEN = process.env.WAWP_ACCESS_TOKEN ?? "";
+const SITE = (process.env.NEXT_PUBLIC_SITE_URL || "https://cabincrew.com.br").replace(/\/$/, "");
+
+export const whatsappConfigurado = () => !!(INSTANCIA && TOKEN);
+
+export type ResultadoEnvio = { ok: true } | { ok: false; status: "erro" | "sem_whatsapp"; erro: string };
+
+async function chamar(caminho: string, init?: RequestInit) {
+  const url = `${API}${caminho}${caminho.includes("?") ? "&" : "?"}instance_id=${encodeURIComponent(INSTANCIA)}&access_token=${encodeURIComponent(TOKEN)}`;
+  const r = await fetch(url, { ...init, headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) }, signal: AbortSignal.timeout(20000), cache: "no-store" });
+  const corpo = await r.text();
+  if (!r.ok) {
+    const motivo = r.status === 401 ? "token do Wawp inválido" : r.status === 404 ? "instância do Wawp não encontrada ou desconectada" : r.status === 429 ? "limite de envios do Wawp atingido" : `Wawp respondeu ${r.status}`;
+    throw new Error(`${motivo}${corpo ? `: ${corpo.slice(0, 200)}` : ""}`);
+  }
+  try { return JSON.parse(corpo); } catch { return {}; }
+}
+
+/** Envia um texto para um número (com DDI, ex.: +5511999999999). Confere antes se o número tem WhatsApp. */
+export async function enviarWhatsapp(telefone: string, texto: string): Promise<ResultadoEnvio> {
+  if (!whatsappConfigurado()) return { ok: false, status: "erro", erro: "WhatsApp não configurado no servidor" };
+  const numero = telefone.replace(/\D/g, "");
+  if (numero.length < 10) return { ok: false, status: "sem_whatsapp", erro: "número inválido" };
+  try {
+    const c = (await chamar(`/v2/contacts/check-exists?phone=${numero}`)) as { exists?: boolean; jid?: string };
+    if (c.exists === false) return { ok: false, status: "sem_whatsapp", erro: "este número não tem WhatsApp" };
+    const chatId = c.jid && c.jid.endsWith("@c.us") ? c.jid : `${numero}@c.us`;
+    await chamar("/v2/send/text", { method: "POST", body: JSON.stringify({ chatId, message: texto.slice(0, 4000) }) });
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, status: "erro", erro: (e as Error).message.slice(0, 400) };
+  }
+}
+
+/** Troca {nome}, {link} e outras variáveis do modelo. */
+export function preencher(texto: string, vars: Record<string, string | number | undefined>) {
+  return texto.replace(/\{(\w+)\}/g, (_, k: string) => (k === "link" ? SITE : String(vars[k] ?? ""))).trim();
+}
+
+/**
+ * Aviso automático para o aluno logado (boas-vindas, módulo concluído…).
+ * Roda depois da resposta (não atrasa a página), uma única vez por evento/ref, e só se o aluno não desligou os avisos.
+ */
+export function avisarAluno(supabase: SupabaseClient, evento: string, vars: Record<string, string | number | undefined> = {}, ref = "") {
+  if (!whatsappConfigurado()) return;
+  after(async () => {
+    const { data } = await supabase.rpc("whatsapp_reservar", { p_evento: evento, p_ref: ref });
+    const r = ((data ?? []) as { envio_id: number; telefone: string; nome: string; texto: string }[])[0];
+    if (!r) return;
+    const texto = preencher(r.texto, { ...vars, nome: r.nome });
+    const res = await enviarWhatsapp(r.telefone, texto);
+    await supabase.rpc("whatsapp_resultado", { p_id: r.envio_id, p_status: res.ok ? "enviada" : res.status, p_texto: texto, p_erro: res.ok ? null : res.erro });
+  });
+}
+
+/** Cliente do Supabase com a sessão recém-criada (no cadastro, os cookies ainda não chegaram ao servidor). */
+export function clienteDaSessao(accessToken: string) {
+  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!, {
+    global: { headers: { Authorization: `Bearer ${accessToken}` } },
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}

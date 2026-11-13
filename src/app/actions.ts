@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { avisarAluno, clienteDaSessao } from "@/lib/whatsapp";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient, getUser } from "@/lib/supabase/server";
@@ -86,6 +87,7 @@ export async function cadastrar(_: FormState, form: FormData): Promise<FormState
   if (!data.session) {
     return { erro: "Conta criada, mas o login automático está desativado no Supabase (desligue “Confirm email”)." };
   }
+  avisarAluno(clienteDaSessao(data.session.access_token), "boas_vindas");
   revalidatePath("/", "layout");
   redirect(destinoSeguro(form));
 }
