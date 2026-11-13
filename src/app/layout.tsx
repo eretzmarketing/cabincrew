@@ -36,6 +36,8 @@ function liberadoNaManutencao(path: string, search: string) {
   if (path.startsWith("/auth/")) return true;
   // autenticação pública de certificados (recrutadores) funciona mesmo em manutenção
   if (path === "/autenticar" || /^\/certificado\/[A-Za-z0-9]{8}$/.test(path)) return true;
+  // documentos legais sempre visíveis
+  if (["/termos", "/privacidade", "/reembolso", "/regras"].includes(path)) return true;
   const q = new URLSearchParams(search);
   return path === "/entrar" && (q.has("equipe") || q.get("conta") === "excluida");
 }

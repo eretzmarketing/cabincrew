@@ -110,7 +110,7 @@ export function CadastroForm({ next }: { next: string }) {
       </label>
       <label className="flex min-h-11 cursor-pointer items-start gap-3 text-sm leading-relaxed text-ink-2">
         <input type="checkbox" name="aceite" required className="mt-0.5 h-5 w-5 shrink-0 accent-brand-strong" />
-        <span>Li e aceito as <Link href="/regras" target="_blank" className="font-semibold text-brand-strong underline">regras do fórum</Link> e a <Link href="/privacidade" target="_blank" className="font-semibold text-brand-strong underline">política de privacidade</Link>.</span>
+        <span>Li e aceito os <Link href="/termos" target="_blank" className="font-semibold text-brand-strong underline">Termos de Uso</Link>, a <Link href="/privacidade" target="_blank" className="font-semibold text-brand-strong underline">Política de Privacidade</Link> e as <Link href="/regras" target="_blank" className="font-semibold text-brand-strong underline">Regras do fórum</Link>.</span>
       </label>
       <Aviso state={state} />
       <Enviar className="w-full">Criar minha conta</Enviar>

@@ -5,6 +5,7 @@ import { avisarAluno, avisarInteressado, clienteDaSessao, enviarReservaPublica }
 import { after } from "next/server";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { VERSAO_LEGAL } from "@/lib/legal";
 import { createClient, getUser } from "@/lib/supabase/server";
 import { slugify } from "@/lib/forum";
 import { getConfig } from "@/lib/config";
@@ -73,7 +74,7 @@ export async function cadastrar(_: FormState, form: FormData): Promise<FormState
   if (!whatsapp) return { erro: "Digite um WhatsApp válido, com o DDD (ou o código de área do país)." };
   if (escola.length < 2) return { erro: "Informe sua escola de aviação." };
   if (senha.length < 8) return { erro: "A senha precisa ter pelo menos 8 caracteres." };
-  if (form.get("aceite") !== "on") return { erro: "Aceite as regras do fórum e a política de privacidade." };
+  if (form.get("aceite") !== "on") return { erro: "Para criar a conta, aceite os Termos de Uso, a Política de Privacidade e as Regras do fórum." };
 
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signUp({
@@ -89,7 +90,14 @@ export async function cadastrar(_: FormState, form: FormData): Promise<FormState
   if (!data.session) {
     return { erro: "Conta criada, mas o login automático está desativado no Supabase (desligue “Confirm email”)." };
   }
-  avisarAluno(clienteDaSessao(data.session.access_token), "boas_vindas");
+  const sessao = clienteDaSessao(data.session.access_token);
+  // prova do aceite: quem, quando, versão dos textos, IP e navegador
+  const h = await headers();
+  await sessao.from("aceites").insert({
+    user_id: data.user!.id, email, documentos: ["termos", "privacidade", "regras"], versao: VERSAO_LEGAL, contexto: "cadastro",
+    ip: (h.get("x-forwarded-for") ?? "").split(",")[0].trim().slice(0, 100) || null, navegador: (h.get("user-agent") ?? "").slice(0, 300) || null,
+  });
+  avisarAluno(sessao, "boas_vindas");
   revalidatePath("/", "layout");
   redirect(destinoSeguro(form));
 }

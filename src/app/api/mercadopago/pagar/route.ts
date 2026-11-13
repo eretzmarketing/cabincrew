@@ -4,6 +4,7 @@ import { precosFinais } from "@/lib/cupons";
 import { validarCupom } from "@/lib/cupons-servidor";
 import { configMP, criarPagamento, referencia, registrarPagamento, URL_WEBHOOK } from "@/lib/mercadopago";
 import { cursosDoAluno } from "@/lib/crew-gate";
+import { VERSAO_LEGAL } from "@/lib/legal";
 import { getUser } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -37,8 +38,15 @@ export async function POST(req: Request) {
   const { supabase, user, profile } = await getUser();
   if (!user || !profile) return NextResponse.json({ erro: "Entre na sua conta para comprar." }, { status: 401 });
 
-  const corpo = (await req.json().catch(() => ({}))) as { produto?: string; metodo?: string; cpf?: string; cupom?: string; cartao?: Record<string, unknown> };
+  const corpo = (await req.json().catch(() => ({}))) as { produto?: string; metodo?: string; cpf?: string; cupom?: string; aceite?: string; cartao?: Record<string, unknown> };
   const slug = corpo.produto ?? "head-hunter";
+  if (corpo.aceite !== VERSAO_LEGAL) return NextResponse.json({ erro: "Aceite os Termos de Uso e a Política de Reembolso para continuar." }, { status: 400 });
+  // prova do aceite, ligada ao pagamento criado
+  const h = req.headers;
+  const registrarAceite = (ref: string | number) => supabase.from("aceites").insert({
+    user_id: user.id, email: user.email, documentos: ["termos", "reembolso", "privacidade"], versao: VERSAO_LEGAL, contexto: "checkout", produto: slug, ref: String(ref),
+    ip: (h.get("x-forwarded-for") ?? "").split(",")[0].trim().slice(0, 100) || null, navegador: (h.get("user-agent") ?? "").slice(0, 300) || null,
+  });
   const { data: prod } = await supabase.from("produtos").select("*").eq("slug", slug).maybeSingle();
   if (!prod?.ativo || prod.excluido) return NextResponse.json({ erro: "Produto indisponível." }, { status: 404 });
   const ativos = await cursosDoAluno(supabase, user.id);
@@ -65,6 +73,7 @@ export async function POST(req: Request) {
         date_of_expiration: expiraEm30min(),
         payer: { email: user.email, first_name: primeiro || undefined, last_name: resto.join(" ") || undefined, identification: { type: "CPF", number: cpf } },
       }, randomUUID());
+      await registrarAceite(pg.id);
       const t = pg.point_of_interaction?.transaction_data;
       return NextResponse.json({ id: pg.id, status: pg.status, pix: { codigo: t?.qr_code, imagem: t?.qr_code_base64, link: t?.ticket_url }, valor: pg.transaction_amount });
     }
@@ -78,6 +87,7 @@ export async function POST(req: Request) {
         issuer_id: c.issuer_id ? Number(c.issuer_id) : undefined,
         payer: { email: c.payer?.email || user.email, first_name: primeiro || undefined, last_name: resto.join(" ") || undefined, identification: c.payer?.identification },
       }, randomUUID());
+      await registrarAceite(pg.id);
       if (pg.status === "approved" || pg.status === "authorized") await registrarPagamento(pg);
       return NextResponse.json({
         id: pg.id, status: pg.status,

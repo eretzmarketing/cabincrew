@@ -120,7 +120,7 @@ export default async function PlanosPage({ searchParams }: { searchParams: Promi
 
       <section className="mx-auto flex max-w-[900px] flex-col gap-3 px-6 pb-20 text-center text-[15px] text-ink-2">
         <p>Pagamento seguro pelo Mercado Pago, com Pix ou cartão. O acesso é liberado na hora e vale até você concluir o curso, com dias extras para revisar.</p>
-        <p>Garantia de 7 dias: se não gostar, peça o reembolso dentro de 7 dias após a compra.</p>
+        <p>Garantia de 7 dias: se não gostar, peça o reembolso dentro de 7 dias após a compra. Veja a <Link href="/reembolso" className="font-semibold underline underline-offset-4">Política de Reembolso</Link> e os <Link href="/termos" className="font-semibold underline underline-offset-4">Termos de Uso</Link>.</p>
       </section>
     </main>
   );

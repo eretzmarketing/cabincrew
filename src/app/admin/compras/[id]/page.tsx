@@ -19,10 +19,11 @@ export default async function CompraPage({ params }: { params: Promise<{ id: str
   const { data } = await supabase.from("compras").select("*").eq("id", Number(id)).maybeSingle();
   const c = data as Compra | null;
   if (!c) notFound();
-  const [{ data: hist }, uso, excl] = await Promise.all([
+  const [{ data: hist }, uso, excl, { data: aceites }] = await Promise.all([
     supabase.from("compras_historico").select("id, acao, dados, por, em").eq("compra_id", c.id).order("em"),
     c.user_id ? supabase.rpc("admin_uso_aluno", { p_user: c.user_id }) : Promise.resolve({ data: null }),
     c.user_id ? supabase.from("contas_excluidas").select("excluida_em, primeira_atividade, ultima_atividade, aulas_concluidas, treinos_feitos, dias_de_estudo").eq("user_id", c.user_id).maybeSingle() : Promise.resolve({ data: null }),
+    c.id_transacao ? supabase.from("aceites").select("versao, documentos, ip, navegador, aceito_em").eq("ref", c.id_transacao).order("aceito_em").limit(1) : Promise.resolve({ data: [] }),
   ]);
   const u = ((uso.data ?? []) as Uso[])[0];
   const e = excl.data as { excluida_em: string; primeira_atividade: string | null; ultima_atividade: string | null; aulas_concluidas: number | null; treinos_feitos: number | null; dias_de_estudo: number | null } | null;
@@ -59,6 +60,7 @@ export default async function CompraPage({ params }: { params: Promise<{ id: str
             {linha("Forma de pagamento", `${FORMAS[c.forma_pagamento] ?? c.forma_pagamento}${c.parcelas ? ` · ${c.parcelas}x` : ""}`)}
             {linha("Plataforma", c.plataforma)}
             {linha("ID da transação", <span className="break-all">{c.id_transacao ?? "—"}</span>)}
+            {(aceites ?? []).length > 0 && linha("Aceite dos termos", <>{dataHoraBR((aceites as { aceito_em: string }[])[0].aceito_em)} · versão {(aceites as { versao: string }[])[0].versao} · IP {(aceites as { ip: string | null }[])[0].ip ?? "—"}</>)}
             {c.cupom && linha("Cupom", <>{c.cupom}{c.desconto_cupom ? ` (${Number(c.desconto_cupom).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })} de desconto)` : ""}</>)}
           </div>
           {c.observacao && <p className="rounded-xl bg-soft px-4 py-3 text-[14px] whitespace-pre-line">{c.observacao}</p>}

@@ -5,7 +5,7 @@ export const revalidate = 3600;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const site = process.env.NEXT_PUBLIC_SITE_URL ?? "https://cabincrew.com.br";
-  const fixas: MetadataRoute.Sitemap = ["/entrar", "/privacidade"].map((p) => ({ url: `${site}${p}` }));
+  const fixas: MetadataRoute.Sitemap = ["/entrar", "/planos", "/simulados-anac", "/autenticar", "/termos", "/privacidade", "/reembolso"].map((p) => ({ url: `${site}${p}` }));
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;

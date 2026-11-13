@@ -24,13 +24,14 @@ export default async function AlunoPage({ params }: { params: Promise<{ id: stri
   const { id } = await params;
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
   const { supabase } = await getUser();
-  const [{ data: linha }, { dados, dataMeta, jornada }, { data: recentes }, { data: comprasAluno }, { data: acessosAluno }, { data: certsAluno }] = await Promise.all([
+  const [{ data: linha }, { dados, dataMeta, jornada }, { data: recentes }, { data: comprasAluno }, { data: acessosAluno }, { data: certsAluno }, { data: aceitesAluno }] = await Promise.all([
     supabase.rpc("admin_hh_alunos", { p_busca: "", p_id: id }),
     carregarJornada(supabase, id),
     supabase.from("tentativas").select("nota, iniciada_em, finalizada_em, saidas_aba, simulados(titulo, origem)").eq("user_id", id).order("iniciada_em", { ascending: false }).limit(15),
     supabase.from("compras").select("*").eq("user_id", id).order("comprada_em", { ascending: false }),
     supabase.from("acessos").select("*").eq("user_id", id),
     supabase.from("certificados").select("codigo, curso, concluido_em, revogado").eq("user_id", id),
+    supabase.from("aceites").select("contexto, versao, produto, ip, aceito_em").eq("user_id", id).order("aceito_em", { ascending: false }).limit(20),
   ]);
   const l = ((linha ?? []) as LinhaAluno[])[0];
   if (!l) notFound();
@@ -176,6 +177,17 @@ export default async function AlunoPage({ params }: { params: Promise<{ id: stri
               );
             })}
             <span className="text-[13px] text-muted">Compras pelo Mercado Pago liberam sozinhas. Para cortesia, Pix direto ou curso presencial, use Liberar acesso.</span>
+          </Card>
+
+          <Card>
+            <h2 className="font-display text-xl font-extrabold">Aceite dos termos</h2>
+            {!(aceitesAluno ?? []).length ? <p className="text-[14px] text-ink-2">Nenhum aceite registrado (cadastros anteriores ao registro de aceites).</p> : (
+              <ul className="flex flex-col gap-1.5 text-[14px]">
+                {((aceitesAluno ?? []) as { contexto: string; versao: string; produto: string | null; ip: string | null; aceito_em: string }[]).map((x, i) => (
+                  <li key={i}><strong className="text-navy">{x.contexto === "cadastro" ? "Cadastro" : `Compra${x.produto ? ` (${x.produto})` : ""}`}</strong> · {dataHoraBR(x.aceito_em)} · versão {x.versao} · IP {x.ip ?? "—"}</li>
+                ))}
+              </ul>
+            )}
           </Card>
 
           <Card>

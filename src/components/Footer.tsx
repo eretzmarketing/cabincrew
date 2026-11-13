@@ -30,7 +30,9 @@ export default async function Footer() {
             )}
             <div className="flex flex-col gap-2.5">
               <strong className="font-display text-white">Cabin Crew</strong>
+              <Link href="/termos" className="hover:text-white">Termos de Uso</Link>
               <Link href="/privacidade" className="hover:text-white">Privacidade</Link>
+              <Link href="/reembolso" className="hover:text-white">Reembolso</Link>
             </div>
           </nav>
         </div>

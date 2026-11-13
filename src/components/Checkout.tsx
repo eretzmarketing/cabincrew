@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
 import { precosFinais, normalizarCupom, rotuloCupom, type Cupom } from "@/lib/cupons";
+import { VERSAO_LEGAL } from "@/lib/legal";
 
 type Base = { slug: string; nome: string; endereco: string; precoBase: number; descontoPix: number; diasExtras: number };
 type Produto = Base & { preco: number; pix: number; cupom: string | null; descontoCupom: number };
@@ -39,6 +40,7 @@ export default function Checkout({ publicKey, base, email, nome, cupomInicial, e
 }) {
   const [metodo, setMetodo] = useState<"pix" | "cartao">("pix");
   const [cupom, setCupom] = useState<Cupom | null>(cupomInicial);
+  const [aceite, setAceite] = useState(false);
   const p = precosFinais(base.precoBase, base.descontoPix, cupom);
   const produto: Produto = { ...base, preco: p.cartao, pix: p.pix, cupom: cupom?.codigo ?? null, descontoCupom: p.descontoCupom };
   const [aprovado, setAprovado] = useState(false);
@@ -68,6 +70,10 @@ export default function Checkout({ publicKey, base, email, nome, cupomInicial, e
   return (
     <div className="grid items-start gap-6 lg:grid-cols-[1fr_340px]">
       <section className="flex flex-col gap-5 rounded-[22px] bg-white p-5 shadow-sm md:p-7">
+        <label className={`flex cursor-pointer items-start gap-3 rounded-2xl border-2 px-4 py-3 text-[15px] ${aceite ? "border-[#2fa36b] bg-[#f3fbf6]" : "border-line"}`}>
+          <input type="checkbox" checked={aceite} onChange={(e) => setAceite(e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 accent-[#c8102e]" />
+          <span>Li e aceito os <a href="/termos" target="_blank" className="font-semibold text-navy underline">Termos de Uso</a> e a <a href="/reembolso" target="_blank" className="font-semibold text-navy underline">Política de Reembolso</a> (7 dias de arrependimento). Entendo que o acesso vale até eu concluir o curso{produto.diasExtras > 0 ? `, mais ${produto.diasExtras} dias para revisar` : ""}.</span>
+        </label>
         <h2 className="font-display text-xl font-extrabold">Como você quer pagar?</h2>
         <div role="radiogroup" aria-label="Forma de pagamento" className="grid gap-3 sm:grid-cols-2">
           {([["pix", "Pix", `${reais(produto.pix)}${produto.descontoPix ? ` · ${produto.descontoPix}% off` : ""}`], ["cartao", "Cartão de crédito", `${reais(produto.preco)} · até 12x`]] as const).map(([k, r, d]) => (
@@ -78,7 +84,7 @@ export default function Checkout({ publicKey, base, email, nome, cupomInicial, e
             </button>
           ))}
         </div>
-        {metodo === "pix" ? <PagarPix key={produto.cupom ?? "-"} produto={produto} aoAprovar={() => setAprovado(true)} /> : <PagarCartao publicKey={publicKey} produto={produto} email={email} aoAprovar={() => setAprovado(true)} aoAnalisar={() => setAnalise(true)} />}
+        {metodo === "pix" ? <PagarPix key={produto.cupom ?? "-"} aceite={aceite} produto={produto} aoAprovar={() => setAprovado(true)} /> : <PagarCartao aceite={aceite} publicKey={publicKey} produto={produto} email={email} aoAprovar={() => setAprovado(true)} aoAnalisar={() => setAnalise(true)} />}
       </section>
 
       <aside className="flex flex-col gap-4 rounded-[22px] bg-navy p-6 text-white lg:sticky lg:top-24">
@@ -102,7 +108,7 @@ export default function Checkout({ publicKey, base, email, nome, cupomInicial, e
   );
 }
 
-function PagarPix({ produto, aoAprovar }: { produto: Produto; aoAprovar: () => void }) {
+function PagarPix({ produto, aceite, aoAprovar }: { produto: Produto; aceite: boolean; aoAprovar: () => void }) {
   const [cpf, setCpf] = useState("");
   const [erro, setErro] = useState("");
   const [pend, setPend] = useState(false);
@@ -127,7 +133,8 @@ function PagarPix({ produto, aoAprovar }: { produto: Produto; aoAprovar: () => v
   async function gerar(e: React.FormEvent) {
     e.preventDefault();
     setErro(""); setPend(true);
-    const r = await pagar({ produto: produto.slug, metodo: "pix", cpf, cupom: produto.cupom });
+    if (!aceite) return setErro("Marque que você leu e aceita os Termos de Uso e a Política de Reembolso.");
+    const r = await pagar({ produto: produto.slug, metodo: "pix", cpf, cupom: produto.cupom, aceite: VERSAO_LEGAL });
     setPend(false);
     if (r.erro || !r.id) return setErro(r.erro ?? "Não foi possível gerar o Pix.");
     setPix({ id: r.id, ...r.pix, valor: r.valor ?? produto.pix, criado: Date.now() });
@@ -163,18 +170,18 @@ function PagarPix({ produto, aoAprovar }: { produto: Produto; aoAprovar: () => v
         className="min-h-12 rounded-xl border border-[#c9cedb] bg-white px-4 text-[16px] outline-none focus:border-navy" aria-describedby="cpf-ajuda" />
       <span id="cpf-ajuda" className="text-[13px] text-muted">Exigido pelo Mercado Pago para gerar o Pix. Fica registrado na sua compra.</span>
       {erro && <p role="alert" className="rounded-xl bg-brand-soft px-4 py-2.5 text-[14px] text-brand-deep">{erro}</p>}
-      <button disabled={pend || cpf.replace(/\D/g, "").length !== 11} className="inline-flex min-h-14 cursor-pointer items-center justify-center rounded-xl bg-brand-strong px-6 font-display text-[17px] font-bold text-white hover:bg-brand-deep disabled:cursor-not-allowed disabled:opacity-50">
+      <button disabled={pend || !aceite || cpf.replace(/\D/g, "").length !== 11} className="inline-flex min-h-14 cursor-pointer items-center justify-center rounded-xl bg-brand-strong px-6 font-display text-[17px] font-bold text-white hover:bg-brand-deep disabled:cursor-not-allowed disabled:opacity-50">
         {pend ? "Gerando o Pix…" : `Gerar Pix de ${reais(produto.pix)}`}
       </button>
     </form>
   );
 }
 
-function PagarCartao({ publicKey, produto, email, aoAprovar, aoAnalisar }: { publicKey: string; produto: Produto; email: string; aoAprovar: () => void; aoAnalisar: () => void }) {
+function PagarCartao({ publicKey, produto, email, aceite, aoAprovar, aoAnalisar }: { publicKey: string; produto: Produto; email: string; aceite: boolean; aoAprovar: () => void; aoAnalisar: () => void }) {
   const [erro, setErro] = useState("");
   const [carregando, setCarregando] = useState(true);
-  const fns = useRef({ aoAprovar, aoAnalisar });
-  useEffect(() => { fns.current = { aoAprovar, aoAnalisar }; }, [aoAprovar, aoAnalisar]);
+  const fns = useRef({ aoAprovar, aoAnalisar, aceite });
+  useEffect(() => { fns.current = { aoAprovar, aoAnalisar, aceite }; }, [aoAprovar, aoAnalisar, aceite]);
 
   useEffect(() => {
     let ctl: { unmount: () => void } | null = null;
@@ -190,7 +197,8 @@ function PagarCartao({ publicKey, produto, email, aoAprovar, aoAnalisar }: { pub
           onError: (e: unknown) => console.error("[checkout]", e),
           onSubmit: async (dados: Record<string, unknown>) => {
             setErro("");
-            const r = await pagar({ produto: produto.slug, metodo: "cartao", cartao: dados, cupom: produto.cupom });
+            if (!fns.current.aceite) { setErro("Marque que você leu e aceita os Termos de Uso e a Política de Reembolso (no topo da página)."); throw new Error("aceite"); }
+            const r = await pagar({ produto: produto.slug, metodo: "cartao", cartao: dados, cupom: produto.cupom, aceite: VERSAO_LEGAL });
             if (r.status === "approved" || r.status === "authorized") { fns.current.aoAprovar(); return; }
             if (r.status === "in_process" || r.status === "pending") { fns.current.aoAnalisar(); return; }
             setErro(r.mensagem ?? r.erro ?? "Pagamento não aprovado. Tente outro cartão ou o Pix.");
