@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { enviarWhatsappManual, salvarModeloWhatsapp } from "@/app/whatsapp-actions";
+import { enviarWhatsappManual, salvarConexaoWhatsapp, salvarModeloWhatsapp } from "@/app/whatsapp-actions";
 
 const campo = "w-full rounded-xl border border-[#c9cedb] bg-white px-4 py-3 text-[15px] leading-relaxed outline-none focus:border-navy";
 const btn = "inline-flex min-h-11 cursor-pointer items-center justify-center rounded-full bg-navy px-5 font-semibold text-white hover:bg-navy-deep disabled:opacity-50";
@@ -47,6 +47,31 @@ export function EnviarWhatsappForm({ alunoId, textoInicial = "", rotulo = "Envia
       <div className="flex flex-wrap items-center gap-3">
         <button className="inline-flex min-h-11 cursor-pointer items-center justify-center rounded-full bg-[#25d366] px-5 font-semibold text-[#0b3d20] hover:brightness-95 disabled:opacity-50" disabled={pend}>{pend ? "Enviando…" : rotulo}</button>
         <span className="text-[13px] text-muted">Pode usar {"{nome}"} para o primeiro nome.</span>
+      </div>
+      <Aviso s={s} />
+    </form>
+  );
+}
+
+export function ConexaoWhatsappForm({ instancia, tokenFinal, conectado, doPainel }: { instancia: string; tokenFinal: string; conectado: boolean; doPainel: boolean }) {
+  const [s, acao, pend] = useActionState(salvarConexaoWhatsapp, {});
+  return (
+    <form action={acao} className="flex flex-col gap-4">
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="flex flex-col gap-1">
+          <label htmlFor="instancia" className="text-[14px] font-semibold">Instance ID</label>
+          <input id="instancia" name="instancia" defaultValue={instancia} autoComplete="off" spellCheck={false} placeholder="ex.: 882AEB1F4E32" className={campo} />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label htmlFor="token" className="text-[14px] font-semibold">Access Token</label>
+          <input id="token" name="token" type="password" autoComplete="new-password" spellCheck={false}
+            placeholder={conectado ? `atual termina em …${tokenFinal} (deixe em branco para manter)` : "cole o token do Wawp"} className={campo} />
+        </div>
+      </div>
+      <div className="flex flex-wrap items-center gap-3">
+        <button name="acao" value="salvar" className={btn} disabled={pend}>{pend ? "Testando…" : conectado ? "Salvar e testar" : "Conectar"}</button>
+        {doPainel && <button name="acao" value="desconectar" className="inline-flex min-h-11 cursor-pointer items-center rounded-full border-2 border-line px-5 font-semibold text-navy hover:border-navy" disabled={pend}>Desconectar</button>}
+        <span className="text-[13px] text-muted">Os dados ficam só no servidor do site. O token nunca aparece aqui de novo.</span>
       </div>
       <Aviso s={s} />
     </form>

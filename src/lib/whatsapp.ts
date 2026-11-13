@@ -1,21 +1,37 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { readFileSync } from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { after } from "next/server";
 
 /**
- * WhatsApp pelo Wawp (https://api.wawp.net). O ID da instância e o token ficam só no servidor,
- * em .env.local (WAWP_INSTANCE_ID e WAWP_ACCESS_TOKEN), gravados pelo deploy/configurar-whatsapp.sh.
+ * WhatsApp pelo Wawp (https://api.wawp.net). O ID da instância e o token ficam só no servidor:
+ * no arquivo ~/.cabincrew-whatsapp.json (gravado pelo Admin → WhatsApp, só o usuário do site lê)
+ * ou, se ele não existir, em .env.local (WAWP_INSTANCE_ID e WAWP_ACCESS_TOKEN).
  */
 const API = process.env.WAWP_API_BASE || "https://api.wawp.net";
-const INSTANCIA = process.env.WAWP_INSTANCE_ID ?? "";
-const TOKEN = process.env.WAWP_ACCESS_TOKEN ?? "";
 const SITE = (process.env.NEXT_PUBLIC_SITE_URL || "https://cabincrew.com.br").replace(/\/$/, "");
+export const ARQUIVO_CONEXAO = process.env.WAWP_CONFIG_FILE || path.join(os.homedir(), ".cabincrew-whatsapp.json");
 
-export const whatsappConfigurado = () => !!(INSTANCIA && TOKEN);
+export type Conexao = { instancia: string; token: string; origem: "painel" | "servidor" };
+
+/** Credenciais atuais do Wawp (arquivo do painel primeiro; depois .env.local). */
+export function conexaoWhatsapp(): Conexao | null {
+  try {
+    const j = JSON.parse(readFileSync(ARQUIVO_CONEXAO, "utf8")) as { instancia?: string; token?: string };
+    if (j.instancia && j.token) return { instancia: j.instancia, token: j.token, origem: "painel" };
+  } catch { /* sem arquivo */ }
+  const instancia = process.env.WAWP_INSTANCE_ID ?? "", token = process.env.WAWP_ACCESS_TOKEN ?? "";
+  return instancia && token ? { instancia, token, origem: "servidor" } : null;
+}
+
+export const whatsappConfigurado = () => !!conexaoWhatsapp();
 
 export type ResultadoEnvio = { ok: true } | { ok: false; status: "erro" | "sem_whatsapp"; erro: string };
 
-async function chamar(caminho: string, init?: RequestInit) {
-  const url = `${API}${caminho}${caminho.includes("?") ? "&" : "?"}instance_id=${encodeURIComponent(INSTANCIA)}&access_token=${encodeURIComponent(TOKEN)}`;
+async function chamar(caminho: string, init?: RequestInit, con: Conexao | null = conexaoWhatsapp()) {
+  if (!con) throw new Error("WhatsApp não configurado");
+  const url = `${API}${caminho}${caminho.includes("?") ? "&" : "?"}instance_id=${encodeURIComponent(con.instancia)}&access_token=${encodeURIComponent(con.token)}`;
   const r = await fetch(url, { ...init, headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) }, signal: AbortSignal.timeout(20000), cache: "no-store" });
   const corpo = await r.text();
   if (!r.ok) {
@@ -23,6 +39,16 @@ async function chamar(caminho: string, init?: RequestInit) {
     throw new Error(`${motivo}${corpo ? `: ${corpo.slice(0, 200)}` : ""}`);
   }
   try { return JSON.parse(corpo); } catch { return {}; }
+}
+
+/** Testa um ID e token antes de salvar: devolve null se o Wawp aceitou, ou o motivo do erro. */
+export async function testarConexao(instancia: string, token: string): Promise<string | null> {
+  try {
+    await chamar("/v2/contacts/check-exists?phone=5511999999999", undefined, { instancia, token, origem: "painel" });
+    return null;
+  } catch (e) {
+    return (e as Error).message.slice(0, 300);
+  }
 }
 
 /** Envia um texto para um número (com DDI, ex.: +5511999999999). Confere antes se o número tem WhatsApp. */

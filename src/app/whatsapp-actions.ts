@@ -2,7 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { getUser } from "@/lib/supabase/server";
-import { enviarWhatsapp, preencher } from "@/lib/whatsapp";
+import { chmod, unlink, writeFile } from "node:fs/promises";
+import { ARQUIVO_CONEXAO, conexaoWhatsapp, enviarWhatsapp, preencher, testarConexao } from "@/lib/whatsapp";
 
 type Estado = { ok?: boolean; msg?: string; erro?: string };
 
@@ -57,4 +58,25 @@ export async function alternarAvisosWhatsapp(form: FormData) {
   if (!user) return;
   await supabase.from("profiles").update({ whatsapp_avisos: form.get("ligar") === "1" }).eq("id", user.id);
   revalidatePath("/conta");
+}
+
+/** Admin: conecta (ou troca) o número do Wawp: testa o Instance ID e o token e grava no servidor. */
+export async function salvarConexaoWhatsapp(_: Estado, form: FormData): Promise<Estado> {
+  await admin();
+  if (form.get("acao") === "desconectar") {
+    await unlink(ARQUIVO_CONEXAO).catch(() => {});
+    revalidatePath("/admin/whatsapp");
+    return { ok: true, msg: conexaoWhatsapp() ? "Removido do painel. Continua valendo a conexão configurada no servidor." : "Desconectado." };
+  }
+  const instancia = String(form.get("instancia") ?? "").trim();
+  let token = String(form.get("token") ?? "").trim();
+  if (!token) token = conexaoWhatsapp()?.token ?? ""; // em branco = manter o token atual
+  if (!/^[A-Za-z0-9_-]{4,80}$/.test(instancia)) return { erro: "Informe o Instance ID (coluna Instance ID no Wawp)." };
+  if (!/^[A-Za-z0-9_\-.]{6,200}$/.test(token)) return { erro: "Informe o Access Token do Wawp." };
+  const erro = await testarConexao(instancia, token);
+  if (erro) return { erro: `O Wawp recusou: ${erro}` };
+  await writeFile(ARQUIVO_CONEXAO, JSON.stringify({ instancia, token, salvo_em: new Date().toISOString() }), { mode: 0o600 });
+  await chmod(ARQUIVO_CONEXAO, 0o600).catch(() => {});
+  revalidatePath("/admin/whatsapp");
+  return { ok: true, msg: "Conectado ✓ Mande um teste abaixo para confirmar." };
 }

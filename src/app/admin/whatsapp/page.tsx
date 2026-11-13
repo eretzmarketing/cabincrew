@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Card, Numero, Titulo } from "@/components/admin-ui";
-import { EnviarWhatsappForm, ModeloWhatsappForm } from "@/components/WhatsappForms";
+import { ConexaoWhatsappForm, EnviarWhatsappForm, ModeloWhatsappForm } from "@/components/WhatsappForms";
 import { getUser } from "@/lib/supabase/server";
-import { whatsappConfigurado } from "@/lib/whatsapp";
+import { conexaoWhatsapp } from "@/lib/whatsapp";
 
 export const metadata: Metadata = { title: "WhatsApp" };
 export const dynamic = "force-dynamic";
@@ -34,16 +34,23 @@ export default async function WhatsappAdminPage() {
   const titulo = new Map(modelos.map((m) => [m.evento, m.titulo]));
   const limite = new Date().getTime() - 86400000;
   const hoje = envios.filter((e) => Date.parse(e.created_at) > limite);
-  const ok = whatsappConfigurado();
+  const con = conexaoWhatsapp();
+  const ok = !!con;
 
   return (
     <>
       <Titulo sub="Avisos automáticos para os alunos pelo seu número no Wawp: boas-vindas, parabéns por concluir módulos e cursos. Cada aviso é enviado uma única vez para cada aluno.">WhatsApp</Titulo>
 
-      <p className={`rounded-2xl px-5 py-4 font-semibold ${ok ? "bg-[#e5f6ec] text-[#0f6b3a]" : "bg-[#fff8e6] text-[#7a5a00]"}`}>
-        {ok ? "✓ Conectado ao Wawp. Os avisos estão sendo enviados."
-          : <>Ainda não configurado no servidor. Rode o <strong>deploy/configurar-whatsapp.sh</strong> no console da Hostinger (instruções no chat).</>}
-      </p>
+      <Card>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="font-display text-xl font-extrabold">Conexão com o Wawp</h2>
+          <span className={`rounded-full px-3 py-1 text-sm font-semibold ${ok ? "bg-[#e5f6ec] text-[#0f6b3a]" : "bg-[#fff8e6] text-[#7a5a00]"}`}>
+            {ok ? `✓ Conectado · instância ${con!.instancia}` : "Não conectado"}
+          </span>
+        </div>
+        <p className="text-[15px] text-ink-2">Para trocar de número, conecte o novo número no Wawp e cole aqui o <strong>Instance ID</strong> e o <strong>Access Token</strong> (em wawp.net › Instances). O site testa antes de salvar.</p>
+        <ConexaoWhatsappForm instancia={con?.instancia ?? ""} tokenFinal={con ? con.token.slice(-4) : ""} conectado={ok} doPainel={con?.origem === "painel"} />
+      </Card>
 
       <div className="flex flex-wrap gap-3">
         <Numero rotulo="Enviadas (24h)" valor={hoje.filter((e) => e.status === "enviada").length} />
