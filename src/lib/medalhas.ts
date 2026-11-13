@@ -1,5 +1,4 @@
 /** Medalhas do Head Hunter, calculadas a partir do que o aluno já fez (nada é gravado à parte). */
-import { TODAS_AULAS, chaveAula } from "@/lib/ingles-a-bordo";
 import { META, maiorSequencia, type DadosJornada, type montarJornada } from "@/lib/jornada";
 
 type Jornada = ReturnType<typeof montarJornada>;
@@ -12,8 +11,7 @@ export function calcularMedalhas(d: DadosJornada, j: Jornada): Medalha[] {
   const provas = d.tentativas.filter((t) => t.modo === "prova" && t.nota !== null);
   const etapasFeitas = j.etapas.filter((e) => e.feita).length;
   const comConteudo = j.etapas.filter((e) => !e.vazia).length;
-  const m1 = TODAS_AULAS.filter((a) => a.modulo === 1);
-  const m1Feitas = m1.filter((a) => d.ingles.get(chaveAula(a))?.concluida).length;
+  const treinosIngles = treinos.filter((t) => d.simulados.get(t.simulado_id)?.bancos.includes("ingles")).length;
   const coerente = d.opq.some((o) => o.perfil.incoerentes.length === 0 && o.perfil.extremos < 70);
   const melhorVideo = Math.max(0, ...d.videos.map((v) => v.nota));
   const dez = (n: number, alvo: number) => `${Math.min(n, alvo)} de ${alvo}`;
@@ -31,7 +29,7 @@ export function calcularMedalhas(d: DadosJornada, j: Jornada): Medalha[] {
     { id: "gabaritou", emoji: "💯", nome: "Gabarito", como: "Acertar 100% em um treino ou simulado.", ganha: [...treinos, ...provas].some((t) => t.nota === 100) },
     { id: "perfil", emoji: "🧩", nome: "Perfil coerente", como: "Terminar o perfil comportamental sem respostas incoerentes ou forçadas.", ganha: coerente },
     { id: "video", emoji: "🎥", nome: "Câmera ligada", como: `Tirar ${META}% ou mais no treino de vídeo de apresentação.`, ganha: melhorVideo >= META },
-    { id: "ingles", emoji: "🇬🇧", nome: "Welcome aboard", como: "Concluir o Módulo 1 do Flight Attendant English.", ganha: m1.length > 0 && m1Feitas === m1.length, progresso: dez(m1Feitas, m1.length) },
+    { id: "ingles", emoji: "🇬🇧", nome: "Welcome aboard", como: "Fazer 5 treinos de inglês.", ganha: treinosIngles >= 5, progresso: dez(treinosIngles, 5) },
     { id: "etapa", emoji: "🛬", nome: "Primeira etapa", como: "Concluir uma etapa da jornada.", ganha: etapasFeitas >= 1 },
     { id: "pronto", emoji: "👑", nome: "Pronto para a seleção", como: "Concluir todas as etapas da jornada.", ganha: comConteudo > 0 && etapasFeitas >= comConteudo, progresso: dez(etapasFeitas, comConteudo) },
   ];

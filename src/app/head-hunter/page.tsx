@@ -115,15 +115,6 @@ export default async function CrewSelectPage({ searchParams }: { searchParams: P
               <span className="inline-flex min-h-12 items-center gap-2 rounded-full bg-brand-strong px-6 font-display font-bold text-white">Abrir simulados <Arrow /></span>
             </Link>
           )}
-          <Link href={dados.temEnglish ? "/english" : "/planos#english"} className="group relative flex flex-wrap items-center justify-between gap-4 overflow-hidden rounded-[22px] bg-navy p-6 text-white">
-            <Image src="/img/ingles/cena-01.jpg" alt="" fill sizes="1200px" className="object-cover opacity-25 transition duration-500 group-hover:scale-[1.02]" />
-            <span className="relative flex flex-col gap-1">
-              <span className="self-start rounded-full bg-white/15 px-3 py-1 font-display text-xs font-bold tracking-[.08em] uppercase">{dados.temEnglish ? "Seu curso de inglês" : "Curso à parte"}</span>
-              <strong className="font-display text-xl font-extrabold">Flight Attendant English</strong>
-              <span className="text-[15px] text-[#d7dbe6]">Curso completo de inglês para aviação: diálogos de bordo com áudio, anúncios, emergências e quiz em cada aula.</span>
-            </span>
-            <span className="relative inline-flex min-h-12 items-center gap-2 rounded-full bg-brand-strong px-6 font-display font-bold text-white">{dados.temEnglish ? "Abrir o curso" : "Conhecer o curso"} <Arrow /></span>
-          </Link>
           <Link href="/head-hunter/ranking" className="flex flex-wrap items-center justify-between gap-4 rounded-[22px] border-2 border-brand-line bg-white p-6 text-navy hover:border-brand">
             <span className="flex flex-col gap-1">
               <span className="self-start rounded-full bg-brand-soft px-3 py-1 font-display text-xs font-bold tracking-[.08em] text-brand-strong uppercase">Ranking da semana</span>
@@ -217,7 +208,7 @@ function Venda({ nome, prod, revogado }: { nome: string; prod: Prod; revogado: b
               </div>
               {Number(prod.desconto_pix) > 0 && <p className="text-[16px]"><strong className="text-[#0f6b3a]">{reais(pix)} no Pix</strong> ({Number(prod.desconto_pix)}% de desconto)</p>}
               <Link href="/comprar/head-hunter" className="inline-flex min-h-14 items-center justify-center gap-2 rounded-xl bg-brand-strong px-6 font-display text-[17px] font-bold text-white hover:bg-brand-deep">Quero começar agora <Arrow /></Link>
-              <Link href="/planos" className="text-center text-[15px] font-semibold text-navy underline underline-offset-4">Ver o combo com o Flight Attendant English</Link>
+              <Link href="/planos" className="text-center text-[15px] font-semibold text-navy underline underline-offset-4">Ver todos os planos</Link>
               <span className="text-[13px] text-muted">Pagamento seguro pelo Mercado Pago. Acesso liberado na hora.</span>
             </div>
           ) : <p className="text-[17px] text-ink-2">As inscrições abrem em breve. Avisaremos você pelo WhatsApp.</p>}

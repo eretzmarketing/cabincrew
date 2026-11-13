@@ -13,7 +13,6 @@ type Linha = { posicao: number; apelido: string; pontos: number; eu: boolean };
 
 const PONTOS = [
   ["Aula concluída", "10"],
-  ["Aula do Flight Attendant English concluída", "10"],
   ["Treino de 10 questões", "5 (+5 com 80% ou mais)"],
   ["Simulado no modo Prova real", "20 (+10 com 80% ou mais)"],
   ["Sessão do perfil comportamental", "10"],
