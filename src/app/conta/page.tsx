@@ -5,6 +5,7 @@ import ExcluirContaForm from "@/components/ExcluirContaForm";
 import { NovaSenhaForm, PerfilForm } from "@/components/forms";
 import Link from "next/link";
 import AvatarForm from "@/components/AvatarForm";
+import { CURSOS_CERT } from "@/lib/certificados";
 import { avatarUrl, getUser } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Minha conta", robots: { index: false } };
@@ -15,7 +16,10 @@ export default async function ContaPage({ searchParams }: { searchParams: Promis
   if (!user || !profile) redirect("/entrar?modo=entrar&next=/conta");
 
   const voltar = sp.next?.startsWith("/head-hunter") ? sp.next : sp.foto ? "/head-hunter" : null;
-  const { count } = await supabase.from("relatos").select("id", { count: "exact", head: true }).eq("autor_id", user.id);
+  const [{ count }, { data: certs }] = await Promise.all([
+    supabase.from("relatos").select("id", { count: "exact", head: true }).eq("autor_id", user.id),
+    supabase.from("certificados").select("codigo, curso, concluido_em").eq("user_id", user.id).eq("revogado", false),
+  ]);
 
   return (
     <main className="bg-soft px-6 py-12">
@@ -54,6 +58,21 @@ export default async function ContaPage({ searchParams }: { searchParams: Promis
           </div>
           <PerfilForm p={profile} />
         </section>
+        {(certs ?? []).length > 0 && (
+          <section className="flex flex-col gap-3 rounded-[20px] border border-line bg-white p-6">
+            <h2 className="font-display text-xl font-bold">Meus certificados</h2>
+            <ul className="flex flex-col gap-2">
+              {((certs ?? []) as { codigo: string; curso: string; concluido_em: string }[]).map((c) => (
+                <li key={c.codigo}>
+                  <Link href={`/certificado/${c.codigo}`} className="flex min-h-12 items-center justify-between gap-3 rounded-xl border border-line px-4 hover:border-navy">
+                    <span className="font-semibold">🎓 {CURSOS_CERT[c.curso] ?? c.curso}</span>
+                    <span className="text-[14px] text-muted">{new Date(c.concluido_em).toLocaleDateString("pt-BR")} · abrir</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
         <section className="flex flex-col gap-4 rounded-[20px] border border-line bg-white p-6">
           <h2 className="font-display text-xl font-bold">Trocar senha</h2>
           <NovaSenhaForm />

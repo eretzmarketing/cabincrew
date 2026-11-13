@@ -67,7 +67,8 @@ export default async function CrewSelectPage({ searchParams }: { searchParams: P
       {revisaoAte && (
         <div className="bg-[#e5f6ec] text-[#0f6b3a]" role="status">
           <p className="mx-auto max-w-[1200px] px-6 py-3 text-[15px] font-semibold">
-            👑 Você concluiu toda a jornada! Seu acesso continua até {new Date(revisaoAte).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })} para você revisar antes da seleção.
+            👑 Você concluiu toda a jornada! Seu acesso continua até {new Date(revisaoAte).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })} para você revisar antes da seleção.{" "}
+            <Link href="/certificado/novo/head-hunter" className="underline underline-offset-4">🎓 Baixar meu certificado</Link>
           </p>
         </div>
       )}
@@ -227,6 +228,7 @@ function Concluido({ nome, em }: { nome: string; em: string | null }) {
         <p className="text-[17px] leading-relaxed text-ink-2">
           Você completou toda a jornada e o seu acesso ao curso terminou{em ? ` em ${new Date(em).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}` : ""}. Agora é com você: chegue confiante na seleção. Boa sorte! ✈️
         </p>
+        <Link href="/certificado/novo/head-hunter" className="inline-flex min-h-12 items-center rounded-xl bg-navy px-6 font-semibold text-white hover:bg-navy-deep">🎓 Baixar meu certificado</Link>
         <p className="text-[15px] text-muted">Quer revisar tudo antes da prova? Você pode comprar um novo acesso.</p>
         <Link href="/comprar/head-hunter" className="inline-flex min-h-12 items-center rounded-xl border-2 border-navy px-6 font-semibold text-navy hover:bg-navy hover:text-white">Comprar novo acesso</Link>
       </div>

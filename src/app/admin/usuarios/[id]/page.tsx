@@ -12,7 +12,9 @@ import {
   type LinhaAluno,
 } from "@/lib/painel-alunos";
 import { getUser } from "@/lib/supabase/server";
+import { emitirCertificadoAdmin } from "@/app/certificados-actions";
 import { alterarAcesso } from "@/app/pagamentos-actions";
+import { CURSOS_CERT } from "@/lib/certificados";
 import { STATUS_COMPRA, dataHoraBR, dinheiro, fimArrependimento, type Compra } from "@/lib/compras";
 
 export const metadata: Metadata = { title: "Aluno · Head Hunter" };
@@ -22,12 +24,13 @@ export default async function AlunoPage({ params }: { params: Promise<{ id: stri
   const { id } = await params;
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
   const { supabase } = await getUser();
-  const [{ data: linha }, { dados, dataMeta, jornada }, { data: recentes }, { data: comprasAluno }, { data: acessosAluno }] = await Promise.all([
+  const [{ data: linha }, { dados, dataMeta, jornada }, { data: recentes }, { data: comprasAluno }, { data: acessosAluno }, { data: certsAluno }] = await Promise.all([
     supabase.rpc("admin_hh_alunos", { p_busca: "", p_id: id }),
     carregarJornada(supabase, id),
     supabase.from("tentativas").select("nota, iniciada_em, finalizada_em, saidas_aba, simulados(titulo, origem)").eq("user_id", id).order("iniciada_em", { ascending: false }).limit(15),
     supabase.from("compras").select("*").eq("user_id", id).order("comprada_em", { ascending: false }),
     supabase.from("acessos").select("*").eq("user_id", id),
+    supabase.from("certificados").select("codigo, curso, concluido_em, revogado").eq("user_id", id),
   ]);
   const l = ((linha ?? []) as LinhaAluno[])[0];
   if (!l) notFound();
@@ -173,6 +176,27 @@ export default async function AlunoPage({ params }: { params: Promise<{ id: stri
               );
             })}
             <span className="text-[13px] text-muted">Compras pelo Mercado Pago liberam sozinhas. Para cortesia, Pix direto ou curso presencial, use Liberar acesso.</span>
+          </Card>
+
+          <Card>
+            <h2 className="font-display text-xl font-extrabold">Certificados</h2>
+            {(["head-hunter", "english"] as const).map((curso) => {
+              const cert = ((certsAluno ?? []) as { codigo: string; curso: string; concluido_em: string; revogado: boolean }[]).find((x) => x.curso === curso && !x.revogado);
+              return (
+                <div key={curso} className="flex flex-wrap items-center justify-between gap-2 border-t border-line pt-3 first-of-type:border-0 first-of-type:pt-0">
+                  <span className="text-[15px]"><strong className="font-display">{CURSOS_CERT[curso]}:</strong> {cert ? <>emitido · <Link href={`/certificado/${cert.codigo}`} target="_blank" className="font-mono font-semibold text-navy underline">{cert.codigo}</Link></> : "não emitido"}</span>
+                  {!cert && (
+                    <form action={emitirCertificadoAdmin} className="flex flex-wrap items-center gap-2">
+                      <input type="hidden" name="user_id" value={l.id} /><input type="hidden" name="curso" value={curso} />
+                      <label className="sr-only" htmlFor={`dt-${curso}`}>Data de conclusão</label>
+                      <input id={`dt-${curso}`} type="date" name="data" className="min-h-10 rounded-lg border border-[#c9cedb] px-2 text-[14px]" />
+                      <button className="min-h-10 cursor-pointer rounded-full border-2 border-navy px-3 text-[13px] font-semibold text-navy">Emitir</button>
+                    </form>
+                  )}
+                </div>
+              );
+            })}
+            <span className="text-[13px] text-muted">O aluno emite sozinho ao concluir. Use “Emitir” para quem concluiu fora do site (sem data, usa hoje).</span>
           </Card>
 
           <Card>

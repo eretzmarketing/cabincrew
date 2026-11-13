@@ -18,6 +18,7 @@ export default async function InglesABordoPage() {
           <span aria-hidden="true" className="text-[64px] leading-none">🇬🇧</span>
           <h1 className="font-display text-[34px] leading-tight font-extrabold">Congratulations, {(profile.nome ?? profile.apelido).split(" ")[0]}! Você concluiu o Flight Attendant English.</h1>
           <p className="text-[17px] leading-relaxed text-ink-2">Você completou todas as aulas e o seu acesso ao curso terminou{acesso?.expira_em ? ` em ${new Date(acesso.expira_em).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}` : ""}. Have a nice flight! ✈️</p>
+          <Link href="/certificado/novo/english" className="inline-flex min-h-12 items-center rounded-xl bg-navy px-6 font-semibold text-white hover:bg-navy-deep">🎓 Baixar meu certificado</Link>
           <Link href="/comprar/english" className="inline-flex min-h-12 items-center rounded-xl border-2 border-navy px-6 font-semibold text-navy hover:bg-navy hover:text-white">Comprar novo acesso</Link>
         </div>
       </main>
@@ -36,7 +37,8 @@ export default async function InglesABordoPage() {
     <main className="bg-soft pb-20">
       {revisaoAte && (
         <p className="bg-[#e5f6ec] px-6 py-3 text-center text-[15px] font-semibold text-[#0f6b3a]" role="status">
-          🇬🇧 Você concluiu o curso! Seu acesso continua até {new Date(revisaoAte).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })} para revisar.
+          🇬🇧 Você concluiu o curso! Seu acesso continua até {new Date(revisaoAte).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })} para revisar.{" "}
+          <Link href="/certificado/novo/english" className="underline underline-offset-4">🎓 Baixar meu certificado</Link>
         </p>
       )}
       <section className="relative overflow-hidden bg-navy text-white">

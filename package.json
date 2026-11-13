@@ -9,6 +9,8 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@fontsource/great-vibes": "^5.2.5",
+    "@fontsource/playfair-display": "^5.2.5",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.118.0",
     "flag-icons": "^7.2.3",
