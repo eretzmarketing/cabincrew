@@ -34,7 +34,8 @@ export const metadata: Metadata = {
 /** Em manutenção, só passam administradores, o login da equipe (/entrar?equipe) e o retorno do login. */
 function liberadoNaManutencao(path: string, search: string) {
   if (path.startsWith("/auth/")) return true;
-  return path === "/entrar" && new URLSearchParams(search).has("equipe");
+  const q = new URLSearchParams(search);
+  return path === "/entrar" && (q.has("equipe") || q.get("conta") === "excluida");
 }
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

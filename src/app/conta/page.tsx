@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { sair } from "@/app/actions";
-import { alternarAvisosWhatsapp } from "@/app/whatsapp-actions";
+import ExcluirContaForm from "@/components/ExcluirContaForm";
 import { NovaSenhaForm, PerfilForm } from "@/components/forms";
 import Link from "next/link";
 import AvatarForm from "@/components/AvatarForm";
@@ -15,11 +15,7 @@ export default async function ContaPage({ searchParams }: { searchParams: Promis
   if (!user || !profile) redirect("/entrar?modo=entrar&next=/conta");
 
   const voltar = sp.next?.startsWith("/head-hunter") ? sp.next : sp.foto ? "/head-hunter" : null;
-  const [{ count }, { data: av }] = await Promise.all([
-    supabase.from("relatos").select("id", { count: "exact", head: true }).eq("autor_id", user.id),
-    supabase.from("profiles").select("whatsapp_avisos").eq("id", user.id).maybeSingle(),
-  ]);
-  const avisos = av ? av.whatsapp_avisos !== false : null;
+  const { count } = await supabase.from("relatos").select("id", { count: "exact", head: true }).eq("autor_id", user.id);
 
   return (
     <main className="bg-soft px-6 py-12">
@@ -58,24 +54,17 @@ export default async function ContaPage({ searchParams }: { searchParams: Promis
           </div>
           <PerfilForm p={profile} />
         </section>
-        {avisos !== null && (
-          <section className="flex flex-col gap-3 rounded-[20px] border border-line bg-white p-6">
-            <h2 className="font-display text-xl font-bold">Avisos no WhatsApp</h2>
-            <p className="text-[15px] text-ink-2">
-              {avisos ? "Você recebe no WhatsApp as boas-vindas e os parabéns quando conclui módulos e cursos." : "Os avisos no WhatsApp estão desligados."}
-            </p>
-            <form action={alternarAvisosWhatsapp}>
-              <input type="hidden" name="ligar" value={avisos ? "0" : "1"} />
-              <button type="submit" className="min-h-11 cursor-pointer rounded-full border-2 border-navy bg-white px-5 font-semibold text-navy hover:bg-soft">
-                {avisos ? "Desligar avisos" : "Ligar avisos"}
-              </button>
-            </form>
-          </section>
-        )}
         <section className="flex flex-col gap-4 rounded-[20px] border border-line bg-white p-6">
           <h2 className="font-display text-xl font-bold">Trocar senha</h2>
           <NovaSenhaForm />
         </section>
+        {!profile.is_admin && (
+          <section className="flex flex-col gap-3 rounded-[20px] border border-line bg-white p-6">
+            <h2 className="font-display text-xl font-bold">Excluir conta</h2>
+            <p className="text-[15px] text-ink-2">Apaga sua conta e todos os seus dados da Cabin Crew.</p>
+            <ExcluirContaForm />
+          </section>
+        )}
         <form action={sair}>
           <button type="submit" className="min-h-11 cursor-pointer rounded-full border-2 border-line bg-white px-5 font-semibold text-navy hover:border-navy">Sair</button>
         </form>

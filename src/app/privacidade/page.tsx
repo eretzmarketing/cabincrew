@@ -18,7 +18,7 @@ export default function PrivacidadePage() {
         <h2 className="font-display text-xl font-bold text-navy">Anonimato</h2>
         <p>Relatos publicados como anônimos não exibem seu apelido para outros usuários. A equipe de moderação pode ver a autoria para aplicar as regras do fórum.</p>
         <h2 className="font-display text-xl font-bold text-navy">Seus direitos</h2>
-        <p>Você pode apagar seus relatos a qualquer momento e pedir a exclusão da conta pelo contato [E-MAIL DE CONTATO].</p>
+        <p>Você pode apagar seus relatos a qualquer momento e excluir sua conta, com todos os seus dados, em Minha conta.</p>
       </article>
     </main>
   );

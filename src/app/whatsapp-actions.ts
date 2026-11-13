@@ -52,14 +52,6 @@ export async function enviarWhatsappManual(_: Estado, form: FormData): Promise<E
   return r.ok ? { ok: true, msg: "Mensagem enviada ✓" } : { erro: `Não foi enviada: ${r.erro}` };
 }
 
-/** Aluno: liga/desliga os avisos automáticos no WhatsApp. */
-export async function alternarAvisosWhatsapp(form: FormData) {
-  const { supabase, user } = await getUser();
-  if (!user) return;
-  await supabase.from("profiles").update({ whatsapp_avisos: form.get("ligar") === "1" }).eq("id", user.id);
-  revalidatePath("/conta");
-}
-
 /** Admin: conecta (ou troca) o número do Wawp: testa o Instance ID e o token e grava no servidor. */
 export async function salvarConexaoWhatsapp(_: Estado, form: FormData): Promise<Estado> {
   await admin();

@@ -88,6 +88,25 @@ export function avisarAluno(supabase: SupabaseClient, evento: string, vars: Reco
   });
 }
 
+type Reserva = { envio_id: number; telefone: string; nome: string; texto: string };
+
+/** Envia uma mensagem já reservada no banco para quem não tem login (lista Em breve, conta excluída). */
+export async function enviarReservaPublica(supabase: SupabaseClient, r: Reserva | undefined, vars: Record<string, string | number | undefined> = {}) {
+  if (!r || !whatsappConfigurado()) return;
+  const texto = preencher(r.texto, { ...vars, nome: r.nome });
+  const res = await enviarWhatsapp(r.telefone, texto);
+  await supabase.rpc("whatsapp_resultado_publico", { p_id: r.envio_id, p_status: res.ok ? "enviada" : res.status, p_texto: texto, p_erro: res.ok ? null : res.erro });
+}
+
+/** Confirmação no WhatsApp para quem entrou na lista da página Em breve (uma vez por telefone). */
+export function avisarInteressado(supabase: SupabaseClient, telefone: string) {
+  if (!whatsappConfigurado()) return;
+  after(async () => {
+    const { data } = await supabase.rpc("whatsapp_reservar_interessado", { p_telefone: telefone });
+    await enviarReservaPublica(supabase, ((data ?? []) as Reserva[])[0]);
+  });
+}
+
 /** Cliente do Supabase com a sessão recém-criada (no cadastro, os cookies ainda não chegaram ao servidor). */
 export function clienteDaSessao(accessToken: string) {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!, {

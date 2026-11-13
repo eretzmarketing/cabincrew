@@ -1,7 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { avisarAluno, clienteDaSessao } from "@/lib/whatsapp";
+import { avisarAluno, avisarInteressado, clienteDaSessao, enviarReservaPublica } from "@/lib/whatsapp";
+import { after } from "next/server";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient, getUser } from "@/lib/supabase/server";
@@ -35,6 +36,7 @@ export async function queroSerAvisado(_: FormState, form: FormData): Promise<For
     console.error("[quero_ser_avisado]", error.message);
     return { erro: "Não foi possível salvar agora. Tente de novo em instantes." };
   }
+  avisarInteressado(supabase, telefone);
   return { ok: true, msg: nome.split(" ")[0] };
 }
 
@@ -304,4 +306,25 @@ export async function enviarAvatar(_: FormState, form: FormData): Promise<FormSt
   }
   revalidatePath("/", "layout");
   return { ok: true, msg: "Foto salva." };
+}
+
+/* ---------- Excluir a própria conta ---------- */
+export async function excluirMinhaConta(_: FormState, form: FormData): Promise<FormState> {
+  const { supabase, user, profile } = await getUser();
+  if (!user) redirect("/entrar?modo=entrar");
+  if (profile?.is_admin) return { erro: "Contas de administrador não podem ser excluídas por aqui." };
+  if (String(form.get("confirmacao") ?? "").trim().toUpperCase() !== "EXCLUIR") return { erro: "Digite EXCLUIR para confirmar." };
+  if (form.get("ciente") !== "on") return { erro: "Marque que você está ciente de que perde o acesso, sem reembolso." };
+
+  await supabase.storage.from("avatares").remove([`${user.id}/avatar.webp`]).catch(() => {}); // foto de perfil
+  const { data, error } = await supabase.rpc("excluir_minha_conta");
+  if (error) {
+    console.error("[excluir_minha_conta]", error.message);
+    return { erro: "Não foi possível excluir agora. Tente de novo em instantes." };
+  }
+  await supabase.auth.signOut().catch(() => {});
+  const reserva = ((data ?? []) as { envio_id: number; telefone: string; nome: string; texto: string }[])[0];
+  after(() => enviarReservaPublica(supabase, reserva));
+  revalidatePath("/", "layout");
+  redirect("/entrar?conta=excluida");
 }

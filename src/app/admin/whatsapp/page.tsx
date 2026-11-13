@@ -20,15 +20,14 @@ const STATUS: Record<string, { rotulo: string; cor: string }> = {
 
 export default async function WhatsappAdminPage() {
   const { supabase } = await getUser();
-  const [mods, envs, semAviso] = await Promise.all([
+  const [mods, envs] = await Promise.all([
     supabase.from("whatsapp_modelos").select("evento, titulo, quando, texto, ativo").order("evento"),
     supabase.from("whatsapp_envios").select("id, user_id, evento, telefone, texto, status, erro, created_at, profiles(nome, apelido)").order("created_at", { ascending: false }).limit(100),
-    supabase.from("profiles").select("id", { count: "exact", head: true }).eq("whatsapp_avisos", false),
   ]);
   if (mods.error) {
     return (<><Titulo>WhatsApp</Titulo><p className="rounded-2xl bg-brand-soft p-5 text-brand-deep">Rode o SQL <strong>0036_whatsapp.sql</strong> no Supabase para ativar esta página.</p></>);
   }
-  const ordem = ["boas_vindas", "checkin", "modulo_concluido", "ingles_modulo", "ingles_concluido", "jornada_concluida"];
+  const ordem = ["interessado", "boas_vindas", "checkin", "modulo_concluido", "ingles_modulo", "ingles_concluido", "jornada_concluida", "conta_excluida"];
   const modelos = ((mods.data ?? []) as Modelo[]).sort((a, b) => ordem.indexOf(a.evento) - ordem.indexOf(b.evento));
   const envios = (envs.data ?? []) as unknown as Envio[];
   const titulo = new Map(modelos.map((m) => [m.evento, m.titulo]));
@@ -39,7 +38,7 @@ export default async function WhatsappAdminPage() {
 
   return (
     <>
-      <Titulo sub="Avisos automáticos para os alunos pelo seu número no Wawp: boas-vindas, parabéns por concluir módulos e cursos. Cada aviso é enviado uma única vez para cada aluno.">WhatsApp</Titulo>
+      <Titulo sub="O WhatsApp é o canal oficial de avisos da Cabin Crew: confirmação da lista Em breve, boas-vindas, parabéns por concluir módulos e cursos e confirmação de conta excluída. Cada aviso é enviado uma única vez para cada pessoa.">WhatsApp</Titulo>
 
       <Card>
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -55,7 +54,6 @@ export default async function WhatsappAdminPage() {
       <div className="flex flex-wrap gap-3">
         <Numero rotulo="Enviadas (24h)" valor={hoje.filter((e) => e.status === "enviada").length} />
         <Numero rotulo="Com erro (24h)" valor={hoje.filter((e) => e.status === "erro").length} />
-        <Numero rotulo="Alunos sem avisos" valor={semAviso.count ?? 0} detalhe="desligaram em Minha conta" />
       </div>
 
       <Card>
@@ -91,7 +89,7 @@ export default async function WhatsappAdminPage() {
               {envios.map((e) => (
                 <tr key={e.id} className="border-b border-[#eceef3] align-top last:border-0">
                   <td className="p-3 whitespace-nowrap">{new Date(e.created_at).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" })}</td>
-                  <td className="p-3">{e.user_id ? <Link href={`/admin/head-hunter/alunos/${e.user_id}`} className="font-semibold text-navy underline-offset-4 hover:underline">{e.profiles?.nome || e.profiles?.apelido || "Aluno"}</Link> : "—"}<span className="block text-[13px] text-muted">{e.telefone}</span></td>
+                  <td className="p-3">{e.evento === "interessado" ? "Lista Em breve" : e.evento === "conta_excluida" ? "Conta excluída" : e.user_id ? <Link href={`/admin/head-hunter/alunos/${e.user_id}`} className="font-semibold text-navy underline-offset-4 hover:underline">{e.profiles?.nome || e.profiles?.apelido || "Aluno"}</Link> : "—"}<span className="block text-[13px] text-muted">{e.telefone}</span></td>
                   <td className="p-3">{e.evento === "manual" ? "Mensagem avulsa" : titulo.get(e.evento) ?? e.evento}</td>
                   <td className="p-3"><span className={`inline-block rounded-full px-2.5 py-0.5 text-[13px] font-semibold ${STATUS[e.status]?.cor ?? ""}`}>{STATUS[e.status]?.rotulo ?? e.status}</span>{e.erro && <span className="block pt-1 text-[12px] text-muted">{e.erro}</span>}</td>
                   <td className="max-w-[360px] p-3 text-[13px] text-ink-2"><span className="line-clamp-3 whitespace-pre-line">{e.texto}</span></td>
