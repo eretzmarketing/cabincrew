@@ -129,3 +129,8 @@ end $$;
 
 notify pgrst, 'reload schema';
 select 'cupons prontos' as status;
+
+-- campanhas também podem ir para números digitados à mão (envio de cupom)
+alter table whatsapp_campanhas drop constraint if exists whatsapp_campanhas_fonte_check;
+alter table whatsapp_campanhas add constraint whatsapp_campanhas_fonte_check check (fonte in ('alunos', 'interessados', 'manual'));
+notify pgrst, 'reload schema';

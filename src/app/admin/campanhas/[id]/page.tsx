@@ -29,7 +29,7 @@ export default async function CampanhaPage({ params }: { params: Promise<{ id: s
   return (
     <>
       <Link href="/admin/campanhas" className="text-sm font-semibold text-navy">← Campanhas</Link>
-      <Titulo sub={`${c.fonte === "alunos" ? "Alunos" : "Lista Em breve"} · ${c.total} destinatário(s) · intervalo de ${c.intervalo_min} a ${c.intervalo_max} segundos`}>
+      <Titulo sub={`${c.fonte === "alunos" ? "Alunos" : c.fonte === "manual" ? "Alunos e números avulsos" : "Lista Em breve"} · ${c.total} destinatário(s) · intervalo de ${c.intervalo_min} a ${c.intervalo_max} segundos`}>
         {c.nome} <span className={`ml-2 inline-block rounded-full px-3 py-1 align-middle text-sm font-semibold ${STATUS_CAMPANHA[c.status]?.cor ?? ""}`}>{STATUS_CAMPANHA[c.status]?.rotulo ?? c.status}</span>
       </Titulo>
       <div className="grid gap-6 lg:grid-cols-[1fr_340px]">

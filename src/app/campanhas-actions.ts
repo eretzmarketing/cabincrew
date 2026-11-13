@@ -111,7 +111,8 @@ export async function enviarProximo(id: number): Promise<{ estado: "enviou" | "a
   if (r.acao === "aguardar") return { estado: "aguardar", aguardar: Math.max(1, r.aguardar) };
 
   const { data: c } = await supabase.from("whatsapp_campanhas").select("texto, imagem, intervalo_min, intervalo_max").eq("id", id).single();
-  const texto = preencher(c!.texto, { nome: (r.nome ?? "").split(" ")[0] });
+  // sem nome (número digitado à mão): "Olá, !" vira "Olá!"
+  const texto = preencher(c!.texto, { nome: (r.nome ?? "").split(" ")[0] }).replace(/(Olá|Oi), !/g, "$1!");
   const res = await enviarWhatsapp(r.telefone!, texto, c!.imagem ? urlPublicaMidia(c!.imagem) : null);
   await supabase.from("whatsapp_campanha_envios")
     .update({ status: res.ok ? "enviada" : res.status, erro: res.ok ? null : res.erro, enviado_em: new Date().toISOString() })

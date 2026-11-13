@@ -2,10 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { alternarCupom, excluirCupom } from "@/app/cupons-actions";
 import { Card, Titulo } from "@/components/admin-ui";
-import { CompartilharCupom, CupomForm, type CupomAdmin } from "@/components/CuponsForms";
+import { CompartilharCupom, CupomForm, EnviarCupomWhatsapp, type CupomAdmin } from "@/components/CuponsForms";
 import { rotuloCupom } from "@/lib/cupons";
 import { SITE } from "@/lib/mercadopago";
 import { getUser } from "@/lib/supabase/server";
+import { whatsappConfigurado } from "@/lib/whatsapp";
 
 export const metadata: Metadata = { title: "Cupons" };
 export const dynamic = "force-dynamic";
@@ -22,8 +23,8 @@ function situacao(c: CupomAdmin, usos: number) {
   return { t: "Valendo", cor: "bg-[#e5f6ec] text-[#0f6b3a]" };
 }
 
-export default async function CuponsPage({ searchParams }: { searchParams: Promise<{ editar?: string; salvo?: string }> }) {
-  const { editar, salvo } = await searchParams;
+export default async function CuponsPage({ searchParams }: { searchParams: Promise<{ editar?: string; salvo?: string; enviar?: string }> }) {
+  const { editar, salvo, enviar } = await searchParams;
   const { supabase } = await getUser();
   const [{ data, error }, { data: prods }, { data: vendas }] = await Promise.all([
     supabase.from("cupons").select("*").order("created_at", { ascending: false }),
@@ -40,6 +41,11 @@ export default async function CuponsPage({ searchParams }: { searchParams: Promi
     u.n++; u.total += Number(v.valor); uso.set(v.cupom, u);
   }
   const emEdicao = cupons.find((c) => c.codigo === editar);
+  const paraEnviar = cupons.find((c) => c.codigo === enviar);
+  const alunos = paraEnviar
+    ? (((await supabase.rpc("admin_publico_campanha")).data ?? []) as { id: string; nome: string | null; whatsapp: string | null; escola: string | null; bloqueado: boolean }[])
+        .filter((a) => !a.bloqueado).map((a) => ({ id: a.id, nome: a.nome ?? "Sem nome", whatsapp: a.whatsapp, escola: a.escola }))
+    : [];
 
   return (
     <>
@@ -47,6 +53,16 @@ export default async function CuponsPage({ searchParams }: { searchParams: Promi
       {error ? <p className="rounded-2xl bg-brand-soft p-5 text-brand-deep">Rode o SQL <strong>0047_cupons.sql</strong> no Supabase para ativar esta página.</p> : (
         <>
           {salvo && <p role="status" className="rounded-2xl bg-[#e5f6ec] px-5 py-4 font-semibold text-[#0f6b3a]">Cupom {salvo} salvo ✓</p>}
+          {paraEnviar && (
+            <Card>
+              <div id="enviar" className="flex scroll-mt-24 flex-wrap items-center justify-between gap-2">
+                <h2 className="font-display text-xl font-extrabold">Enviar o cupom {paraEnviar.codigo} pelo WhatsApp</h2>
+                <Link href={`/admin/cupons#${paraEnviar.codigo}`} className="text-[14px] font-semibold underline underline-offset-4">Fechar</Link>
+              </div>
+              <EnviarCupomWhatsapp codigo={paraEnviar.codigo} desconto={rotuloCupom(paraEnviar)} site={SITE} alunos={alunos} conectado={whatsappConfigurado()}
+                planos={paraEnviar.produtos?.length ? planos.filter((p) => paraEnviar.produtos!.includes(p.slug)) : planos} />
+            </Card>
+          )}
           {emEdicao ? (
             <Card>
               <div className="flex flex-wrap items-center justify-between gap-2">

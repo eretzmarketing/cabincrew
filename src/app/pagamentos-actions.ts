@@ -5,6 +5,7 @@ import { chmod, writeFile } from "node:fs/promises";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { FORMAS } from "@/lib/compras";
+import { normalizarTelefone } from "@/lib/telefone";
 import { SITE } from "@/lib/mercadopago";
 import { enviarWhatsapp, preencher } from "@/lib/whatsapp";
 import { ARQUIVO_MP, configMP, hashChave, testarTokenMP } from "@/lib/mercadopago";
@@ -140,16 +141,6 @@ const ORIGENS: Record<string, { rotulo: string; plataforma: string }> = {
   presencial: { rotulo: "Curso presencial", plataforma: "Curso presencial" },
   outro: { rotulo: "Outro pagamento por fora", plataforma: "Pagamento por fora" },
 };
-
-/** Número com DDI: sem "+", considera Brasil (55). */
-function normalizarTelefone(v: string) {
-  const d = v.replace(/\D/g, "");
-  if (!d) return null;
-  if (v.trim().startsWith("+")) return d.length >= 10 ? `+${d}` : null;
-  if (d.length === 10 || d.length === 11) return `+55${d}`;
-  if (d.startsWith("55") && (d.length === 12 || d.length === 13)) return `+${d}`;
-  return null;
-}
 
 /** Converte "2026-11-12T14:30" (horário de Brasília) para data com fuso. */
 function dataBrasilia(v: string) {

@@ -43,7 +43,7 @@ export default async function CampanhasPage() {
                 <tr key={c.id} className="border-b border-[#eceef3] last:border-0">
                   <td className="p-3 whitespace-nowrap">{new Date(c.created_at).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" })}</td>
                   <td className="p-3"><Link href={`/admin/campanhas/${c.id}`} className="font-semibold text-navy underline-offset-4 hover:underline">{c.nome}</Link></td>
-                  <td className="p-3">{c.fonte === "alunos" ? "Alunos" : "Lista Em breve"}</td>
+                  <td className="p-3">{c.fonte === "alunos" ? "Alunos" : c.fonte === "manual" ? "Alunos e números avulsos" : "Lista Em breve"}</td>
                   <td className="p-3">{feitos.get(c.id) ?? 0} de {c.total}</td>
                   <td className="p-3"><span className={`inline-block rounded-full px-2.5 py-0.5 text-[13px] font-semibold ${STATUS_CAMPANHA[c.status]?.cor ?? ""}`}>{STATUS_CAMPANHA[c.status]?.rotulo ?? c.status}</span></td>
                 </tr>

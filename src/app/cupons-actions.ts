@@ -2,7 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { INTERVALOS } from "@/lib/campanhas";
 import { normalizarCupom } from "@/lib/cupons";
+import { normalizarTelefone } from "@/lib/telefone";
+import { enviarWhatsapp, preencher } from "@/lib/whatsapp";
 import { getUser } from "@/lib/supabase/server";
 
 type Estado = { ok?: boolean; msg?: string; erro?: string };
@@ -75,4 +78,60 @@ export async function excluirCupom(form: FormData) {
   if (count) await supabase.from("cupons").update({ ativo: false }).eq("codigo", codigo);
   else await supabase.from("cupons").delete().eq("codigo", codigo);
   revalidatePath("/admin/cupons");
+}
+
+/**
+ * Admin: envia o cupom pelo WhatsApp da Cabin Crew (Wawp) para alunos escolhidos e/ou números digitados.
+ * Uma pessoa: envia na hora. Várias: vira uma campanha com intervalo entre as mensagens (protege o número).
+ */
+export async function enviarCupomWhatsapp(_: Estado, form: FormData): Promise<Estado> {
+  const { supabase, user } = await admin();
+  const codigo = normalizarCupom(String(form.get("codigo") ?? ""));
+  const mensagem = String(form.get("mensagem") ?? "").trim();
+  let ids: string[] = [];
+  try { ids = (JSON.parse(String(form.get("ids") ?? "[]")) as string[]).filter((x) => /^[0-9a-f-]{36}$/i.test(x)); } catch { /* vazio */ }
+  const linhas = String(form.get("telefones") ?? "").split(/[\n,;]+/).map((x) => x.trim()).filter(Boolean);
+  if (!codigo) return { erro: "Cupom inválido." };
+  if (mensagem.length < 5 || mensagem.length > 3000) return { erro: "Escreva a mensagem (até 3.000 caracteres)." };
+  if (!mensagem.includes(codigo) && !mensagem.includes("cupom=")) return { erro: "A mensagem precisa ter o código do cupom ou o link." };
+
+  const invalidos = linhas.filter((l) => !normalizarTelefone(l));
+  if (invalidos.length) return { erro: `Número inválido: ${invalidos.slice(0, 3).join(", ")}. Use DDD + número (ex.: 11 98177-7605) ou +DDI para outros países.` };
+
+  let dest: { user_id: string | null; nome: string; telefone: string }[] = [];
+  if (ids.length) {
+    const { data } = await supabase.rpc("admin_publico_campanha");
+    const sel = new Set(ids);
+    dest = ((data ?? []) as { id: string; nome: string | null; whatsapp: string | null; bloqueado: boolean }[])
+      .filter((p) => sel.has(p.id) && p.whatsapp && !p.bloqueado)
+      .map((p) => ({ user_id: p.id, nome: p.nome ?? "", telefone: p.whatsapp! }));
+  }
+  for (const l of linhas) dest.push({ user_id: null, nome: "", telefone: normalizarTelefone(l)! });
+  const vistos = new Set<string>();
+  dest = dest.filter((d) => { const k = d.telefone.replace(/\D/g, ""); if (vistos.has(k)) return false; vistos.add(k); return true; });
+  if (!dest.length) return { erro: "Escolha pelo menos um aluno (com WhatsApp) ou digite um número." };
+
+  // uma pessoa: envia agora
+  if (dest.length === 1) {
+    const d = dest[0];
+    const texto = preencher(mensagem, { nome: d.nome.split(" ")[0] || "" }).replace(/(Olá|Oi), !/g, "$1!");
+    const r = await enviarWhatsapp(d.telefone, texto);
+    await supabase.from("whatsapp_envios").insert({ user_id: d.user_id, evento: "manual", ref: `cupom-${codigo}-${Date.now()}`, telefone: d.telefone, texto, status: r.ok ? "enviada" : r.status, erro: r.ok ? null : r.erro });
+    revalidatePath("/admin/whatsapp");
+    return r.ok ? { ok: true, msg: `Cupom enviado para ${d.nome || d.telefone} ✓` } : { erro: `Não foi enviado: ${r.erro}` };
+  }
+
+  // várias: campanha com intervalo
+  const intervalo = INTERVALOS.find((i) => i.id === String(form.get("intervalo"))) ?? INTERVALOS[1];
+  const { data: c, error } = await supabase.from("whatsapp_campanhas").insert({
+    nome: `Cupom ${codigo}`, texto: mensagem, imagem: null, fonte: linhas.length ? "manual" : "alunos", filtros: { cupom: codigo },
+    intervalo_min: intervalo.min, intervalo_max: intervalo.max, status: "pausada", total: dest.length, criado_por: user!.id,
+  }).select("id").single();
+  if (error || !c) return { erro: error?.message.includes("fonte") ? "Rode o SQL 0047_cupons.sql (versão atualizada) no Supabase." : "Não foi possível montar o envio." };
+  for (let i = 0; i < dest.length; i += 500) {
+    const { error: e2 } = await supabase.from("whatsapp_campanha_envios").insert(dest.slice(i, i + 500).map((d) => ({ campanha_id: c.id, ...d })));
+    if (e2) return { erro: "Não foi possível montar a lista de envio." };
+  }
+  revalidatePath("/admin/campanhas");
+  redirect(`/admin/campanhas/${c.id}`);
 }

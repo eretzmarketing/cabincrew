@@ -1,7 +1,10 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { salvarCupom } from "@/app/cupons-actions";
+import Link from "next/link";
+import { useMemo } from "react";
+import { enviarCupomWhatsapp, salvarCupom } from "@/app/cupons-actions";
+import { INTERVALOS, duracaoEstimada } from "@/lib/campanhas";
 
 const campo = "w-full rounded-xl border border-[#c9cedb] bg-white px-4 py-3 text-[15px] outline-none focus:border-navy";
 const rot = "text-[14px] font-semibold";
@@ -109,9 +112,100 @@ export function CompartilharCupom({ codigo, rotulo, planos, site }: { codigo: st
       <div className="flex flex-wrap gap-2">
         <button type="button" onClick={() => copiar(link, "link")} className="inline-flex min-h-11 cursor-pointer items-center rounded-full bg-navy px-4 text-[14px] font-semibold text-white">{copiado === "link" ? "Link copiado ✓" : "Copiar link"}</button>
         <button type="button" onClick={() => copiar(mensagem, "msg")} className="inline-flex min-h-11 cursor-pointer items-center rounded-full border-2 border-navy px-4 text-[14px] font-semibold text-navy">{copiado === "msg" ? "Mensagem copiada ✓" : "Copiar mensagem pronta"}</button>
-        <a href={`https://wa.me/?text=${encodeURIComponent(mensagem)}`} target="_blank" rel="noopener noreferrer"
-          className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[#25d366] px-4 text-[14px] font-semibold text-[#0b3d20]">Enviar pelo WhatsApp</a>
+        <Link href={`/admin/cupons?enviar=${codigo}#enviar`} className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[#25d366] px-4 text-[14px] font-semibold text-[#0b3d20]">Enviar pelo WhatsApp para alunos</Link>
       </div>
     </div>
+  );
+}
+
+type Aluno = { id: string; nome: string; whatsapp: string | null; escola: string | null };
+
+/** Envio do cupom pelo WhatsApp da Cabin Crew: alunos da plataforma e/ou números digitados. */
+export function EnviarCupomWhatsapp({ codigo, desconto, planos, site, alunos, conectado }: {
+  codigo: string; desconto: string; planos: Plano[]; site: string; alunos: Aluno[]; conectado: boolean;
+}) {
+  const [s, acao, pend] = useActionState(enviarCupomWhatsapp, {});
+  const [destino, setDestino] = useState(planos.length === 1 ? `/comprar/${planos[0].slug}` : "/planos");
+  const curso = destino === "/planos" ? planos.map((p) => p.nome).join(" ou ") : planos.find((p) => destino.endsWith(`/${p.slug}`))?.nome ?? "";
+  const padrao = (d: string, c: string) => `Olá, {nome}! 🎁 Você está recebendo um cupom exclusivo de ${desconto} para o curso ${c}.\n\nAproveite! O desconto já entra aplicado por este link:\n👉 ${site}${d}?cupom=${codigo}\n\nCupom: ${codigo}`;
+  const [mensagem, setMensagem] = useState(padrao(destino, curso));
+  const [editada, setEditada] = useState(false);
+  const [busca, setBusca] = useState("");
+  const [sel, setSel] = useState<Set<string>>(new Set());
+  const [telefones, setTelefones] = useState("");
+  const comWhats = useMemo(() => alunos.filter((a) => a.whatsapp), [alunos]);
+  const q = busca.trim().toLowerCase();
+  const filtrados = useMemo(() => (q ? comWhats.filter((a) => `${a.nome} ${a.whatsapp} ${a.escola ?? ""}`.toLowerCase().includes(q)) : comWhats), [comWhats, q]);
+  const nManuais = telefones.split(/[\n,;]+/).map((x) => x.trim()).filter(Boolean).length;
+  const total = sel.size + nManuais;
+  const todosMarcados = filtrados.length > 0 && filtrados.every((a) => sel.has(a.id));
+  const alternar = (id: string) => setSel((x) => { const n = new Set(x); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+  const [intervalo, setIntervalo] = useState("30-60");
+  const iv = INTERVALOS.find((i) => i.id === intervalo)!;
+
+  return (
+    <form action={acao} className="flex flex-col gap-5">
+      <input type="hidden" name="codigo" value={codigo} />
+      <input type="hidden" name="ids" value={JSON.stringify([...sel])} />
+      {!conectado && <p className="rounded-xl bg-[#fff8e6] px-4 py-3 text-[14px] font-semibold text-[#7a5a00]">Conecte o Wawp em Configurações › WhatsApp para enviar.</p>}
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <div className="flex flex-col gap-2">
+          <label htmlFor={`env-dest-${codigo}`} className={rot}>Link leva para</label>
+          <select id={`env-dest-${codigo}`} value={destino} className={`${campo} py-2.5`}
+            onChange={(e) => { const d = e.target.value; setDestino(d); if (!editada) setMensagem(padrao(d, d === "/planos" ? planos.map((p) => p.nome).join(" ou ") : planos.find((p) => d.endsWith(`/${p.slug}`))?.nome ?? "")); }}>
+            <option value="/planos">Página Planos</option>
+            {planos.map((p) => <option key={p.slug} value={`/comprar/${p.slug}`}>Checkout direto: {p.nome}</option>)}
+          </select>
+          <label htmlFor={`env-msg-${codigo}`} className={rot}>Mensagem <span className="font-normal text-muted">({"{nome}"} vira o primeiro nome do aluno)</span></label>
+          <textarea id={`env-msg-${codigo}`} name="mensagem" rows={9} value={mensagem} onChange={(e) => { setMensagem(e.target.value); setEditada(true); }} className={campo} />
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <span className={rot}>Alunos da plataforma <span className="font-normal text-muted">({comWhats.length} com WhatsApp)</span></span>
+          <input type="search" value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar por nome, WhatsApp ou escola" aria-label="Buscar aluno" className={`${campo} py-2.5`} />
+          <label className="flex min-h-10 cursor-pointer items-center gap-2 text-[14px] font-semibold">
+            <input type="checkbox" checked={todosMarcados} onChange={() => setSel((x) => { const n = new Set(x); for (const a of filtrados) { if (todosMarcados) n.delete(a.id); else n.add(a.id); } return n; })} className="h-5 w-5 accent-[#1f2a44]" />
+            {q ? `Selecionar os ${filtrados.length} encontrados` : "Selecionar todos"}
+          </label>
+          <ul className="max-h-[260px] overflow-auto rounded-xl border border-line bg-white">
+            {filtrados.slice(0, 500).map((a) => (
+              <li key={a.id} className="border-b border-[#eceef3] last:border-0">
+                <label className="flex min-h-11 cursor-pointer items-center gap-3 px-3 py-1.5 text-[14px]">
+                  <input type="checkbox" checked={sel.has(a.id)} onChange={() => alternar(a.id)} className="h-5 w-5 shrink-0 accent-[#1f2a44]" />
+                  <span className="min-w-0 flex-1"><strong className="block truncate">{a.nome}</strong><span className="text-[12px] text-muted">{a.whatsapp}{a.escola ? ` · ${a.escola}` : ""}</span></span>
+                </label>
+              </li>
+            ))}
+            {!filtrados.length && <li className="p-3 text-[14px] text-ink-2">Nenhum aluno encontrado.</li>}
+          </ul>
+          <label htmlFor={`env-tel-${codigo}`} className={rot}>Ou digite números <span className="font-normal text-muted">(um por linha)</span></label>
+          <textarea id={`env-tel-${codigo}`} name="telefones" rows={3} value={telefones} onChange={(e) => setTelefones(e.target.value)} placeholder={"11 98177-7605\n+351 912 345 678"} className={campo} />
+        </div>
+      </div>
+
+      {total > 1 && (
+        <fieldset className="flex flex-col gap-2 rounded-2xl bg-soft p-4">
+          <legend className={`${rot} mb-1`}>Intervalo entre as mensagens</legend>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {INTERVALOS.map((i) => (
+              <label key={i.id} className="flex min-h-11 cursor-pointer items-center gap-2 text-[14px]">
+                <input type="radio" name="intervalo" value={i.id} checked={intervalo === i.id} onChange={() => setIntervalo(i.id)} className="h-4 w-4 accent-[#1f2a44]" />{i.rotulo}
+              </label>
+            ))}
+          </div>
+          <span className="text-[13px] text-muted">Tempo estimado: {duracaoEstimada(total, iv.min, iv.max)}. Na próxima tela você clica em Começar e deixa a página aberta.</span>
+        </fieldset>
+      )}
+
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <span className="text-[15px] font-semibold">{total ? `${total} destinatário(s)` : "Escolha alunos ou digite números"}</span>
+        <button disabled={pend || !total || !conectado} className="inline-flex min-h-12 cursor-pointer items-center rounded-full bg-[#25d366] px-6 font-semibold text-[#0b3d20] disabled:cursor-not-allowed disabled:opacity-50">
+          {pend ? "Enviando…" : total > 1 ? "Preparar envio com intervalo" : "Enviar agora"}
+        </button>
+      </div>
+      {s.erro && <p role="alert" className="rounded-xl bg-brand-soft px-4 py-2.5 text-[14px] text-brand-deep">{s.erro}</p>}
+      {s.msg && <p role="status" className="rounded-xl bg-[#e5f6ec] px-4 py-2.5 text-[14px] text-[#0f6b3a]">{s.msg}</p>}
+    </form>
   );
 }
