@@ -13,6 +13,7 @@ import {
   type LinhaAluno,
 } from "@/lib/painel-alunos";
 import { getUser } from "@/lib/supabase/server";
+import { alterarAcesso } from "@/app/pagamentos-actions";
 import { STATUS_COMPRA, dataHoraBR, dinheiro, fimArrependimento, type Compra } from "@/lib/compras";
 
 export const metadata: Metadata = { title: "Aluno · Head Hunter" };
@@ -22,11 +23,12 @@ export default async function AlunoPage({ params }: { params: Promise<{ id: stri
   const { id } = await params;
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
   const { supabase } = await getUser();
-  const [{ data: linha }, { dados, dataMeta, jornada }, { data: recentes }, { data: comprasAluno }] = await Promise.all([
+  const [{ data: linha }, { dados, dataMeta, jornada }, { data: recentes }, { data: comprasAluno }, { data: acesso }] = await Promise.all([
     supabase.rpc("admin_hh_alunos", { p_busca: "", p_id: id }),
     carregarJornada(supabase, id),
     supabase.from("tentativas").select("nota, iniciada_em, finalizada_em, saidas_aba, simulados(titulo, origem)").eq("user_id", id).order("iniciada_em", { ascending: false }).limit(15),
     supabase.from("compras").select("*").eq("user_id", id).order("comprada_em", { ascending: false }),
+    supabase.from("acessos").select("status, liberado_em, encerrado_em, motivo").eq("user_id", id).eq("produto", "head-hunter").maybeSingle(),
   ]);
   const l = ((linha ?? []) as LinhaAluno[])[0];
   if (!l) notFound();
@@ -153,6 +155,22 @@ export default async function AlunoPage({ params }: { params: Promise<{ id: stri
               <EnviarWhatsappForm alunoId={l.id} textoInicial={mensagemSugerida(l)} />
             </Card>
           )}
+
+          <Card>
+            <h2 className="font-display text-xl font-extrabold">Acesso ao Head Hunter</h2>
+            <p className="text-[15px]">
+              {!acesso ? "Sem acesso comprado." : acesso.status === "ativo" ? <><strong className="text-[#0f6b3a]">Ativo</strong> desde {dataHoraBR(acesso.liberado_em)}</>
+                : <><strong>{acesso.status === "concluido" ? "Concluído" : "Encerrado"}</strong> em {acesso.encerrado_em ? dataHoraBR(acesso.encerrado_em) : "—"}</>}
+              {acesso?.motivo && <span className="block text-[13px] text-muted">{acesso.motivo}</span>}
+            </p>
+            <form action={alterarAcesso} className="flex flex-wrap gap-2">
+              <input type="hidden" name="user_id" value={l.id} />
+              {acesso?.status === "ativo"
+                ? <button name="acao" value="encerrar" className="min-h-11 cursor-pointer rounded-full border-2 border-line px-4 text-[14px] font-semibold text-brand-deep hover:border-brand-deep">Encerrar acesso</button>
+                : <button name="acao" value="liberar" className="min-h-11 cursor-pointer rounded-full bg-navy px-4 text-[14px] font-semibold text-white hover:bg-navy-deep">{acesso ? "Liberar de novo" : "Liberar acesso"}</button>}
+            </form>
+            <span className="text-[13px] text-muted">Compras pelo Mercado Pago liberam sozinhas. Use para vendas por fora do site ou cortesias.</span>
+          </Card>
 
           <Card>
             <div className="flex flex-wrap items-center justify-between gap-2">

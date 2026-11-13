@@ -13,9 +13,13 @@ export const metadata: Metadata = { title: "Head Hunter", robots: { index: false
 
 export default async function CrewSelectPage({ searchParams }: { searchParams: Promise<{ erro?: string }> }) {
   const { erro } = await searchParams;
-  const { supabase, user, profile, liberado } = await exigirCrewSelect("/head-hunter");
+  const { supabase, user, profile, liberado, acesso, pago } = await exigirCrewSelect("/head-hunter");
 
-  if (!liberado) return <EmBreve nome={profile.nome ?? profile.apelido} />;
+  if (!liberado) {
+    if (acesso?.status === "concluido") return <Concluido nome={profile.nome ?? profile.apelido} em={acesso.encerrado_em} />;
+    const { data: prod } = await supabase.from("produtos").select("nome, descricao, preco, desconto_pix, ativo").eq("slug", "head-hunter").maybeSingle();
+    return <Venda nome={profile.nome ?? profile.apelido} prod={prod} revogado={acesso?.status === "revogado"} />;
+  }
 
   const [{ data: modulos }, { data: aulas }, { data: feitas }, anac, { dados, dataMeta, jornada }] = await Promise.all([
     supabase.from("modulos").select("*").eq("publicado", true).order("ordem"),
@@ -48,7 +52,14 @@ export default async function CrewSelectPage({ searchParams }: { searchParams: P
   const primeiroNome = (profile.nome ?? profile.apelido).split(" ")[0];
 
   // jornada completa: parabéns no WhatsApp (uma única vez)
-  if (jornada.etapas.some((e) => !e.vazia) && jornada.etapas.every((e) => e.vazia || e.feita)) avisarAluno(supabase, "jornada_concluida");
+  if (jornada.etapas.some((e) => !e.vazia) && jornada.etapas.every((e) => e.vazia || e.feita)) {
+    avisarAluno(supabase, "jornada_concluida");
+    // acesso comprado termina quando o aluno conclui toda a jornada
+    if (pago && !profile.is_admin) {
+      const { data: encerrou } = await supabase.rpc("hh_concluir_acesso");
+      if (encerrou) return <Concluido nome={profile.nome ?? profile.apelido} em={new Date().toISOString()} />;
+    }
+  }
 
   return (
     <main className="bg-soft">
@@ -169,20 +180,55 @@ export default async function CrewSelectPage({ searchParams }: { searchParams: P
   );
 }
 
-function EmBreve({ nome }: { nome: string }) {
+type Prod = { nome: string; descricao: string | null; preco: number; desconto_pix: number; ativo: boolean } | null;
+const reais = (v: number) => Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+function Venda({ nome, prod, revogado }: { nome: string; prod: Prod; revogado: boolean }) {
+  const pix = prod ? Math.round(Number(prod.preco) * (100 - Number(prod.desconto_pix))) / 100 : 0;
   return (
     <main className="bg-soft">
       <div className="mx-auto flex max-w-[1200px] flex-wrap items-center gap-10 px-6 py-16">
-        <div className="relative hidden h-[420px] flex-[1_1_320px] overflow-hidden rounded-3xl md:block">
+        <div className="relative hidden h-[460px] flex-[1_1_320px] overflow-hidden rounded-3xl md:block">
           <Image src="/img/head-hunter.jpg" alt="Comissária com mala de bordo no aeroporto" fill sizes="40vw" className="object-cover object-[center_20%]" />
         </div>
         <div className="flex flex-[999_1_420px] flex-col gap-4">
-          <span className="self-start rounded-full bg-brand px-3 py-1.5 font-display text-xs font-bold tracking-[.08em] text-white uppercase">Em breve</span>
-          <h1 className="font-display text-[34px] leading-tight font-extrabold">{nome.split(" ")[0]}, sua vaga no Head Hunter está garantida.</h1>
-          <p className="text-[17px] leading-relaxed text-ink-2">
-            Estamos preparando os módulos e avisaremos você assim que o acesso for liberado.
-          </p>
+          <span className="self-start rounded-full bg-brand px-3 py-1.5 font-display text-xs font-bold tracking-[.08em] text-white uppercase">Head Hunter</span>
+          <h1 className="font-display text-[34px] leading-tight font-extrabold">{nome.split(" ")[0]}, seu plano de voo até a aprovação.</h1>
+          {revogado && <p className="rounded-xl bg-[#fff8e6] px-4 py-3 text-[15px] text-[#7a5a00]">Seu acesso anterior foi encerrado. Para voltar a estudar, faça uma nova compra.</p>}
+          <p className="text-[17px] leading-relaxed text-ink-2">{prod?.descricao ?? "Preparatório completo para a seleção de comissário(a) de voo."}</p>
+          <ul className="flex flex-col gap-2 text-[16px]">
+            {["Jornada personalizada para a companhia que você quer", "Aulas, simulados no estilo das seleções e dinâmicas de grupo", "Treino de entrevista, vídeo de apresentação e Inglês a bordo com áudio", "Acesso até você concluir toda a jornada"].map((t) => (
+              <li key={t} className="flex gap-2"><span className="text-brand-strong"><Check /></span>{t}</li>
+            ))}
+          </ul>
+          {prod?.ativo ? (
+            <div className="flex flex-col gap-3 rounded-2xl border border-line bg-white p-5">
+              <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                <strong className="font-display text-[32px] font-extrabold text-navy">{reais(prod.preco)}</strong>
+                <span className="text-[15px] text-ink-2">no cartão, em até 12x</span>
+              </div>
+              {Number(prod.desconto_pix) > 0 && <p className="text-[16px]"><strong className="text-[#0f6b3a]">{reais(pix)} no Pix</strong> ({Number(prod.desconto_pix)}% de desconto)</p>}
+              <Link href="/head-hunter/comprar" className="inline-flex min-h-14 items-center justify-center gap-2 rounded-xl bg-brand-strong px-6 font-display text-[17px] font-bold text-white hover:bg-brand-deep">Quero começar agora <Arrow /></Link>
+              <span className="text-[13px] text-muted">Pagamento seguro pelo Mercado Pago. Acesso liberado na hora.</span>
+            </div>
+          ) : <p className="text-[17px] text-ink-2">As inscrições abrem em breve. Avisaremos você pelo WhatsApp.</p>}
         </div>
+      </div>
+    </main>
+  );
+}
+
+function Concluido({ nome, em }: { nome: string; em: string | null }) {
+  return (
+    <main className="bg-soft">
+      <div className="mx-auto flex max-w-[760px] flex-col items-center gap-5 px-6 py-20 text-center">
+        <span aria-hidden="true" className="text-[64px] leading-none">👑</span>
+        <h1 className="font-display text-[34px] leading-tight font-extrabold">Parabéns, {nome.split(" ")[0]}! Você concluiu o Head Hunter.</h1>
+        <p className="text-[17px] leading-relaxed text-ink-2">
+          Você completou toda a jornada{em ? ` em ${new Date(em).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}` : ""} e o seu acesso ao curso foi encerrado. Agora é com você: chegue confiante na seleção. Boa sorte! ✈️
+        </p>
+        <p className="text-[15px] text-muted">Quer revisar tudo antes da prova? Você pode comprar um novo acesso.</p>
+        <Link href="/head-hunter/comprar" className="inline-flex min-h-12 items-center rounded-xl border-2 border-navy px-6 font-semibold text-navy hover:bg-navy hover:text-white">Comprar novo acesso</Link>
       </div>
     </main>
   );

@@ -33,7 +33,7 @@ export const GRUPOS: Grupo[] = [
   { id: "campanhas", label: "Campanhas", itens: [{ href: "/admin/campanhas", label: "Campanhas" }] },
   {
     id: "financeiro", label: "Financeiro",
-    itens: [{ href: "/admin/compras", label: "Compras" }],
+    itens: [{ href: "/admin/compras", label: "Compras" }, { href: "/admin/produtos", label: "Produtos e preços" }],
   },
   {
     id: "site", label: "Site e comunidade",
@@ -47,6 +47,7 @@ export const GRUPOS: Grupo[] = [
     itens: [
       { href: "/admin/configuracoes", label: "Geral" },
       { href: "/admin/whatsapp", label: "WhatsApp" },
+      { href: "/admin/pagamentos", label: "Pagamentos" },
     ],
   },
 ];
