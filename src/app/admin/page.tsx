@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Card, Chave, Numero, Titulo, btnSecundario } from "@/components/admin-ui";
+import { situacaoBackup } from "@/lib/backup";
 import { getConfig } from "@/lib/config";
 import { getUser } from "@/lib/supabase/server";
 
@@ -27,9 +28,19 @@ export default async function AdminHome() {
     supabase.from("profiles").select("nome, escola, created_at").order("created_at", { ascending: false }).limit(6),
   ]);
 
+  const bk = await situacaoBackup();
+  const horas = bk.configurado && bk.ultimo ? (new Date().getTime() - bk.ultimo.getTime()) / 3600000 : null;
+  const bkOk = bk.configurado && !bk.erro && horas !== null && horas < 30;
+
   return (
     <>
       <Titulo sub="Resumo da plataforma Cabin Crew.">Visão geral</Titulo>
+
+      <p role="status" className={`rounded-2xl px-5 py-3 text-[15px] ${bkOk ? "bg-[#e5f6ec] text-[#0f6b3a]" : "bg-[#fff8e6] text-[#7a5a00]"}`}>
+        {!bk.configurado ? <>💾 <strong>Backup do banco não configurado.</strong> Rode o script de backup no console da Hostinger (deploy/backup-banco.sh).</>
+          : !bk.ultimo ? <>💾 <strong>Backup configurado, mas nenhum arquivo ainda.</strong>{bk.erro ? " O último teve erro: veja ~/backups-banco/ultimo-backup.log." : ""}</>
+          : <>💾 Último backup do banco: <strong>{bk.ultimo.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" })}</strong> · {(bk.tamanho / 1048576).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} MB · {bk.arquivos} cópia(s) guardada(s){!bkOk && <strong> · atenção: {bk.erro ? "o último backup deu erro" : "faz mais de um dia sem backup"}</strong>}</>}
+      </p>
 
       <Card className={cfg.manutencao ? "border-2 border-brand" : ""}>
         <Chave
