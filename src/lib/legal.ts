@@ -2,8 +2,8 @@
  * Dados do responsável pela plataforma e versão dos textos legais.
  * Ao mudar Termos, Privacidade ou Reembolso, atualize VERSAO_LEGAL: os novos aceites passam a registrar a nova data.
  */
-export const VERSAO_LEGAL = "2026-11-13";
-export const VERSAO_LEGAL_EXTENSO = "13 de novembro de 2026";
+export const VERSAO_LEGAL = "2026-11-14";
+export const VERSAO_LEGAL_EXTENSO = "14 de novembro de 2026";
 
 // Dados aprovados pelo advogado. Razão social, CNPJ e encarregado em branco: não aparecem nas páginas.
 export const EMPRESA = {

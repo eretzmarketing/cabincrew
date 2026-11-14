@@ -16,9 +16,10 @@ export default async function ContaPage({ searchParams }: { searchParams: Promis
   if (!user || !profile) redirect("/entrar?modo=entrar&next=/conta");
 
   const voltar = sp.next?.startsWith("/head-hunter") ? sp.next : sp.foto ? "/head-hunter" : null;
-  const [{ count }, { data: certs }] = await Promise.all([
+  const [{ count }, { data: certs }, { count: pedidos }] = await Promise.all([
     supabase.from("relatos").select("id", { count: "exact", head: true }).eq("autor_id", user.id),
     supabase.from("certificados").select("codigo, curso, concluido_em").eq("user_id", user.id).eq("revogado", false),
+    supabase.from("loja_pedidos").select("id", { count: "exact", head: true }).eq("user_id", user.id).neq("status", "aguardando"),
   ]);
 
   return (
@@ -72,6 +73,12 @@ export default async function ContaPage({ searchParams }: { searchParams: Promis
               ))}
             </ul>
           </section>
+        )}
+        {(pedidos ?? 0) > 0 && (
+          <Link href="/conta/pedidos" className="flex min-h-14 items-center justify-between gap-3 rounded-[20px] border border-line bg-white px-6 hover:border-navy">
+            <span className="font-display text-xl font-bold">📦 Meus pedidos</span>
+            <span className="text-[14px] text-muted">{pedidos} {pedidos === 1 ? "pedido" : "pedidos"} · acompanhar entrega →</span>
+          </Link>
         )}
         <section className="flex flex-col gap-4 rounded-[20px] border border-line bg-white p-6">
           <h2 className="font-display text-xl font-bold">Trocar senha</h2>

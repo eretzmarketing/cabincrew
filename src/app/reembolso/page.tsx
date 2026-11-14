@@ -40,6 +40,15 @@ export default function ReembolsoPage() {
 
       <h2>7. Cursos presenciais e outras vendas</h2>
       <p>Compras feitas fora do site (por exemplo, no curso presencial) seguem as condições combinadas no momento da venda. Quando a venda for feita fora do estabelecimento comercial, também vale o direito de arrependimento de 7 dias.</p>
+
+      <h2>8. Apostilas impressas (loja)</h2>
+      <ul>
+        <li><strong>Prazo para desistir:</strong> 7 dias corridos a partir do dia em que você <strong>recebe</strong> a apostila.</li>
+        <li><strong>Como devolver:</strong> fale com a gente pelo WhatsApp ou e-mail informando o número do pedido. Enviamos as instruções de devolução; o custo do envio de volta é por conta da Cabin Crew.</li>
+        <li><strong>Reembolso:</strong> devolvemos o valor total pago (incluindo o frete, se houver) pela mesma forma de pagamento, assim que a apostila chegar de volta.</li>
+        <li><strong>Produto com defeito ou danificado no transporte:</strong> avise em até 7 dias do recebimento, com uma foto, e trocamos sem custo.</li>
+        <li><strong>Endereço:</strong> confira o endereço antes de pagar. Se o pedido voltar por endereço incorreto ou por ausência repetida, combinamos um novo envio.</li>
+      </ul>
     </PaginaLegal>
   );
 }

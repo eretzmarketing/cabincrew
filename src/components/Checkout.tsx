@@ -30,8 +30,8 @@ function carregarSdk(): Promise<void> {
   });
 }
 
-async function pagar(dados: Record<string, unknown>) {
-  const r = await fetch("/api/mercadopago/pagar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(dados) });
+async function pagar(dados: Record<string, unknown>, url = "/api/mercadopago/pagar") {
+  const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(dados) });
   return (await r.json().catch(() => ({ erro: "Falha de conexão." }))) as { id?: number; status?: string; mensagem?: string; erro?: string; pix?: { codigo?: string; imagem?: string; link?: string }; valor?: number };
 }
 
@@ -108,7 +108,11 @@ export default function Checkout({ publicKey, base, email, nome, cupomInicial, e
   );
 }
 
-function PagarPix({ produto, aceite, aoAprovar }: { produto: Produto; aceite: boolean; aoAprovar: () => void }) {
+/** Para reaproveitar o pagamento em outras páginas (ex.: loja): outro endereço de cobrança e dados extras no pedido. */
+type Cobranca = { url?: string; extra?: Record<string, unknown>; textoAceite?: string };
+type ProdutoPagamento = Pick<Produto, "slug" | "preco" | "pix" | "cupom">;
+
+export function PagarPix({ produto, aceite, aoAprovar, cobranca }: { produto: ProdutoPagamento; aceite: boolean; aoAprovar: () => void; cobranca?: Cobranca }) {
   const [cpf, setCpf] = useState("");
   const [erro, setErro] = useState("");
   const [pend, setPend] = useState(false);
@@ -133,8 +137,8 @@ function PagarPix({ produto, aceite, aoAprovar }: { produto: Produto; aceite: bo
   async function gerar(e: React.FormEvent) {
     e.preventDefault();
     setErro(""); setPend(true);
-    if (!aceite) return setErro("Marque que você leu e aceita os Termos de Uso e a Política de Reembolso.");
-    const r = await pagar({ produto: produto.slug, metodo: "pix", cpf, cupom: produto.cupom, aceite: VERSAO_LEGAL });
+    if (!aceite) { setPend(false); return setErro(cobranca?.textoAceite ?? "Marque que você leu e aceita os Termos de Uso e a Política de Reembolso."); }
+    const r = await pagar({ ...cobranca?.extra, produto: produto.slug, metodo: "pix", cpf, cupom: produto.cupom, aceite: VERSAO_LEGAL }, cobranca?.url);
     setPend(false);
     if (r.erro || !r.id) return setErro(r.erro ?? "Não foi possível gerar o Pix.");
     setPix({ id: r.id, ...r.pix, valor: r.valor ?? produto.pix, criado: Date.now() });
@@ -177,11 +181,11 @@ function PagarPix({ produto, aceite, aoAprovar }: { produto: Produto; aceite: bo
   );
 }
 
-function PagarCartao({ publicKey, produto, email, aceite, aoAprovar, aoAnalisar }: { publicKey: string; produto: Produto; email: string; aceite: boolean; aoAprovar: () => void; aoAnalisar: () => void }) {
+export function PagarCartao({ publicKey, produto, email, aceite, aoAprovar, aoAnalisar, cobranca }: { publicKey: string; produto: ProdutoPagamento; email: string; aceite: boolean; aoAprovar: () => void; aoAnalisar: () => void; cobranca?: Cobranca }) {
   const [erro, setErro] = useState("");
   const [carregando, setCarregando] = useState(true);
-  const fns = useRef({ aoAprovar, aoAnalisar, aceite });
-  useEffect(() => { fns.current = { aoAprovar, aoAnalisar, aceite }; }, [aoAprovar, aoAnalisar, aceite]);
+  const fns = useRef({ aoAprovar, aoAnalisar, aceite, cobranca });
+  useEffect(() => { fns.current = { aoAprovar, aoAnalisar, aceite, cobranca }; }, [aoAprovar, aoAnalisar, aceite, cobranca]);
 
   useEffect(() => {
     let ctl: { unmount: () => void } | null = null;
@@ -197,8 +201,9 @@ function PagarCartao({ publicKey, produto, email, aceite, aoAprovar, aoAnalisar 
           onError: (e: unknown) => console.error("[checkout]", e),
           onSubmit: async (dados: Record<string, unknown>) => {
             setErro("");
-            if (!fns.current.aceite) { setErro("Marque que você leu e aceita os Termos de Uso e a Política de Reembolso (no topo da página)."); throw new Error("aceite"); }
-            const r = await pagar({ produto: produto.slug, metodo: "cartao", cartao: dados, cupom: produto.cupom, aceite: VERSAO_LEGAL });
+            if (!fns.current.aceite) { setErro(fns.current.cobranca?.textoAceite ?? "Marque que você leu e aceita os Termos de Uso e a Política de Reembolso (no topo da página)."); throw new Error("aceite"); }
+            const c = fns.current.cobranca;
+            const r = await pagar({ ...c?.extra, produto: produto.slug, metodo: "cartao", cartao: dados, cupom: produto.cupom, aceite: VERSAO_LEGAL }, c?.url);
             if (r.status === "approved" || r.status === "authorized") { fns.current.aoAprovar(); return; }
             if (r.status === "in_process" || r.status === "pending") { fns.current.aoAnalisar(); return; }
             setErro(r.mensagem ?? r.erro ?? "Pagamento não aprovado. Tente outro cartão ou o Pix.");

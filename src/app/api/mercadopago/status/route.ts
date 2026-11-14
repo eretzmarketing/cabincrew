@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { buscarPagamento, lerReferencia, registrarPagamento } from "@/lib/mercadopago";
+import { lerReferenciaLoja } from "@/lib/loja";
 import { getUser } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -11,7 +12,7 @@ export async function GET(req: Request) {
   if (!user || !/^\d{1,20}$/.test(id)) return NextResponse.json({ erro: "inválido" }, { status: 400 });
   try {
     const pg = await buscarPagamento(id);
-    if (lerReferencia(pg.external_reference)?.userId !== user.id) return NextResponse.json({ erro: "inválido" }, { status: 404 });
+    if ((lerReferencia(pg.external_reference) ?? lerReferenciaLoja(pg.external_reference))?.userId !== user.id) return NextResponse.json({ erro: "inválido" }, { status: 404 });
     if (pg.status !== "pending" && pg.status !== "in_process") await registrarPagamento(pg);
     return NextResponse.json({ status: pg.status });
   } catch {

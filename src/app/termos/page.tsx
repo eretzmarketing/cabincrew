@@ -27,6 +27,7 @@ export default function TermosPage() {
         <li><strong>Head Hunter:</strong> curso de preparação para os processos seletivos de comissário(a) de voo das companhias aéreas (jornada personalizada, aulas, simulados, dinâmicas, perfil comportamental, entrevista em inglês e vídeo de apresentação).</li>
         <li><strong>Flight Attendant English:</strong> curso de inglês para aviação, vendido separadamente.</li>
         <li><strong>Flight Attendant Spanish:</strong> curso de espanhol para aviação, vendido separadamente.</li>
+        <li><strong>Loja:</strong> apostilas impressas enviadas pelos Correios para o endereço informado na compra. O prazo de postagem aparece na página de cada produto e o código de rastreio é enviado por WhatsApp. Devoluções seguem a <Link href="/reembolso">Política de Reembolso</Link>.</li>
         <li>Planos combinados (combo) e promoções podem ser oferecidos na página <Link href="/planos">Planos</Link>. Cada curso pode ser comprado sozinho: a compra de um nunca é condição para a compra do outro.</li>
       </ul>
 

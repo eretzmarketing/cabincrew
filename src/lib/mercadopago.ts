@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { enviarWhatsapp, preencher } from "@/lib/whatsapp";
+import { enderecoEmLinha, lerReferenciaLoja, type Endereco } from "@/lib/loja";
 
 /**
  * Mercado Pago (Checkout transparente: Pix e cartão na própria página).
@@ -92,6 +93,7 @@ const anonimo = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, proces
  * Sempre recebe o pagamento lido direto da API do Mercado Pago, nunca dados enviados pelo navegador.
  */
 export async function registrarPagamento(pg: Pagamento): Promise<{ situacao: string; erro?: string }> {
+  if (lerReferenciaLoja(pg.external_reference)) return registrarPagamentoLoja(pg);
   const cfg = configMP();
   const ref = lerReferencia(pg.external_reference);
   if (!cfg || !ref) return { situacao: "ignorado" };
@@ -133,4 +135,30 @@ export function assinaturaValida(cabecalho: string | null, requestId: string | n
 /** Preço de um produto por forma de pagamento (Pix com desconto). */
 export function precoPor(preco: number, descontoPix: number, metodo: "pix" | "cartao") {
   return metodo === "pix" ? Math.round(preco * (100 - descontoPix)) / 100 : Number(preco);
+}
+
+/** Pedido da loja (apostilas): confirma o pagamento e avisa no WhatsApp. */
+async function registrarPagamentoLoja(pg: Pagamento): Promise<{ situacao: string; erro?: string }> {
+  const cfg = configMP();
+  const ref = lerReferenciaLoja(pg.external_reference);
+  if (!cfg || !ref) return { situacao: "ignorado" };
+  const metodo = METODO[pg.payment_type_id ?? ""] ?? (pg.payment_method_id === "pix" ? "pix" : "outro");
+  const supabase = anonimo();
+  const { data, error } = await supabase.rpc("loja_registrar_pagamento", {
+    p_chave: cfg.chave,
+    p: { id: String(pg.id), status: pg.status, valor: pg.transaction_amount, pedido: ref.pedido, metodo },
+  });
+  if (error) { console.error("[loja] não foi possível registrar o pagamento", pg.id, error.message); return { situacao: "erro", erro: error.message }; }
+  const r = ((data ?? []) as { pedido_id: number; situacao: string; envio_id: number | null; telefone: string | null; nome: string | null; texto: string | null }[])[0];
+  if (r?.envio_id && r.telefone && r.texto) {
+    const { data: ped } = await supabase.rpc("loja_resumo_pedido", { p_chave: cfg.chave, p_pedido: ref.pedido });
+    const p = ((ped ?? []) as { produto_nome: string; quantidade: number; endereco: Endereco }[])[0];
+    const texto = preencher(r.texto, {
+      nome: r.nome ?? "", pedido: ref.pedido, produto: p ? `${p.quantidade > 1 ? `${p.quantidade}× ` : ""}${p.produto_nome}` : "sua apostila",
+      endereco: p ? enderecoEmLinha(p.endereco) : "", valor: reais(pg.transaction_amount), forma: FORMA[metodo] ?? metodo,
+    });
+    const res = await enviarWhatsapp(r.telefone, texto);
+    await supabase.rpc("loja_whatsapp_resultado", { p_chave: cfg.chave, p_id: r.envio_id, p_status: res.ok ? "enviada" : res.status, p_texto: texto, p_erro: res.ok ? null : res.erro });
+  }
+  return { situacao: r?.situacao ?? "pendente" };
 }

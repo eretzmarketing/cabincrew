@@ -21,6 +21,7 @@ export default async function Header() {
             {user && <Link href="/spanish" className={link}>Spanish</Link>}
             <Link href="/simulados-anac" className={link}>Simulados ANAC</Link>
             <Link href="/planos" className={link}>Planos</Link>
+            <Link href="/loja" className={link}>Loja</Link>
             {forum_ativo && <Link href="/forum" className={link}>Fórum de Seleções</Link>}
             {profile?.is_admin && <Link href="/admin" className={link}>Administrador</Link>}
           </nav>
