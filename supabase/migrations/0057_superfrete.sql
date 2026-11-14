@@ -11,12 +11,10 @@ alter table loja_produtos add column if not exists comprimento_cm numeric(5,1) n
 alter table loja_produtos alter column peso_g set default 1000;
 alter table loja_produtos alter column altura_cm set default 5;
 alter table loja_produtos alter column largura_cm set default 25;
--- medida padrão de cada apostila: 5 × 25 × 30 cm, 1 kg (só troca o que ainda está com a medida antiga)
+-- medida padrão do pacote: 5 × 25 × 30 cm, até 1 kg — vale para 1 apostila e também para o combo com as 3
+-- (só troca o que ainda está com uma medida antiga, não mexe no que você ajustou)
 update loja_produtos set peso_g = 1000, altura_cm = 5, largura_cm = 25, comprimento_cm = 30
- where slug <> 'combo-3-apostilas' and peso_g = 500 and altura_cm = 2 and largura_cm = 21 and comprimento_cm = 30;
--- combo: as 3 apostilas empilhadas, 15 × 25 × 30 cm, 3 kg
-update loja_produtos set peso_g = 3000, altura_cm = 15, largura_cm = 25, comprimento_cm = 30
- where slug = 'combo-3-apostilas' and largura_cm = 21 and comprimento_cm = 30 and ((peso_g = 500 and altura_cm = 2) or (peso_g = 1500 and altura_cm = 6));
+ where (peso_g, altura_cm, largura_cm, comprimento_cm) in ((500, 2, 21, 30), (1500, 6, 21, 30), (3000, 15, 25, 30));
 
 alter table loja_pedidos add column if not exists etiqueta_id text;
 alter table loja_pedidos add column if not exists etiqueta_status text;       -- criando, pending (no carrinho), released (paga), posted, delivered, canceled
