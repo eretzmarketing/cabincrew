@@ -8,7 +8,7 @@ import { CAMPOS_PADRAO, EXEMPLO, FONTES, NOMES_CURSO_CERT, ROTULO_CAMPO, type Ca
 const campo = "w-full rounded-xl border border-[#c9cedb] bg-white px-3 py-2 text-[14px] outline-none focus:border-navy";
 const rot = "text-[13px] font-semibold";
 
-export default function EditorCertificado({ inicial, site }: { inicial: Modelo; site: string }) {
+export default function EditorCertificado({ inicial, site, cargaAuto }: { inicial: Modelo; site: string; cargaAuto?: string | null }) {
   const [m, setM] = useState<Modelo>({ ...inicial, campos: inicial.campos?.length ? inicial.campos : CAMPOS_PADRAO });
   const [ativo, setAtivo] = useState(inicial.ativo !== false);
   const [carga, setCarga] = useState(inicial.carga_horaria ?? "");
@@ -55,7 +55,7 @@ export default function EditorCertificado({ inicial, site }: { inicial: Modelo; 
     setSel(id);
   }
   const faltando = (["nome", "curso", "data", "nota", "codigo"] as CampoId[]).filter((t) => !m.campos.some((c) => c.tipo === t));
-  const dados = { ...EXEMPLO, curso: NOMES_CURSO_CERT[m.curso] ?? m.curso, carga };
+  const dados = { ...EXEMPLO, curso: NOMES_CURSO_CERT[m.curso] ?? m.curso, carga: carga || cargaAuto || "" };
 
   return (
     <div className="grid gap-5 xl:grid-cols-[1fr_320px]">
@@ -81,8 +81,8 @@ export default function EditorCertificado({ inicial, site }: { inicial: Modelo; 
 
       <aside className="flex flex-col gap-4 rounded-2xl border border-line bg-white p-4 xl:sticky xl:top-24 xl:self-start">
         <div className="flex flex-col gap-2 border-b border-line pb-3">
-          <label className={`flex flex-col gap-1 ${rot}`}>Carga horária <span className="font-normal text-muted">(ex.: 40 horas · use {"{carga}"} no certificado)</span>
-            <input value={carga} onChange={(e) => setCarga(e.target.value)} maxLength={60} className={campo} />
+          <label className={`flex flex-col gap-1 ${rot}`}>Carga horária <span className="font-normal text-muted">({cargaAuto ? `em branco = calculada pelas aulas: ${cargaAuto}` : "ex.: 40 horas"} · use {"{carga}"} no certificado)</span>
+            <input value={carga} onChange={(e) => setCarga(e.target.value)} maxLength={60} placeholder={cargaAuto ? `${cargaAuto} (automático)` : ""} className={campo} />
           </label>
           <label className={`flex flex-col gap-1 ${rot}`}>Descrição do curso <span className="font-normal text-muted">(aparece na autenticação)</span>
             <textarea rows={3} value={descricao} onChange={(e) => setDescricao(e.target.value)} maxLength={1000} className={campo} />

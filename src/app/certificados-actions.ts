@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import type { Campo } from "@/lib/certificados";
 import { getUser } from "@/lib/supabase/server";
 import { SLUGS_CURSOS } from "@/lib/cursos";
+import { cargaDoCurso } from "@/lib/carga-curso";
 
 type Estado = { ok?: boolean; msg?: string; erro?: string };
 const CURSOS = SLUGS_CURSOS;
@@ -29,10 +30,12 @@ export async function salvarModeloCertificado(curso: string, m: { imagem: string
     negrito: !!c.negrito, alinhamento: ["left", "center", "right"].includes(c.alinhamento) ? c.alinhamento : "center",
     largura: num(c.largura, 5, 100, 60), visivel: c.visivel !== false,
   }));
+  // carga horária em branco: o sistema calcula pelo conteúdo do curso
+  const carga = String(m.carga_horaria ?? "").trim().slice(0, 60) || (await cargaDoCurso(supabase, curso));
   const { error } = await supabase.from("certificado_modelos").upsert({
     curso, imagem: m.imagem, largura: Math.round(num(m.largura, 100, 10000, 3508)), altura: Math.round(num(m.altura, 100, 10000, 2480)),
     campos, ativo: !!m.ativo, updated_at: new Date().toISOString(),
-    carga_horaria: String(m.carga_horaria ?? "").trim().slice(0, 60) || null, descricao: String(m.descricao ?? "").trim().slice(0, 1000) || null,
+    carga_horaria: carga, descricao: String(m.descricao ?? "").trim().slice(0, 1000) || null,
   });
   if (error) return { erro: error.message.includes("carga_horaria") || error.message.includes("descricao") ? "Rode o SQL 0050_autenticar_certificado.sql no Supabase." : error.message.includes("certificado_modelos") ? "Rode o SQL 0049_certificados.sql no Supabase." : "Não foi possível salvar." };
   revalidatePath("/admin/certificados");

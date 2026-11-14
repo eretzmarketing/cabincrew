@@ -3,6 +3,7 @@ import Link from "next/link";
 import { revogarCertificado } from "@/app/certificados-actions";
 import { Titulo } from "@/components/admin-ui";
 import EditorCertificado from "@/components/EditorCertificado";
+import { cargaDoCurso } from "@/lib/carga-curso";
 import { CAMPOS_PADRAO, CURSOS_CERT, dataExtenso, type Modelo } from "@/lib/certificados";
 import { SITE } from "@/lib/mercadopago";
 import { getUser } from "@/lib/supabase/server";
@@ -23,6 +24,7 @@ export default async function CertificadosPage({ searchParams }: { searchParams:
   ]);
   const modelo: Modelo = (mod as Modelo | null) ?? { curso, imagem: null, largura: 3508, altura: 2480, campos: CAMPOS_PADRAO, ativo: true };
   const lista = (certs ?? []) as Cert[];
+  const cargaAuto = await cargaDoCurso(supabase, curso);
 
   return (
     <>
@@ -35,7 +37,7 @@ export default async function CertificadosPage({ searchParams }: { searchParams:
                 className={`inline-flex min-h-11 items-center rounded-full px-5 font-semibold ${curso === k ? "bg-navy text-white" : "text-navy"}`}>{r}</Link>
             ))}
           </nav>
-          <EditorCertificado key={curso} inicial={modelo} site={SITE} />
+          <EditorCertificado key={curso} inicial={modelo} site={SITE} cargaAuto={cargaAuto} />
 
           <section className="flex flex-col gap-3">
             <h2 className="font-display text-2xl font-extrabold">Certificados emitidos</h2>

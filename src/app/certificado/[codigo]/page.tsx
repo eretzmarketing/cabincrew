@@ -7,6 +7,7 @@ import { BotoesCertificado } from "@/components/BotoesCertificado";
 import { CAMPOS_PADRAO, CURSOS_CERT, NOMES_CURSO_CERT, dataExtenso, type Modelo } from "@/lib/certificados";
 import { SITE } from "@/lib/mercadopago";
 import { avatarUrl, getUser } from "@/lib/supabase/server";
+import { cargaIdioma } from "@/lib/carga-curso";
 
 export const dynamic = "force-dynamic";
 
@@ -43,7 +44,7 @@ export default async function CertificadoPage({ params }: { params: Promise<{ co
   const r = await carregar((await params).codigo);
   if (!r) notFound();
   const { c, modelo } = r;
-  const carga = c.carga_horaria ?? modelo.carga_horaria ?? null;
+  const carga = c.carga_horaria ?? modelo.carga_horaria ?? cargaIdioma(c.curso);
   const dados = { nome: c.nome, curso: NOMES_CURSO_CERT[c.curso] ?? c.curso, concluido_em: c.concluido_em, nota: c.nota, codigo: c.codigo, carga };
   const d = new Date(c.concluido_em);
   const linkedin = `https://www.linkedin.com/profile/add?${new URLSearchParams({
