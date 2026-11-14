@@ -28,6 +28,7 @@ export const GRUPOS: Grupo[] = [
       { href: "/admin/opq", label: "Perfil comportamental" },
       { href: "/admin/entrevista", label: "Entrevista em inglês" },
       { href: "/admin/ingles", label: "Flight Attendant English" },
+      { href: "/admin/espanhol", label: "Flight Attendant Spanish" },
     ],
   },
   { id: "campanhas", label: "Campanhas", itens: [{ href: "/admin/campanhas", label: "Campanhas" }] },

@@ -3,11 +3,12 @@ import { excluirProduto } from "@/app/pagamentos-actions";
 import { Card, Titulo } from "@/components/admin-ui";
 import { NovoPlanoForm, ProdutoForm, type Plano } from "@/components/PagamentosForms";
 import { getUser } from "@/lib/supabase/server";
+import { SLUGS_CURSOS } from "@/lib/cursos";
 
 export const metadata: Metadata = { title: "Planos e preços" };
 export const dynamic = "force-dynamic";
 
-const BASE = ["head-hunter", "english"];
+const BASE = SLUGS_CURSOS;
 
 export default async function ProdutosPage({ searchParams }: { searchParams: Promise<{ criado?: string }> }) {
   const { criado } = await searchParams;

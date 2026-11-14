@@ -5,6 +5,7 @@ import AvatarAluno from "@/components/AvatarAluno";
 import BotaoWhatsapp from "@/components/BotaoWhatsapp";
 import { Titulo, btnSecundario } from "@/components/admin-ui";
 import { avatarUrl, getUser } from "@/lib/supabase/server";
+import { SLUGS_CURSOS, nomeCurso, siglaCurso } from "@/lib/cursos";
 
 export const metadata: Metadata = { title: "Usuários" };
 export const dynamic = "force-dynamic";
@@ -13,7 +14,7 @@ const POR_PAGINA = 50;
 type Pessoa = { id: string; nome: string | null; email: string | null; whatsapp: string | null; escola: string | null; cadastro: string; bloqueado: boolean; compras: number };
 type Busca = { q?: string; escola?: string; curso?: string; sit?: string; de?: string; ate?: string; p?: string; excluido?: string };
 
-const CURSOS: Record<string, string> = { "head-hunter": "Com Head Hunter", english: "Com Flight Attendant English", ambos: "Com os dois cursos", nenhum: "Sem curso", comprou: "Já comprou algo" };
+const CURSOS: Record<string, string> = { "head-hunter": "Com Head Hunter", english: "Com Flight Attendant English", spanish: "Com Flight Attendant Spanish", ambos: "Com HH e English", todos: "Com os três cursos", nenhum: "Sem curso", comprou: "Já comprou algo" };
 const campo = "min-h-11 rounded-xl border border-[#c9cedb] bg-white px-3 text-[15px]";
 const diaSP = (iso: string) => new Date(iso).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
 
@@ -42,8 +43,9 @@ export default async function UsuariosPage({ searchParams }: { searchParams: Pro
     .filter((p) => {
       const c = cursos.get(p.id) ?? [];
       switch (sp.curso) {
-        case "head-hunter": case "english": return c.includes(sp.curso);
+        case "head-hunter": case "english": case "spanish": return c.includes(sp.curso);
         case "ambos": return c.includes("head-hunter") && c.includes("english");
+        case "todos": return SLUGS_CURSOS.every((x) => c.includes(x));
         case "nenhum": return c.length === 0;
         case "comprou": return p.compras > 0;
         default: return true;
@@ -124,8 +126,8 @@ export default async function UsuariosPage({ searchParams }: { searchParams: Pro
                 <span>desde {new Date(p.cadastro).toLocaleDateString("pt-BR")}</span>
                 {p.whatsapp && <span>{p.whatsapp}</span>}
               </span>
-              <span className="flex w-[70px] gap-1" aria-label="Cursos">
-                {cs.map((c) => <span key={c} title={c === "english" ? "Flight Attendant English" : "Head Hunter"} className="rounded-md bg-[#eef1ff] px-1.5 py-0.5 text-[11px] font-bold text-navy">{c === "english" ? "EN" : "HH"}</span>)}
+              <span className="flex w-[96px] gap-1" aria-label="Cursos">
+                {cs.map((c) => <span key={c} title={nomeCurso(c)} className="rounded-md bg-[#eef1ff] px-1.5 py-0.5 text-[11px] font-bold text-navy">{siglaCurso(c)}</span>)}
               </span>
               <AcoesAluno aluno={{ id: p.id, nome, email: p.email, whatsapp: p.whatsapp, bloqueado: p.bloqueado }} voltarPara="/admin/usuarios" />
             </li>

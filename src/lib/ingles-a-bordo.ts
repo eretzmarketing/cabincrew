@@ -19,10 +19,11 @@ export type Personagem = {
   nome: string;
   papel: string;           // em português, para o aluno
   voz: "f" | "m";
-  sotaque: "US" | "GB" | "AU" | "BR";
+  sotaque: "US" | "GB" | "AU" | "BR" | "ES" | "MX" | "AR" | "CO" | "CL";
   vozSugerida: string;     // dica para escolher a voz no ElevenLabs
 };
 
+/** "en" é a fala no idioma do curso (inglês no English, espanhol no Spanish). */
 export type Fala = { quem: string; en: string; pt: string };
 export type Opcao = { texto: string; certa?: boolean };
 export type Questao = { pergunta: string; opcoes: Opcao[]; explicacao: string };

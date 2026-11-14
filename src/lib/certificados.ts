@@ -17,10 +17,11 @@ export type Campo = {
 export type Modelo = { curso: string; imagem: string | null; largura: number; altura: number; campos: Campo[]; ativo?: boolean; carga_horaria?: string | null; descricao?: string | null };
 export type Dados = { nome: string; curso: string; concluido_em: string; nota: number | null; codigo: string; carga?: string | null };
 
-export const CURSOS_CERT: Record<string, string> = { "head-hunter": "Head Hunter", english: "Flight Attendant English" };
+export const CURSOS_CERT: Record<string, string> = { "head-hunter": "Head Hunter", english: "Flight Attendant English", spanish: "Flight Attendant Spanish" };
 export const NOMES_CURSO_CERT: Record<string, string> = {
   "head-hunter": "Head Hunter · Preparatório para Seleção de Comissário(a) de Voo",
   english: "Flight Attendant English · Inglês para Aviação",
+  spanish: "Flight Attendant Spanish · Espanhol para Aviação",
 };
 
 export const FONTES: Record<Fonte, { rotulo: string; familia: string }> = {

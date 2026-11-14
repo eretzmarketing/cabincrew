@@ -2,9 +2,15 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
-import { salvarQuizIngles } from "@/app/crew-actions";
-import { ELENCO, NOTA_MINIMA, type Atividade, type AulaIngles, type Personagem, type Questao } from "@/lib/ingles-a-bordo";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { salvarQuizIdioma } from "@/app/crew-actions";
+import { NOTA_MINIMA, type Atividade, type AulaIngles, type Personagem, type Questao } from "@/lib/ingles-a-bordo";
+
+/* =================================================================== idioma do curso (inglês ou espanhol) */
+
+export type IdiomaAula = { produto: "english" | "spanish"; lang: "en" | "es"; bcp: string; nome: string; base: string; elenco: Record<string, Personagem> };
+const IdiomaCtx = createContext<IdiomaAula>({ produto: "english", lang: "en", bcp: "en-US", nome: "inglês", base: "/english", elenco: {} });
+const useIdioma = () => useContext(IdiomaCtx);
 
 /* =================================================================== utilidades */
 
@@ -27,7 +33,7 @@ function embaralhar<T>(lista: T[], semente: string): T[] {
 }
 
 const normalizar = (s: string) =>
-  s.toLowerCase().replace(/[’‘`]/g, "'").replace(/[^a-z0-9'\s]/g, " ").replace(/\s+/g, " ").trim();
+  s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[’‘`]/g, "'").replace(/[^a-z0-9'\s]/g, " ").replace(/\s+/g, " ").trim();
 const palavras = (s: string) => normalizar(s).split(" ").filter(Boolean);
 const semColchetes = (s: string) => s.replace(/\[([^\]]+)\]/g, "$1");
 
@@ -50,8 +56,9 @@ function comparar(alvo: string, dito: string) {
 }
 
 function Comparacao({ r }: { r: ReturnType<typeof comparar> }) {
+  const L = useIdioma();
   return (
-    <p lang="en" className="text-[17px] leading-relaxed">
+    <p lang={L.lang} className="text-[17px] leading-relaxed">
       {r.itens.map((x, i) => (
         <span key={i} className={`mr-1 rounded px-0.5 ${x.ok ? "text-[#0f6b3a]" : "bg-[#ffe1e7] text-brand-deep underline decoration-wavy"}`}>{x.w}</span>
       ))}
@@ -65,12 +72,19 @@ const ComLacunas = ({ texto }: { texto: string }) => (
 
 /* =================================================================== voz do navegador */
 
-const FEM = /female|samantha|victoria|karen|moira|tessa|fiona|serena|susan|zira|hazel|libby|sonia|natasha|aria|jenny|michelle|catherine|allison|ava|kate|joanna|salli|kendra|kimberly|emma|amy|olivia|google us english|google uk english female/i;
-const MAS = /\bmale|daniel|alex\b|fred|oliver|george|ryan|guy|david|mark|james|thomas|arthur|aaron|gordon|lee\b|matthew|brian|joey|justin|russell|google uk english male/i;
-const REGIAO: Record<Personagem["sotaque"], RegExp> = { US: /en[-_]US/i, GB: /en[-_](GB|IE)/i, AU: /en[-_](AU|NZ)/i, BR: /en[-_]US/i };
+const FEM = /female|samantha|victoria|karen|moira|tessa|fiona|serena|susan|zira|hazel|libby|sonia|natasha|aria|jenny|michelle|catherine|allison|ava|kate|joanna|salli|kendra|kimberly|emma|amy|olivia|google us english|google uk english female|monica|mónica|paulina|helena|laura|elvira|dalia|lucia|lucía|conchita|penelope|sabina|marisol|elena|camila|valentina|ximena|lupe|esperanza/i;
+const MAS = /\bmale|daniel|alex\b|fred|oliver|george|ryan|guy|david|mark|james|thomas|arthur|aaron|gordon|lee\b|matthew|brian|joey|justin|russell|google uk english male|jorge|juan|diego|pablo|enrique|alvaro|álvaro|raul|raúl|miguel|carlos|jose|josé|andres|andrés|tomas|tomás|gonzalo|lorenzo/i;
+const REGIOES: Record<IdiomaAula["lang"], Record<string, RegExp>> = {
+  en: { US: /en[-_]US/i, GB: /en[-_](GB|IE)/i, AU: /en[-_](AU|NZ)/i, BR: /en[-_]US/i },
+  es: { ES: /es[-_]ES/i, MX: /es[-_](MX|US|419)/i, AR: /es[-_](AR|UY|419)/i, CO: /es[-_](CO|419|MX|US)/i, CL: /es[-_](CL|419)/i, BR: /es[-_](ES|MX|US)/i },
+};
 const generoDe = (v: SpeechSynthesisVoice) => (/female/i.test(v.name) || FEM.test(v.name) ? "f" : MAS.test(v.name) ? "m" : "?");
 
 function useVoz() {
+  const L = useIdioma();
+  const ELENCO = L.elenco;
+  const REGIAO = REGIOES[L.lang];
+  const padrao = new RegExp(L.bcp.replace("-", "[-_]"), "i");
   const [vozes, setVozes] = useState<SpeechSynthesisVoice[]>([]);
   const [falando, setFalando] = useState<string | null>(null);
   const [linha, setLinha] = useState(-1);
@@ -78,7 +92,7 @@ function useVoz() {
 
   useEffect(() => {
     if (!("speechSynthesis" in window)) { setSuportado(false); return; } // eslint-disable-line react-hooks/set-state-in-effect
-    const ler = () => setVozes(window.speechSynthesis.getVoices().filter((v) => /^en/i.test(v.lang)));
+    const ler = () => setVozes(window.speechSynthesis.getVoices().filter((v) => v.lang.toLowerCase().startsWith(L.lang)));
     ler();
     window.speechSynthesis.addEventListener("voiceschanged", ler);
     return () => { window.speechSynthesis.removeEventListener("voiceschanged", ler); window.speechSynthesis.cancel(); };
@@ -86,14 +100,14 @@ function useVoz() {
 
   /** Escolhe uma voz diferente para cada personagem: gênero e sotaque quando o aparelho tiver. */
   const vozPara = useCallback((quem: string | undefined, usadas: Map<string, SpeechSynthesisVoice | undefined>) => {
-    if (!quem || !ELENCO[quem]) return vozes.find((v) => /en[-_]US/i.test(v.lang)) ?? vozes[0];
+    if (!quem || !ELENCO[quem]) return vozes.find((v) => padrao.test(v.lang)) ?? vozes[0];
     if (usadas.has(quem)) return usadas.get(quem);
     const p = ELENCO[quem];
     const ocupadas = new Set([...usadas.values()].filter(Boolean).map((v) => v!.voiceURI));
     const camadas = [
-      vozes.filter((v) => REGIAO[p.sotaque].test(v.lang) && generoDe(v) === p.voz),
+      vozes.filter((v) => (REGIAO[p.sotaque] ?? padrao).test(v.lang) && generoDe(v) === p.voz),
       vozes.filter((v) => generoDe(v) === p.voz),
-      vozes.filter((v) => REGIAO[p.sotaque].test(v.lang)),
+      vozes.filter((v) => (REGIAO[p.sotaque] ?? padrao).test(v.lang)),
       vozes,
     ];
     let escolhida: SpeechSynthesisVoice | undefined;
@@ -116,7 +130,7 @@ function useVoz() {
       const u = new SpeechSynthesisUtterance(semColchetes(f.en));
       const v = vozPara(f.quem, usadas);
       if (v) u.voice = v;
-      u.lang = v?.lang ?? "en-US";
+      u.lang = v?.lang ?? L.bcp;
       u.rate = rate;
       const p = f.quem ? ELENCO[f.quem] : undefined;
       // aparelho com uma voz só: muda o tom para diferenciar homem e mulher
@@ -223,6 +237,7 @@ function Retorno({ ok, children }: { ok: boolean; children: React.ReactNode }) {
 /* =================================================================== diálogo */
 
 function Dialogo({ aula, audio, voz }: { aula: AulaIngles; audio?: string; voz: Voz }) {
+  const L = useIdioma();
   const [texto, setTexto] = useState(false);
   const [traducao, setTraducao] = useState(false);
   const [vel, setVel] = useState(1);
@@ -236,8 +251,8 @@ function Dialogo({ aula, audio, voz }: { aula: AulaIngles; audio?: string; voz: 
       <ul className="flex flex-wrap gap-2" aria-label="Personagens">
         {aula.dialogo.personagens.map((q) => (
           <li key={q} className="inline-flex items-center gap-2 rounded-full bg-soft px-3 py-1.5 text-[13px]">
-            <strong className="font-semibold">{ELENCO[q]?.nome ?? q}</strong>
-            <span className="text-muted">{ELENCO[q]?.papel}</span>
+            <strong className="font-semibold">{L.elenco[q]?.nome ?? q}</strong>
+            <span className="text-muted">{L.elenco[q]?.papel}</span>
           </li>
         ))}
       </ul>
@@ -263,7 +278,7 @@ function Dialogo({ aula, audio, voz }: { aula: AulaIngles; audio?: string; voz: 
             </button>
             <button type="button" onClick={() => voz.falar(idTudo, aula.dialogo.falas, 0.75)} disabled={!voz.suportado || tocandoTudo}
               className="min-h-12 cursor-pointer rounded-full bg-white/15 px-4 text-sm font-semibold hover:bg-white/25 disabled:opacity-50">🐢 Mais devagar</button>
-            {!voz.suportado && <span className="text-sm text-white/80">Seu navegador não tem voz em inglês. Leia o diálogo abaixo.</span>}
+            {!voz.suportado && <span className="text-sm text-white/80">Seu navegador não tem voz em {L.nome}. Leia o diálogo abaixo.</span>}
           </div>
         )}
         <p className="text-sm text-white/75">Primeiro ouça sem ler. Depois abra o texto e ouça de novo acompanhando.</p>
@@ -282,7 +297,7 @@ function Dialogo({ aula, audio, voz }: { aula: AulaIngles; audio?: string; voz: 
               <li key={i} className={`flex items-start gap-3 rounded-2xl border p-3 transition ${atual ? "border-brand bg-brand-soft" : "border-line"}`}>
                 <span className="w-16 shrink-0 pt-1 text-[13px] font-bold text-brand-strong">{f.quem === "Captain" ? "Captain" : f.quem}</span>
                 <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                  <span lang="en" className="text-[16px] leading-relaxed">{f.en}</span>
+                  <span lang={L.lang} className="text-[16px] leading-relaxed">{f.en}</span>
                   {traducao && <span className="text-[14px] text-muted">{f.pt}</span>}
                 </span>
                 <BotaoOuvir voz={voz} id={`fala-${i}`} texto={f.en} quem={f.quem} rotulo="" />
@@ -298,11 +313,12 @@ function Dialogo({ aula, audio, voz }: { aula: AulaIngles; audio?: string; voz: 
 /* =================================================================== múltipla escolha */
 
 function QuestaoMC({ q, n, escolha, onEscolher, revelar, semente }: { q: Questao; n: number; escolha?: number; onEscolher: (i: number) => void; revelar: boolean; semente: string }) {
+  const L = useIdioma();
   const ops = useMemo(() => embaralhar(q.opcoes.map((o, i) => ({ ...o, i })), semente + q.pergunta), [q, semente]);
   const certa = q.opcoes.findIndex((o) => o.certa);
   return (
     <fieldset className="flex flex-col gap-2.5">
-      <legend className="mb-2 text-[16px] font-semibold"><span className="text-muted">{n}.</span> <span lang={/[ãçéáíóú]/i.test(q.pergunta) ? "pt-BR" : "en"}>{q.pergunta}</span></legend>
+      <legend className="mb-2 text-[16px] font-semibold"><span className="text-muted">{n}.</span> <span lang={/[ãõç]|ê|você/i.test(q.pergunta) ? "pt-BR" : L.lang}>{q.pergunta}</span></legend>
       {ops.map((o) => {
         const marcada = escolha === o.i;
         const estado = revelar ? (o.i === certa ? "certa" : marcada ? "errada" : "") : marcada ? "marcada" : "";
@@ -335,6 +351,7 @@ function Compreensao({ questoes }: { questoes: Questao[] }) {
 /* =================================================================== atividades */
 
 function Ditado({ frases, voz }: { frases: string[]; voz: Voz }) {
+  const L = useIdioma();
   const [txt, setTxt] = useState<string[]>(frases.map(() => ""));
   const [conf, setConf] = useState<boolean[]>(frases.map(() => false));
   return (
@@ -350,7 +367,7 @@ function Ditado({ frases, voz }: { frases: string[]; voz: Voz }) {
             </div>
             <form className="flex flex-col gap-2 sm:flex-row" onSubmit={(e) => { e.preventDefault(); setConf(conf.map((c, k) => (k === i ? true : c))); }}>
               <label className="sr-only" htmlFor={`dit-in-${i}`}>Frase {i + 1}</label>
-              <input id={`dit-in-${i}`} lang="en" autoComplete="off" autoCapitalize="off" spellCheck={false} value={txt[i]}
+              <input id={`dit-in-${i}`} lang={L.lang} autoComplete="off" autoCapitalize="off" spellCheck={false} value={txt[i]}
                 onChange={(e) => { setTxt(txt.map((t, k) => (k === i ? e.target.value : t))); setConf(conf.map((c, k) => (k === i ? false : c))); }}
                 className="min-h-12 flex-1 rounded-xl border border-[#c9cedb] px-3.5 text-[16px]" placeholder="Escreva aqui…" />
               <button type="submit" disabled={!txt[i].trim()} className={btnPrim}>Conferir</button>
@@ -369,6 +386,7 @@ function Ditado({ frases, voz }: { frases: string[]; voz: Voz }) {
 }
 
 function Ordenar({ a, voz, n }: { a: Extract<Atividade, { tipo: "ordenar" }>; voz: Voz; n: number }) {
+  const L = useIdioma();
   const inicial = useMemo(() => embaralhar(a.falas, a.instrucao + n), [a, n]);
   const [ordem, setOrdem] = useState(inicial);
   const [conf, setConf] = useState(false);
@@ -390,7 +408,7 @@ function Ordenar({ a, voz, n }: { a: Extract<Atividade, { tipo: "ordenar" }>; vo
           return (
             <li key={f} className={`flex items-center gap-2 rounded-xl border-2 bg-white p-2 pl-3 ${estado === "ok" ? "border-[#2e9e62]" : estado === "erro" ? "border-brand" : "border-transparent"}`}>
               <span className="w-5 font-display font-bold text-muted">{i + 1}</span>
-              <span lang="en" className="flex-1 text-[15px]">{f}</span>
+              <span lang={L.lang} className="flex-1 text-[15px]">{f}</span>
               <BotaoOuvir voz={voz} id={`ord-${n}-${f}`} texto={f} rotulo="" />
               <button type="button" onClick={() => mover(i, -1)} disabled={i === 0} aria-label={`Subir: ${f}`} className="h-10 w-10 cursor-pointer rounded-full bg-soft font-bold hover:bg-[#e6e9f0] disabled:opacity-30">↑</button>
               <button type="button" onClick={() => mover(i, 1)} disabled={i === ordem.length - 1} aria-label={`Descer: ${f}`} className="h-10 w-10 cursor-pointer rounded-full bg-soft font-bold hover:bg-[#e6e9f0] disabled:opacity-30">↓</button>
@@ -408,6 +426,7 @@ function Ordenar({ a, voz, n }: { a: Extract<Atividade, { tipo: "ordenar" }>; vo
 }
 
 function Ligar({ a, n }: { a: Extract<Atividade, { tipo: "ligar" }>; n: number }) {
+  const L = useIdioma();
   const opcoes = useMemo(() => embaralhar(a.pares.map((p, i) => ({ t: p[1], i })), a.instrucao + n), [a, n]);
   const [res, setRes] = useState<Record<number, number>>({}); // item -> índice da resposta
   const [sel, setSel] = useState(0);
@@ -433,7 +452,7 @@ function Ligar({ a, n }: { a: Extract<Atividade, { tipo: "ligar" }>; n: number }
             <li key={i}>
               <button type="button" onClick={() => setSel(i)} aria-pressed={sel === i}
                 className={`flex min-h-12 w-full cursor-pointer flex-col gap-1 rounded-xl border-2 bg-white px-4 py-2 text-left sm:flex-row sm:items-center sm:justify-between ${estado === "ok" ? "border-[#2e9e62]" : estado === "erro" ? "border-brand" : estado === "sel" ? "border-navy" : "border-transparent"}`}>
-                <span lang="en" className="font-semibold">{p[0]}</span>
+                <span lang={L.lang} className="font-semibold">{p[0]}</span>
                 <span className={`text-[14px] ${r === undefined ? "text-muted italic" : "text-navy"}`}>{r === undefined ? (sel === i ? "escolha abaixo ↓" : "—") : `→ ${a.pares[r][1]}`}</span>
               </button>
             </li>
@@ -458,6 +477,7 @@ function Ligar({ a, n }: { a: Extract<Atividade, { tipo: "ligar" }>; n: number }
 }
 
 function Lacunas({ a }: { a: Extract<Atividade, { tipo: "lacunas" }> }) {
+  const L = useIdioma();
   const [v, setV] = useState<string[]>(a.itens.map(() => ""));
   const [conf, setConf] = useState(false);
   const [ver, setVer] = useState(false);
@@ -471,7 +491,7 @@ function Lacunas({ a }: { a: Extract<Atividade, { tipo: "lacunas" }> }) {
           const estado = conf ? (certo(i) ? "ok" : "erro") : "";
           return (
             <li key={i} className="flex flex-col gap-1 rounded-xl bg-white p-3">
-              <span lang="en" className="flex flex-wrap items-center gap-x-1.5 gap-y-2 text-[16px] leading-relaxed">
+              <span lang={L.lang} className="flex flex-wrap items-center gap-x-1.5 gap-y-2 text-[16px] leading-relaxed">
                 <span className="mr-1 font-display font-bold text-muted">{i + 1}.</span>
                 {antes}
                 <input aria-label={`Lacuna da frase ${i + 1}`} value={ver ? it.resposta : v[i]} readOnly={ver} autoComplete="off" autoCapitalize="off" spellCheck={false}
@@ -495,6 +515,7 @@ function Lacunas({ a }: { a: Extract<Atividade, { tipo: "lacunas" }> }) {
 }
 
 function Falar({ a, voz }: { a: Extract<Atividade, { tipo: "falar" }>; voz: Voz }) {
+  const L = useIdioma();
   const [ouvindo, setOuvindo] = useState<number | null>(null);
   const [res, setRes] = useState<Record<number, { dito: string; r: ReturnType<typeof comparar> }>>({});
   const [aviso, setAviso] = useState("");
@@ -510,7 +531,7 @@ function Falar({ a, voz }: { a: Extract<Atividade, { tipo: "falar" }>; voz: Voz 
     const r = criarReconhecimento();
     if (!r) return;
     setAviso("");
-    r.lang = "en-US";
+    r.lang = L.bcp;
     r.interimResults = false;
     r.maxAlternatives = 1;
     r.onresult = (e) => {
@@ -525,12 +546,12 @@ function Falar({ a, voz }: { a: Extract<Atividade, { tipo: "falar" }>; voz: Voz 
   };
 
   return (
-    <Exercicio titulo="🎤 Fale em inglês" instrucao={suporta ? "Ouça o modelo, toque em Falar e diga a frase. O site mostra o que entendeu e as palavras que faltaram." : "Ouça o modelo e repita em voz alta. Grave para comparar com o modelo. (O reconhecimento de fala funciona no Google Chrome e no Android.)"}>
+    <Exercicio titulo={`🎤 Fale em ${L.nome}`} instrucao={suporta ? "Ouça o modelo, toque em Falar e diga a frase. O site mostra o que entendeu e as palavras que faltaram." : "Ouça o modelo e repita em voz alta. Grave para comparar com o modelo. (O reconhecimento de fala funciona no Google Chrome e no Android.)"}>
       {a.frases.map((f, i) => {
         const r = res[i];
         return (
           <div key={i} className="flex flex-col gap-3 rounded-2xl bg-white p-4">
-            <p lang="en" className="font-display text-[18px] font-bold">{f.en}</p>
+            <p lang={L.lang} className="font-display text-[18px] font-bold">{f.en}</p>
             <p className="-mt-2 text-[14px] text-muted">{f.pt}</p>
             <div className="flex flex-wrap gap-2">
               <BotaoOuvir voz={voz} id={`falar-${i}`} texto={f.en} rotulo="Ouvir o modelo" />
@@ -561,6 +582,7 @@ function Falar({ a, voz }: { a: Extract<Atividade, { tipo: "falar" }>; voz: Voz 
 }
 
 function Roleplay({ a, voz }: { a: Extract<Atividade, { tipo: "roleplay" }>; voz: Voz }) {
+  const L = useIdioma();
   const [i, setI] = useState(-1);
   const [ver, setVer] = useState(false);
   const g = useGravador();
@@ -584,7 +606,7 @@ function Roleplay({ a, voz }: { a: Extract<Atividade, { tipo: "roleplay" }>; voz
         <div className="flex flex-col gap-3">
           <span className="text-[13px] font-semibold text-muted">Fala {i + 1} de {a.turnos.length}</span>
           <div className="flex items-start justify-between gap-3 rounded-2xl bg-navy p-4 text-white">
-            <p lang="en" className="font-display text-[19px] leading-snug font-bold">{turno.outro}</p>
+            <p lang={L.lang} className="font-display text-[19px] leading-snug font-bold">{turno.outro}</p>
             <BotaoOuvir voz={voz} id={`rp-${i}`} texto={turno.outro} rotulo="" claro />
           </div>
           <div className="flex flex-wrap gap-2">
@@ -600,7 +622,7 @@ function Roleplay({ a, voz }: { a: Extract<Atividade, { tipo: "roleplay" }>; voz
           {ver && (
             <div className="flex flex-col gap-3 rounded-2xl border border-[#cfe0ff] bg-[#f2f7ff] p-4">
               <div className="flex items-start justify-between gap-3">
-                <p lang="en" className="text-[17px] leading-relaxed"><ComLacunas texto={turno.modelo} /></p>
+                <p lang={L.lang} className="text-[17px] leading-relaxed"><ComLacunas texto={turno.modelo} /></p>
                 <BotaoOuvir voz={voz} id={`rp-m-${i}`} texto={turno.modelo.split(" / ")[0]} rotulo="" claro />
               </div>
               <button type="button" onClick={() => ir(i + 1)} className={`${btnPrim} self-start`}>{i + 1 < a.turnos.length ? "Próxima fala →" : "Terminar"}</button>
@@ -620,6 +642,7 @@ function Roleplay({ a, voz }: { a: Extract<Atividade, { tipo: "roleplay" }>; voz
 /* =================================================================== quiz final */
 
 function Quiz({ aula, chave, notaAnterior, proxima, logado }: { aula: AulaIngles; chave: string; notaAnterior?: number; proxima?: { href: string; titulo: string }; logado: boolean }) {
+  const L = useIdioma();
   const [esc, setEsc] = useState<Record<number, number>>({});
   const [fim, setFim] = useState<null | { nota: number; salvo: boolean }>(null);
   const [tentativa, setTentativa] = useState(0);
@@ -632,7 +655,7 @@ function Quiz({ aula, chave, notaAnterior, proxima, logado }: { aula: AulaIngles
     start(async () => {
       let salvo = false;
       if (logado) {
-        try { salvo = (await salvarQuizIngles(chave, nota)).ok; } catch { salvo = false; }
+        try { salvo = (await salvarQuizIdioma(L.produto, chave, nota)).ok; } catch { salvo = false; }
       }
       setFim({ nota, salvo });
       router.refresh();
@@ -655,7 +678,7 @@ function Quiz({ aula, chave, notaAnterior, proxima, logado }: { aula: AulaIngles
           </p>
           <div className="flex flex-wrap gap-2">
             {passou && proxima && <Link href={proxima.href} className={btnPrim}>Próxima aula: {proxima.titulo} →</Link>}
-            {passou && !proxima && <Link href="/english" className={btnPrim}>Voltar ao curso</Link>}
+            {passou && !proxima && <Link href={L.base} className={btnPrim}>Voltar ao curso</Link>}
             <button type="button" onClick={() => { setEsc({}); setFim(null); setTentativa(tentativa + 1); }} className={btnSec}>Refazer o quiz</button>
           </div>
         </div>
@@ -675,7 +698,15 @@ function Quiz({ aula, chave, notaAnterior, proxima, logado }: { aula: AulaIngles
 
 /* =================================================================== página da aula */
 
-export default function InglesAula({ aula, chave, audio, notaAnterior, proxima, logado }: { aula: AulaIngles; chave: string; audio?: string; notaAnterior?: number; proxima?: { href: string; titulo: string }; logado: boolean }) {
+type PropsAula = { aula: AulaIngles; chave: string; audio?: string; notaAnterior?: number; proxima?: { href: string; titulo: string }; logado: boolean };
+
+export default function InglesAula({ idioma, ...props }: PropsAula & { idioma?: IdiomaAula }) {
+  const padrao = useIdioma();
+  return <IdiomaCtx.Provider value={idioma ?? padrao}><Aula {...props} /></IdiomaCtx.Provider>;
+}
+
+function Aula({ aula, chave, audio, notaAnterior, proxima, logado }: PropsAula) {
+  const L = useIdioma();
   const voz = useVoz();
   const comp = aula.atividades.find((x) => x.tipo === "compreensao");
   const pratica = aula.atividades.filter((x) => x.tipo !== "compreensao");
@@ -700,7 +731,7 @@ export default function InglesAula({ aula, chave, audio, notaAnterior, proxima, 
           {aula.vocabulario.map((v) => (
             <li key={v.en} className="flex items-center justify-between gap-3 rounded-2xl border border-line p-3 pl-4">
               <span className="flex flex-col">
-                <strong lang="en" className="text-[16px]">{v.en}</strong>
+                <strong lang={L.lang} className="text-[16px]">{v.en}</strong>
                 <span className="text-[14px] text-muted">{v.pt}</span>
               </span>
               <BotaoOuvir voz={voz} id={`voc-${v.en}`} texto={v.en.split(" (")[0].replace(" / ", ", ")} rotulo="" />
@@ -712,7 +743,7 @@ export default function InglesAula({ aula, chave, audio, notaAnterior, proxima, 
           {aula.expressoes.map((e) => (
             <li key={e.en} className="flex items-start justify-between gap-3 rounded-2xl bg-soft p-4">
               <span className="flex flex-col gap-0.5">
-                <strong lang="en" className="font-display text-[17px]">{e.en}</strong>
+                <strong lang={L.lang} className="font-display text-[17px]">{e.en}</strong>
                 <span className="text-[14px] text-ink-2">{e.pt}</span>
                 {e.uso && <span className="text-[13px] text-muted">{e.uso}</span>}
               </span>

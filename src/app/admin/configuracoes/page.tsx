@@ -22,7 +22,7 @@ export default async function ConfiguracoesPage() {
           chave="crew_select_aberto"
           ligado={cfg.crew_select_aberto}
           titulo="Cursos liberados para todos, sem pagamento"
-          descricao="Ligado: todo cadastrado acessa o Head Hunter e o Flight Attendant English de graça. Desligado: só quem comprou (ou quem você liberar na página do aluno) acessa; os demais veem a página de venda."
+          descricao="Ligado: todo cadastrado acessa o Head Hunter, o Flight Attendant English e o Flight Attendant Spanish de graça. Desligado: só quem comprou (ou quem você liberar na página do aluno) acessa; os demais veem a página de venda."
         />
       </Card>
       <Card>

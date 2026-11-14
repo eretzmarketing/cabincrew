@@ -5,6 +5,7 @@ import { Card, Titulo } from "@/components/admin-ui";
 import { AdicionarAlunoForm } from "@/components/PagamentosForms";
 import { FORMAS, dataHoraBR } from "@/lib/compras";
 import { getUser } from "@/lib/supabase/server";
+import { nomeCurso } from "@/lib/cursos";
 
 export const metadata: Metadata = { title: "Adicionar aluno a um curso" };
 export const dynamic = "force-dynamic";
@@ -42,7 +43,7 @@ export default async function AdicionarAlunoPage({ searchParams }: { searchParam
                       <tr key={`${p.email}-${p.produto}`} className="border-b border-[#eceef3] last:border-0">
                         <td className="p-3 font-semibold">{p.nome ?? "—"}</td>
                         <td className="p-3">{p.email}</td>
-                        <td className="p-3">{p.produto === "english" ? "Flight Attendant English" : "Head Hunter"}</td>
+                        <td className="p-3">{nomeCurso(p.produto)}</td>
                         <td className="p-3">{p.motivo?.replace(" (liberado pelo administrador)", "") ?? "—"}</td>
                         <td className="p-3 whitespace-nowrap">{dataHoraBR(p.criado_em)}</td>
                         <td className="p-3 text-right"><form action={cancelarAcessoPendente}><input type="hidden" name="email" value={p.email} /><input type="hidden" name="produto" value={p.produto} /><button className="min-h-10 cursor-pointer text-[14px] font-semibold text-brand-deep underline underline-offset-4">Cancelar</button></form></td>

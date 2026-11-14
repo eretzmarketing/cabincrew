@@ -16,6 +16,8 @@ import { emitirCertificadoAdmin } from "@/app/certificados-actions";
 import { alterarAcesso } from "@/app/pagamentos-actions";
 import { CURSOS_CERT } from "@/lib/certificados";
 import { STATUS_COMPRA, dataHoraBR, dinheiro, fimArrependimento, type Compra } from "@/lib/compras";
+import { CURSOS } from "@/lib/cursos";
+import { TODAS_AULAS_ESPANHOL } from "@/lib/espanhol-a-bordo";
 
 export const metadata: Metadata = { title: "Aluno · Head Hunter" };
 export const dynamic = "force-dynamic";
@@ -24,7 +26,7 @@ export default async function AlunoPage({ params }: { params: Promise<{ id: stri
   const { id } = await params;
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
   const { supabase } = await getUser();
-  const [{ data: linha }, { dados, dataMeta, jornada }, { data: recentes }, { data: comprasAluno }, { data: acessosAluno }, { data: certsAluno }, { data: aceitesAluno }] = await Promise.all([
+  const [{ data: linha }, { dados, dataMeta, jornada }, { data: recentes }, { data: comprasAluno }, { data: acessosAluno }, { data: certsAluno }, { data: aceitesAluno }, { count: espanholFeitas }] = await Promise.all([
     supabase.rpc("admin_hh_alunos", { p_busca: "", p_id: id }),
     carregarJornada(supabase, id),
     supabase.from("tentativas").select("nota, iniciada_em, finalizada_em, saidas_aba, simulados(titulo, origem)").eq("user_id", id).order("iniciada_em", { ascending: false }).limit(15),
@@ -32,6 +34,7 @@ export default async function AlunoPage({ params }: { params: Promise<{ id: stri
     supabase.from("acessos").select("*").eq("user_id", id),
     supabase.from("certificados").select("codigo, curso, concluido_em, revogado").eq("user_id", id),
     supabase.from("aceites").select("contexto, versao, produto, ip, aceito_em").eq("user_id", id).order("aceito_em", { ascending: false }).limit(20),
+    supabase.from("espanhol_progresso").select("aula", { count: "exact", head: true }).eq("user_id", id).eq("concluida", true),
   ]);
   const l = ((linha ?? []) as LinhaAluno[])[0];
   if (!l) notFound();
@@ -129,6 +132,7 @@ export default async function AlunoPage({ params }: { params: Promise<{ id: stri
             <ul className="flex flex-col gap-1.5 text-[15px]">
               <li>Aulas concluídas: <strong>{l.aulas}</strong></li>
               <li>Flight Attendant English: <strong>{l.ingles}/{TOTAL_INGLES}</strong> aulas</li>
+              <li>Flight Attendant Spanish: <strong>{espanholFeitas ?? 0}/{TODAS_AULAS_ESPANHOL.length}</strong> aulas</li>
               <li>Perfil comportamental: <strong>{l.opq}</strong> sessões{dados.opq[0] && <> · última {dados.opq[0].perfil.incoerentes.length ? `com ${dados.opq[0].perfil.incoerentes.length} incoerência(s)` : "coerente"}</>}</li>
               <li>Vídeo de apresentação: <strong>{dados.videos.length}</strong> gravações{l.melhor_video !== null && <> · melhor {l.melhor_video}%</>}</li>
             </ul>
@@ -153,7 +157,7 @@ export default async function AlunoPage({ params }: { params: Promise<{ id: stri
 
           <Card>
             <h2 className="font-display text-xl font-extrabold">Acesso aos cursos</h2>
-            {([["head-hunter", "Head Hunter"], ["english", "Flight Attendant English"]] as const).map(([curso, rotulo]) => {
+            {CURSOS.map(({ slug: curso, nome: rotulo }) => {
               const acesso = ((acessosAluno ?? []) as { produto: string; status: string; liberado_em: string; encerrado_em: string | null; concluido_em: string | null; expira_em: string | null; motivo: string | null }[]).find((x) => x.produto === curso);
               const ativo = acesso?.status === "ativo" && (!acesso.expira_em || Date.parse(acesso.expira_em) > Date.parse(new Date().toISOString()));
               return (
@@ -192,7 +196,7 @@ export default async function AlunoPage({ params }: { params: Promise<{ id: stri
 
           <Card>
             <h2 className="font-display text-xl font-extrabold">Certificados</h2>
-            {(["head-hunter", "english"] as const).map((curso) => {
+            {CURSOS.map(({ slug: curso }) => {
               const cert = ((certsAluno ?? []) as { codigo: string; curso: string; concluido_em: string; revogado: boolean }[]).find((x) => x.curso === curso && !x.revogado);
               return (
                 <div key={curso} className="flex flex-wrap items-center justify-between gap-2 border-t border-line pt-3 first-of-type:border-0 first-of-type:pt-0">

@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { NOTA_MINIMA, TODAS_AULAS, chaveAula, chaveDoArquivo } from "@/lib/ingles-a-bordo";
 import { audiosGerados } from "@/lib/ingles-audios";
 import { urlMidia } from "@/lib/midia-comum";
+import type { CursoIdioma } from "@/lib/cursos-idioma";
 
 export type ProgressoIngles = Record<string, { nota: number; concluida: boolean }>;
 
@@ -36,3 +37,24 @@ export function aulaLiberada(chave: string, progresso: ProgressoIngles, livre: b
 }
 
 export { NOTA_MINIMA };
+
+/* ---------- qualquer curso de idioma (English ou Spanish) ---------- */
+
+export async function carregarIdioma(c: CursoIdioma, supabase: SupabaseClient, userId: string) {
+  if (c.produto === "english") return carregarIngles(supabase, userId);
+  const [pr, gerados] = await Promise.all([
+    supabase.from(c.tabela).select("aula, nota, concluida").eq("user_id", userId),
+    audiosGerados(c.pastaAudios),
+  ]);
+  const progresso: ProgressoIngles = {};
+  for (const p of (pr.data ?? []) as { aula: string; nota: number; concluida: boolean }[]) progresso[p.aula] = { nota: p.nota, concluida: p.concluida };
+  return { audios: gerados, progresso, comProgresso: !pr.error };
+}
+
+/** Uma aula abre quando a anterior (na ordem do curso) foi concluída com nota mínima. */
+export function aulaLiberadaEm(c: CursoIdioma, chave: string, progresso: ProgressoIngles, livre: boolean) {
+  if (livre) return true;
+  const i = c.todas.findIndex((a) => chaveAula(a) === chave);
+  if (i <= 0) return true;
+  return !!progresso[chaveAula(c.todas[i - 1])]?.concluida;
+}

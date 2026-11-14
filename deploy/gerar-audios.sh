@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 # =====================================================================
-# Cabin Crew — gera os áudios do Inglês a bordo no ElevenLabs
+# Cabin Crew — gera os áudios dos cursos de idioma no ElevenLabs
 #
 # No console da Hostinger (como root), em uma linha:
 #   su - cabincrew -c "bash ~/htdocs/cabincrew.com.br/deploy/gerar-audios.sh"
 #
-# Opções (depois do .sh):  --custo   --modulo 3   --aula 3.2   --vozes
+# Opções (depois do .sh):  --curso spanish   --custo   --modulo 3   --aula 3.2   --vozes
+# (sem --curso: Flight Attendant English)
 # A chave da API é pedida sem aparecer na tela e não fica salva em lugar nenhum.
 # =====================================================================
 set -euo pipefail

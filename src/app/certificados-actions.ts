@@ -4,9 +4,10 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { Campo } from "@/lib/certificados";
 import { getUser } from "@/lib/supabase/server";
+import { SLUGS_CURSOS } from "@/lib/cursos";
 
 type Estado = { ok?: boolean; msg?: string; erro?: string };
-const CURSOS = ["head-hunter", "english"];
+const CURSOS = SLUGS_CURSOS;
 
 async function admin() {
   const ctx = await getUser();

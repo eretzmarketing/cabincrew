@@ -1,9 +1,10 @@
-/** Monta a lista lateral (módulos e aulas) do player de curso: Head Hunter e Flight Attendant English. */
+/** Monta a lista lateral (módulos e aulas) do player de curso: Head Hunter e cursos de idioma (English e Spanish). */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ItemCurso, SecaoCurso } from "@/components/CursoPlayer";
 import { numeroModulo, type Aula, type Modulo } from "@/lib/crew";
-import { MODULOS_INGLES, chaveAula } from "@/lib/ingles-a-bordo";
-import { aulaLiberada, type ProgressoIngles } from "@/lib/ingles-dados";
+import { chaveAula } from "@/lib/ingles-a-bordo";
+import { aulaLiberadaEm, type ProgressoIngles } from "@/lib/ingles-dados";
+import { INGLES, type CursoIdioma } from "@/lib/cursos-idioma";
 
 export type Navegacao = { secoes: SecaoCurso[]; ordem: ItemCurso[]; feitas: number; total: number; anterior?: ItemCurso; proxima?: ItemCurso };
 
@@ -61,19 +62,21 @@ export async function navegacaoHeadHunter(supabase: SupabaseClient, userId: stri
   return fechar(secoes);
 }
 
-export function navegacaoIngles(progresso: ProgressoIngles, livre: boolean, atual: { chave?: string; modulo?: number }): Navegacao {
-  const secoes: SecaoCurso[] = MODULOS_INGLES.filter((m) => m.aulas.length).map((m) => {
+export function navegacaoIdioma(c: CursoIdioma, progresso: ProgressoIngles, livre: boolean, atual: { chave?: string; modulo?: number }): Navegacao {
+  const secoes: SecaoCurso[] = c.modulos.filter((m) => m.aulas.length).map((m) => {
     const itens: ItemCurso[] = m.aulas.map((a) => {
       const k = chaveAula(a);
       return {
-        href: `/english/${m.numero}/${a.numero}`, titulo: `${k} · ${a.titulo}`, tipo: "audio", minutos: a.minutos,
-        feita: !!progresso[k]?.concluida, bloqueada: !aulaLiberada(k, progresso, livre), atual: k === atual.chave,
+        href: `${c.base}/${m.numero}/${a.numero}`, titulo: `${k} · ${a.titulo}`, tipo: "audio", minutos: a.minutos,
+        feita: !!progresso[k]?.concluida, bloqueada: !aulaLiberadaEm(c, k, progresso, livre), atual: k === atual.chave,
       };
     });
     return {
-      id: `i${m.numero}`, rotulo: `Módulo ${m.numero}`, titulo: m.titulo, href: `/english/${m.numero}`,
+      id: `${c.lang}${m.numero}`, rotulo: `Módulo ${m.numero}`, titulo: m.titulo, href: `${c.base}/${m.numero}`,
       atual: m.numero === atual.modulo || itens.some((i) => i.atual), itens,
     };
   });
   return fechar(secoes);
 }
+
+export const navegacaoIngles = (progresso: ProgressoIngles, livre: boolean, atual: { chave?: string; modulo?: number }) => navegacaoIdioma(INGLES, progresso, livre, atual);

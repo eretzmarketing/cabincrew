@@ -6,6 +6,7 @@ import EditorCertificado from "@/components/EditorCertificado";
 import { CAMPOS_PADRAO, CURSOS_CERT, dataExtenso, type Modelo } from "@/lib/certificados";
 import { SITE } from "@/lib/mercadopago";
 import { getUser } from "@/lib/supabase/server";
+import { ehCurso } from "@/lib/cursos";
 
 export const metadata: Metadata = { title: "Certificados" };
 export const dynamic = "force-dynamic";
@@ -14,7 +15,7 @@ type Cert = { codigo: string; user_id: string | null; curso: string; nome: strin
 
 export default async function CertificadosPage({ searchParams }: { searchParams: Promise<{ curso?: string }> }) {
   const { curso: c = "head-hunter" } = await searchParams;
-  const curso = c === "english" ? "english" : "head-hunter";
+  const curso = ehCurso(c) ? c : "head-hunter";
   const { supabase } = await getUser();
   const [{ data: mod, error }, { data: certs }] = await Promise.all([
     supabase.from("certificado_modelos").select("*").eq("curso", curso).maybeSingle(),

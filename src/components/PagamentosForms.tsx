@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { adicionarAoCurso, criarProduto, salvarConexaoMP, salvarProduto } from "@/app/pagamentos-actions";
+import { CURSOS as CURSOS_BASE } from "@/lib/cursos";
 
 const campo = "w-full rounded-xl border border-[#c9cedb] bg-white px-4 py-3 text-[15px] outline-none focus:border-navy";
 const btn = "inline-flex min-h-11 cursor-pointer items-center justify-center rounded-full bg-navy px-5 font-semibold text-white hover:bg-navy-deep disabled:opacity-50";
@@ -44,7 +45,7 @@ export type Plano = {
   destaque?: string | null; topicos?: string[] | null; ordem?: number; inclui?: string[] | null;
 };
 
-const CURSOS = [["head-hunter", "Head Hunter"], ["english", "Flight Attendant English"]] as const;
+const CURSOS = CURSOS_BASE.map((c) => [c.slug, c.nome] as const);
 
 /** Campos de um plano (usados para editar e para criar). */
 function CamposPlano({ p, id, base }: { p?: Plano; id: string; base: boolean }) {

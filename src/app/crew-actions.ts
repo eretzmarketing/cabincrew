@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { avisarAluno } from "@/lib/whatsapp";
 import { COMPANHIAS } from "@/lib/jornada";
-import { TODAS_AULAS, MODULOS_INGLES, chaveAula } from "@/lib/ingles-a-bordo";
+import { chaveAula } from "@/lib/ingles-a-bordo";
+import { CURSOS_IDIOMA, type ProdutoIdioma } from "@/lib/cursos-idioma";
 import { redirect } from "next/navigation";
 import { getUser } from "@/lib/supabase/server";
 import type { FormState } from "@/app/actions";
@@ -579,30 +580,35 @@ export async function renomearMidia(id: string, titulo: string) {
   revalidatePath("/admin/midia");
 }
 
-/* ---------- Flight Attendant English ---------- */
-export async function salvarQuizIngles(aula: string, nota: number): Promise<{ ok: boolean; concluida: boolean; melhor: number }> {
+/* ---------- Flight Attendant English e Spanish ---------- */
+export async function salvarQuizIdioma(produto: ProdutoIdioma, aula: string, nota: number): Promise<{ ok: boolean; concluida: boolean; melhor: number }> {
+  const c = CURSOS_IDIOMA[produto];
   const { supabase, user } = await getUser();
   const n = Math.max(0, Math.min(100, Math.round(Number(nota) || 0)));
-  if (!user || !/^\d{1,2}\.\d{1,2}$/.test(aula)) return { ok: false, concluida: false, melhor: n };
-  const { data: atual } = await supabase.from("ingles_progresso").select("nota").eq("user_id", user.id).eq("aula", aula).maybeSingle();
+  if (!c || !user || !/^\d{1,2}\.\d{1,2}$/.test(aula) || !c.todas.some((x) => chaveAula(x) === aula)) return { ok: false, concluida: false, melhor: n };
+  const { data: atual } = await supabase.from(c.tabela).select("nota").eq("user_id", user.id).eq("aula", aula).maybeSingle();
   const melhor = Math.max(n, atual?.nota ?? 0);
   const concluida = melhor >= 70;
   const { error } = await supabase
-    .from("ingles_progresso")
+    .from(c.tabela)
     .upsert({ user_id: user.id, aula, nota: melhor, concluida, updated_at: new Date().toISOString() }, { onConflict: "user_id,aula" });
-  revalidatePath("/english", "layout");
+  revalidatePath(c.base, "layout");
   if (!error && concluida) {
-    const { data: prog } = await supabase.from("ingles_progresso").select("aula").eq("user_id", user.id).eq("concluida", true);
+    const { data: prog } = await supabase.from(c.tabela).select("aula").eq("user_id", user.id).eq("concluida", true);
     const ok = new Set((prog ?? []).map((x) => x.aula as string));
-    const mod = MODULOS_INGLES.find((m) => m.aulas.some((x) => chaveAula(x) === aula));
-    if (mod && mod.aulas.every((x) => ok.has(chaveAula(x)))) avisarAluno(supabase, "ingles_modulo", { numero: mod.numero, modulo: mod.titulo }, String(mod.numero));
-    if (TODAS_AULAS.every((x) => ok.has(chaveAula(x)))) {
-      avisarAluno(supabase, "ingles_concluido");
+    const mod = c.modulos.find((m) => m.aulas.some((x) => chaveAula(x) === aula));
+    if (mod && mod.aulas.every((x) => ok.has(chaveAula(x)))) avisarAluno(supabase, c.eventoModulo, { numero: mod.numero, modulo: mod.titulo }, String(mod.numero));
+    if (c.todas.every((x) => ok.has(chaveAula(x)))) {
+      avisarAluno(supabase, c.eventoConcluido);
       // acesso comprado: ao concluir o curso começam os dias extras para revisar
-      await supabase.rpc("concluir_acesso", { p_produto: "english" });
+      await supabase.rpc("concluir_acesso", { p_produto: c.produto });
     }
   }
   return { ok: !error, concluida, melhor };
+}
+
+export async function salvarQuizIngles(aula: string, nota: number) {
+  return salvarQuizIdioma("english", aula, nota);
 }
 
 /* ---------- Perfil comportamental (OPQ) ---------- */

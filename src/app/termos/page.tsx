@@ -3,7 +3,7 @@ import Link from "next/link";
 import PaginaLegal from "@/components/PaginaLegal";
 import { EMPRESA } from "@/lib/legal";
 
-export const metadata: Metadata = { title: "Termos de Uso", description: "Regras de uso da plataforma Cabin Crew, dos cursos Head Hunter e Flight Attendant English e dos Simulados ANAC." };
+export const metadata: Metadata = { title: "Termos de Uso", description: "Regras de uso da plataforma Cabin Crew, dos cursos Head Hunter, Flight Attendant English e Flight Attendant Spanish e dos Simulados ANAC." };
 
 export default function TermosPage() {
   return (
@@ -26,6 +26,7 @@ export default function TermosPage() {
         <li><strong>Simulados ANAC:</strong> gratuitos para quem tem cadastro.</li>
         <li><strong>Head Hunter:</strong> curso de preparação para os processos seletivos de comissário(a) de voo das companhias aéreas (jornada personalizada, aulas, simulados, dinâmicas, perfil comportamental, entrevista em inglês e vídeo de apresentação).</li>
         <li><strong>Flight Attendant English:</strong> curso de inglês para aviação, vendido separadamente.</li>
+        <li><strong>Flight Attendant Spanish:</strong> curso de espanhol para aviação, vendido separadamente.</li>
         <li>Planos combinados (combo) e promoções podem ser oferecidos na página <Link href="/planos">Planos</Link>. Cada curso pode ser comprado sozinho: a compra de um nunca é condição para a compra do outro.</li>
       </ul>
 

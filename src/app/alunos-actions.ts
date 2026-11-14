@@ -2,11 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 import { MODULOS_INGLES, chaveAula } from "@/lib/ingles-a-bordo";
+import { MODULOS_ESPANHOL } from "@/lib/espanhol-a-bordo";
+import { SLUGS_CURSOS } from "@/lib/cursos";
 import { getUser } from "@/lib/supabase/server";
 
 type Estado = { ok?: boolean; msg?: string; erro?: string };
 const UUID = /^[0-9a-f-]{36}$/i;
-const CURSOS = ["head-hunter", "english"] as const;
+const CURSOS = SLUGS_CURSOS;
 
 async function admin() {
   const ctx = await getUser();
@@ -24,18 +26,20 @@ export type DadosGestao = {
   acessos: { produto: string; status: string; expira_em: string | null; concluido_em: string | null }[];
   hh: { id: number; titulo: string; feitas: number; total: number }[];
   en: { id: number; titulo: string; feitas: number; total: number }[];
+  es: { id: number; titulo: string; feitas: number; total: number }[];
 };
 
 /** Dados do painel "Editar aluno": cursos e progresso por módulo. */
 export async function dadosGestaoAluno(id: string): Promise<DadosGestao | null> {
   const { supabase } = await admin();
   if (!UUID.test(id)) return null;
-  const [{ data: acs }, { data: mods }, { data: auls }, { data: prog }, { data: ing }] = await Promise.all([
+  const [{ data: acs }, { data: mods }, { data: auls }, { data: prog }, { data: ing }, { data: esp }] = await Promise.all([
     supabase.from("acessos").select("produto, status, expira_em, concluido_em").eq("user_id", id),
     supabase.from("modulos").select("id, titulo, ordem").order("ordem"),
     supabase.from("aulas").select("id, modulo_id"),
     supabase.from("progresso").select("aula_id").eq("user_id", id),
     supabase.from("ingles_progresso").select("aula, concluida").eq("user_id", id),
+    supabase.from("espanhol_progresso").select("aula, concluida").eq("user_id", id),
   ]);
   const feitas = new Set(((prog ?? []) as { aula_id: string }[]).map((p) => p.aula_id));
   const porModulo = new Map<number, { total: number; feitas: number }>();
@@ -44,17 +48,19 @@ export async function dadosGestaoAluno(id: string): Promise<DadosGestao | null> 
     m.total++; if (feitas.has(a.id)) m.feitas++;
     porModulo.set(a.modulo_id, m);
   }
+  const espOk = new Set(((esp ?? []) as { aula: string; concluida: boolean }[]).filter((x) => x.concluida).map((x) => x.aula));
   const ingOk = new Set(((ing ?? []) as { aula: string; concluida: boolean }[]).filter((x) => x.concluida).map((x) => x.aula));
   return {
     acessos: (acs ?? []) as DadosGestao["acessos"],
     hh: ((mods ?? []) as { id: number; titulo: string }[]).map((m) => ({ id: m.id, titulo: m.titulo, ...(porModulo.get(m.id) ?? { total: 0, feitas: 0 }) })),
     en: MODULOS_INGLES.map((m) => ({ id: m.numero, titulo: `${m.numero}. ${m.titulo}`, total: m.aulas.length, feitas: m.aulas.filter((a) => ingOk.has(chaveAula(a))).length })),
+    es: MODULOS_ESPANHOL.map((m) => ({ id: m.numero, titulo: `${m.numero}. ${m.titulo}`, total: m.aulas.length, feitas: m.aulas.filter((a) => espOk.has(chaveAula(a))).length })),
   };
 }
 
 export async function resetarModuloAluno(id: string, curso: string, modulo: number): Promise<Estado> {
   const { supabase } = await admin();
-  if (!UUID.test(id) || !CURSOS.includes(curso as (typeof CURSOS)[number]) || !Number.isInteger(modulo)) return { erro: "Dados inválidos." };
+  if (!UUID.test(id) || !CURSOS.includes(curso) || !Number.isInteger(modulo)) return { erro: "Dados inválidos." };
   const { data, error } = await supabase.rpc("admin_resetar_modulo", { p_user: id, p_curso: curso, p_modulo: modulo });
   if (error) return { erro: error.message.includes("admin_resetar_modulo") ? "Rode o SQL 0048_gestao_alunos.sql no Supabase." : "Não foi possível resetar." };
   revalidar(id);
@@ -64,7 +70,7 @@ export async function resetarModuloAluno(id: string, curso: string, modulo: numb
 /** Suspende (pausa) ou reativa o acesso a um curso; remover encerra de vez. */
 export async function alterarCursoAluno(id: string, curso: string, acao: "suspender" | "reativar" | "remover"): Promise<Estado> {
   const { supabase } = await admin();
-  if (!UUID.test(id) || !CURSOS.includes(curso as (typeof CURSOS)[number])) return { erro: "Dados inválidos." };
+  if (!UUID.test(id) || !CURSOS.includes(curso)) return { erro: "Dados inválidos." };
   const agora = new Date().toISOString();
   const dados = acao === "suspender" ? { status: "suspenso", motivo: "suspenso pelo administrador", encerrado_em: agora }
     : acao === "reativar" ? { status: "ativo", motivo: "reativado pelo administrador", encerrado_em: null }

@@ -3,10 +3,10 @@ import { getConfig } from "@/lib/config";
 import { exigirLogin } from "@/lib/supabase/server";
 
 export type Acesso = { status: "ativo" | "concluido" | "revogado"; liberado_em: string; encerrado_em: string | null; concluido_em?: string | null; expira_em?: string | null } | null;
-export type Curso = "head-hunter" | "english";
+export type Curso = "head-hunter" | "english" | "spanish";
 
 /**
- * Curso pago (Head Hunter ou Flight Attendant English): exige login, o acesso ao curso (compra aprovada,
+ * Curso pago (Head Hunter, Flight Attendant English ou Spanish): exige login, o acesso ao curso (compra aprovada,
  * liberação do admin ou "cursos liberados para todos") e a foto de perfil. Administradores sempre entram.
  */
 export async function exigirCurso(curso: Curso, destino: string) {

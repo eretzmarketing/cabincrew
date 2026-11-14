@@ -1,9 +1,10 @@
 /**
- * Gera os MP3 dos diálogos do Inglês a bordo com a API do ElevenLabs (Text to Dialogue, modelo Eleven v4)
- * e grava em <pasta de mídia>/audios/ingles/<aula>-<versão>.mp3. O site usa esses arquivos sozinho.
+ * Gera os MP3 dos diálogos dos cursos de idioma com a API do ElevenLabs (Text to Dialogue, modelo Eleven v4)
+ * e grava em <pasta de mídia>/audios/ingles/<aula>-<versão>.mp3 (espanhol: audios/espanhol). O site usa esses arquivos sozinho.
  *
  * Rode pelo deploy/gerar-audios.sh (ele pede a chave sem mostrar na tela).
- * Opções:  --modulo 3      só um módulo
+ * Opções:  --curso spanish  curso de espanhol (sem a opção: inglês)
+ *          --modulo 3      só um módulo
  *          --aula 3.2      só uma aula
  *          --custo         só mostra quantos caracteres seriam usados
  *          --vozes         escolher as vozes de novo
@@ -15,19 +16,25 @@ import { mkdir, readFile, readdir, rename, unlink, writeFile } from "node:fs/pro
 import os from "node:os";
 import path from "node:path";
 import readline from "node:readline";
-import { ELENCO, TODAS_AULAS, chaveAula, type AulaIngles } from "@/lib/ingles-a-bordo";
+import { chaveAula, type AulaIngles } from "@/lib/ingles-a-bordo";
+import { CURSOS_IDIOMA, type ProdutoIdioma } from "@/lib/cursos-idioma";
 
 const API = process.env.ELEVEN_API_BASE || "https://api.elevenlabs.io";
 const MODELO = process.env.ELEVEN_MODEL || "eleven_v4";
 const CHAVE = process.env.ELEVENLABS_API_KEY || "";
-const PASTA = path.join(process.env.MIDIA_DIR || path.join(os.homedir(), "midia"), "audios", "ingles");
-const ARQ_VOZES = path.join(os.homedir(), ".cabincrew-vozes-ingles.json");
-
-/** Vozes que você já escolheu no ElevenLabs (nome da voz na sua conta). */
-const SUGESTAO: Record<string, string> = { Ana: "Misa", Grace: "Ana Lu", Tom: "Adam", Leila: "Maya", Marco: "John" };
-
 const args = process.argv.slice(2);
 const opc = (n: string) => { const i = args.indexOf(n); return i >= 0 ? args[i + 1] : undefined; };
+
+const CURSO = CURSOS_IDIOMA[(opc("--curso") ?? "english") as ProdutoIdioma];
+if (!CURSO) { console.error("Curso inválido. Use --curso english ou --curso spanish."); process.exit(1); }
+const ESPANHOL = CURSO.lang === "es";
+const ELENCO = CURSO.elenco;
+const TODAS_AULAS = CURSO.todas;
+const PASTA = path.join(process.env.MIDIA_DIR || path.join(os.homedir(), "midia"), CURSO.pastaAudios);
+const ARQ_VOZES = path.join(os.homedir(), ESPANHOL ? ".cabincrew-vozes-espanhol.json" : ".cabincrew-vozes-ingles.json");
+
+/** Vozes que você já escolheu no ElevenLabs (nome da voz na sua conta). */
+const SUGESTAO: Record<string, string> = ESPANHOL ? {} : { Ana: "Misa", Grace: "Ana Lu", Tom: "Adam", Leila: "Maya", Marco: "John" };
 const SO_MODULO = opc("--modulo");
 const SO_AULA = opc("--aula");
 const SO_CUSTO = args.includes("--custo");
@@ -40,8 +47,26 @@ const DEZ = ["", "", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "
 const ate99 = (n: number) => (n < 20 ? UNID[n] : DEZ[Math.floor(n / 10)] + (n % 10 ? "-" + UNID[n % 10] : ""));
 const digitos = (s: string) => s.split("").map((d) => UNID[Number(d)]).join(" ");
 
+/* números em espanhol */
+const UNID_ES = ["cero", "uno", "dos", "tres", "cuatro", "cinco", "seis", "siete", "ocho", "nueve", "diez", "once", "doce", "trece", "catorce", "quince", "dieciséis", "diecisiete", "dieciocho", "diecinueve",
+  "veinte", "veintiuno", "veintidós", "veintitrés", "veinticuatro", "veinticinco", "veintiséis", "veintisiete", "veintiocho", "veintinueve"];
+const DEZ_ES = ["", "", "", "treinta", "cuarenta", "cincuenta", "sesenta", "setenta", "ochenta", "noventa"];
+const ate99Es = (n: number) => (n < 30 ? UNID_ES[n] : DEZ_ES[Math.floor(n / 10)] + (n % 10 ? " y " + UNID_ES[n % 10] : ""));
+const digitosEs = (s: string) => s.split("").map((d) => UNID_ES[Number(d)]).join(" ");
+
+/** Espanhol: assentos (12A → doce A), voos (vuelo 2045 → dos cero cuatro cinco) e horários (14:30 → catorce y treinta). */
+function paraFalaEs(t: string) {
+  return t
+    .replace(/\[|\]/g, "")
+    .replace(/\b(\d{1,2}):(\d{2})\b/g, (_, h, m) => `${ate99Es(Number(h))}${m === "00" ? " en punto" : ` y ${ate99Es(Number(m))}`}`)
+    .replace(/\bvuelo (\d{3,4})\b/gi, (_, n) => `vuelo ${digitosEs(n)}`)
+    .replace(/\b(\d{1,2})([A-KL])\b/g, (_, n, l) => `${ate99Es(Number(n))} ${l}`)
+    .replace(/\bfila (\d{1,2})\b/gi, (_, n) => `fila ${ate99Es(Number(n))}`);
+}
+
 /** Escreve por extenso o que a voz poderia ler errado: assentos, portas, voos e horários. */
 export function paraFala(t: string) {
+  if (ESPANHOL) return paraFalaEs(t);
   return t
     .replace(/\[|\]/g, "")
     .replace(/\b(\d{1,2}):(\d{2})\b/g, (_, h, m) => `${ate99(Number(h))} ${m === "00" ? "o'clock" : Number(m) < 10 ? "oh " + UNID[Number(m)] : ate99(Number(m))}`)
@@ -125,7 +150,7 @@ async function gerar(a: AulaIngles, vozes: Record<string, string>, destino: stri
   const inputs = a.dialogo.falas.map((f) => ({ text: paraFala(f.en), voice_id: vozes[f.quem] }));
   const r = await api(`/v1/text-to-dialogue?output_format=mp3_44100_128`, {
     method: "POST",
-    body: JSON.stringify({ inputs, model_id: MODELO, language_code: "en" }),
+    body: JSON.stringify({ inputs, model_id: MODELO, language_code: CURSO.lang }),
   });
   const buf = Buffer.from(await r.arrayBuffer());
   if (buf.length < 2000) throw new Error("o áudio veio vazio");
@@ -138,7 +163,7 @@ async function main() {
   const aulas = TODAS_AULAS.filter((a) => (!SO_MODULO || String(a.modulo) === SO_MODULO) && (!SO_AULA || chaveAula(a) === SO_AULA));
   if (!aulas.length) { console.log("Nenhuma aula encontrada com esse filtro."); return; }
   const caracteres = aulas.reduce((s, a) => s + a.dialogo.falas.reduce((x, f) => x + paraFala(f.en).length, 0), 0);
-  console.log(`${aulas.length} aula(s), ${caracteres.toLocaleString("pt-BR")} caracteres no total (modelo ${MODELO}).`);
+  console.log(`${CURSO.nome}: ${aulas.length} aula(s), ${caracteres.toLocaleString("pt-BR")} caracteres no total (modelo ${MODELO}).`);
   if (SO_CUSTO) return;
   if (!CHAVE) throw new Error("Falta a chave da API. Rode pelo deploy/gerar-audios.sh.");
 

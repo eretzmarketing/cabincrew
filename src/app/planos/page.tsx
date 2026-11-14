@@ -8,7 +8,7 @@ import { getUser } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
   title: "Planos",
-  description: "Simulados ANAC grátis, Head Hunter (preparação para a seleção de comissário de voo), Flight Attendant English e o combo dos dois cursos.",
+  description: "Simulados ANAC grátis, Head Hunter (preparação para a seleção de comissário de voo), Flight Attendant English, Flight Attendant Spanish e os combos.",
 };
 export const dynamic = "force-dynamic";
 
@@ -54,7 +54,7 @@ export default async function PlanosPage({ searchParams }: { searchParams: Promi
         <div className="mx-auto flex max-w-[1200px] flex-col items-center gap-4 px-6 pt-14 pb-28 text-center">
           <span className="rounded-full border border-white/25 bg-white/10 px-4 py-1.5 text-sm font-semibold">Planos Cabin Crew</span>
           <h1 className="max-w-[760px] font-display text-[34px] leading-tight font-extrabold md:text-[48px]">Escolha como você vai chegar à <span className="text-[#ff5a7a]">aprovação</span></h1>
-          <p className="max-w-[640px] text-[17px] leading-relaxed text-[#d7dbe6]">Comece grátis pelos simulados da ANAC. Quando quiser a preparação completa para a seleção e o inglês de aviação, é só escolher o seu plano.</p>
+          <p className="max-w-[640px] text-[17px] leading-relaxed text-[#d7dbe6]">Comece grátis pelos simulados da ANAC. Quando quiser a preparação completa para a seleção e o inglês e o espanhol da aviação, é só escolher o seu plano.</p>
         </div>
       </section>
 
@@ -67,7 +67,7 @@ export default async function PlanosPage({ searchParams }: { searchParams: Promi
           )}
         </div>
       )}
-      <div className={`mx-auto ${codigo ? "" : "-mt-20"} grid max-w-[1240px] items-stretch gap-5 px-4 pb-16 sm:grid-cols-2 xl:grid-cols-4 md:px-6`}>
+      <div className={`mx-auto ${codigo ? "" : "-mt-20"} grid max-w-[1200px] items-stretch gap-5 gap-y-8 px-4 pb-16 sm:grid-cols-2 lg:grid-cols-3 md:px-6`}>
         {/* Simulados ANAC: sempre grátis */}
         <article id="anac" className="flex scroll-mt-24 flex-col gap-5 rounded-[24px] border border-line bg-white p-6 shadow-[0_18px_40px_-30px_rgba(35,42,61,.5)]">
           <div className="flex flex-col gap-1">

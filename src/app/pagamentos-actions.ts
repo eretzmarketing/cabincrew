@@ -10,6 +10,7 @@ import { SITE } from "@/lib/mercadopago";
 import { enviarWhatsapp, preencher } from "@/lib/whatsapp";
 import { ARQUIVO_MP, configMP, hashChave, testarTokenMP } from "@/lib/mercadopago";
 import { getUser } from "@/lib/supabase/server";
+import { CURSOS, SLUGS_CURSOS, ehCurso } from "@/lib/cursos";
 
 type Estado = { ok?: boolean; msg?: string; erro?: string };
 
@@ -43,8 +44,8 @@ export async function salvarConexaoMP(_: Estado, form: FormData): Promise<Estado
   return { ok: true, msg: `Conectado à conta ${teste.conta} ✓${accessToken.startsWith("TEST-") ? " (modo de teste: nenhuma cobrança é real)" : ""}` };
 }
 
-const CURSOS_BASE = ["head-hunter", "english"];
-const ENDERECO: Record<string, string> = { "head-hunter": "/head-hunter", english: "/english" };
+const CURSOS_BASE = SLUGS_CURSOS;
+const ENDERECO: Record<string, string> = Object.fromEntries(CURSOS.map((c) => [c.slug, c.endereco]));
 
 /** Lê e confere os campos comuns de um plano. */
 function lerPlano(form: FormData) {
@@ -125,10 +126,11 @@ export async function alterarAcesso(form: FormData) {
   const { supabase } = await admin();
   const userId = String(form.get("user_id") ?? "");
   const acao = String(form.get("acao") ?? "");
-  const produto = String(form.get("produto") ?? "head-hunter") === "english" ? "english" : "head-hunter";
+  const pedido = String(form.get("produto") ?? "head-hunter");
+  const produto = ehCurso(pedido) ? pedido : "head-hunter";
   if (!/^[0-9a-f-]{36}$/i.test(userId)) return;
   if (acao === "liberar") {
-    await supabase.from("acessos").upsert({ user_id: userId, produto: "head-hunter", status: "ativo", liberado_em: new Date().toISOString(), encerrado_em: null, concluido_em: null, expira_em: null, motivo: "liberado pelo administrador" });
+    await supabase.from("acessos").upsert({ user_id: userId, produto, status: "ativo", liberado_em: new Date().toISOString(), encerrado_em: null, concluido_em: null, expira_em: null, motivo: "liberado pelo administrador" });
   } else if (acao === "encerrar") {
     await supabase.from("acessos").update({ status: "revogado", encerrado_em: new Date().toISOString(), motivo: "encerrado pelo administrador" }).eq("user_id", userId).eq("produto", produto);
   }

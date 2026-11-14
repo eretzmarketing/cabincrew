@@ -1,0 +1,341 @@
+import type { AulaIngles } from "@/lib/ingles-a-bordo";
+
+/** Módulo 2 · Bienvenidos a bordo. Conteúdo original Cabin Crew. */
+export const MODULO_ES_2: AulaIngles[] = [
+  /* ------------------------------------------------------------------ 2.1 */
+  {
+    modulo: 2,
+    numero: 1,
+    titulo: "Recebendo os passageiros",
+    tituloEn: "Bienvenidos a bordo",
+    objetivo: "Cumprimentar passageiros na porta de acordo com o horário e indicar o caminho até o assento.",
+    foto: "/img/ingles/cena-07.jpg",
+    fotoAlt: "Comissária sorri e cumprimenta passageiros na porta do avião",
+    minutos: 15,
+    intro:
+      "Na porta, cada atendimento dura poucos segundos: cumprimentar, conferir o cartão de embarque e indicar o caminho. Com passageiros, use sempre \"usted\" (o senhor / a senhora) e os verbos na terceira pessoa: \"¿Me permite su tarjeta?\".",
+    dialogo: {
+      titulo: "En la puerta",
+      contexto: "Voo da tarde de São Paulo para a Cidade do México. Ana e Diego recebem os passageiros na porta 1 esquerda.",
+      personagens: ["Ana", "Ramírez", "Diego", "Valeria"],
+      falas: [
+        { quem: "Ana", en: "Buenas tardes, señor. Bienvenido a bordo.", pt: "Boa tarde, senhor. Bem-vindo a bordo." },
+        { quem: "Ramírez", en: "Buenas tardes. Tengo el asiento 23C.", pt: "Boa tarde. Tenho o assento 23C." },
+        { quem: "Ana", en: "¿Me permite su tarjeta de embarque, por favor?", pt: "O senhor me permite o seu cartão de embarque, por favor?" },
+        { quem: "Ramírez", en: "Claro, aquí tiene.", pt: "Claro, aqui está." },
+        { quem: "Ana", en: "Gracias, señor Ramírez. Siga por el pasillo de la derecha. Su asiento está en la mitad de la cabina.", pt: "Obrigada, senhor Ramírez. Siga pelo corredor da direita. Seu assento fica no meio da cabine." },
+        { quem: "Ramírez", en: "Muy amable, gracias.", pt: "Muito gentil, obrigado." },
+        { quem: "Diego", en: "Buenas tardes, señorita. Bienvenida a bordo.", pt: "Boa tarde, senhorita. Bem-vinda a bordo." },
+        { quem: "Valeria", en: "Hola. ¿Este es el vuelo a Ciudad de México?", pt: "Oi. Este é o voo para a Cidade do México?" },
+        { quem: "Diego", en: "Sí, señorita. Usted tiene el 8A, ventanilla. Siga derecho por este pasillo, a la izquierda.", pt: "Sim, senhorita. A senhora está no 8A, janela. Siga reto por este corredor, à esquerda." },
+        { quem: "Valeria", en: "Perfecto, gracias.", pt: "Perfeito, obrigada." },
+        { quem: "Diego", en: "De nada. ¡Que tenga un buen vuelo!", pt: "De nada. Tenha um bom voo!" },
+      ],
+    },
+    vocabulario: [
+      { en: "tarjeta de embarque", pt: "cartão de embarque" },
+      { en: "asiento", pt: "assento" },
+      { en: "ventanilla", pt: "janela (assento na janela)" },
+      { en: "pasillo", pt: "corredor (assento no corredor)" },
+      { en: "asiento del medio", pt: "assento do meio" },
+      { en: "a la derecha / a la izquierda", pt: "à direita / à esquerda" },
+      { en: "derecho / recto", pt: "reto, em frente" },
+      { en: "señor / señora / señorita", pt: "senhor / senhora / senhorita" },
+    ],
+    expressoes: [
+      { en: "Bienvenido a bordo.", pt: "Bem-vindo a bordo.", uso: "\"Bienvenida\" para mulher; \"Bienvenidos\" para grupo." },
+      { en: "¿Me permite su tarjeta de embarque?", pt: "O(a) senhor(a) me permite o cartão de embarque?", uso: "Forma educada de pedir o documento." },
+      { en: "Aquí tiene.", pt: "Aqui está.", uso: "Ao entregar algo." },
+      { en: "Siga derecho por este pasillo.", pt: "Siga reto por este corredor.", uso: "Para indicar o caminho. No México e na Espanha também se diz \"todo recto\"." },
+      { en: "¡Que tenga un buen vuelo!", pt: "Tenha um bom voo!", uso: "Despedida na porta, com \"usted\"." },
+    ],
+    dica: "Cumprimento por horário: até o meio-dia \"Buenos días\", à tarde \"Buenas tardes\" e depois que escurece \"Buenas noches\" (que serve para chegar e para se despedir). Cuidado: \"derecho\" é reto/em frente, e \"derecha\" é direita.",
+    atividades: [
+      {
+        tipo: "compreensao",
+        questoes: [
+          { pergunta: "¿Adónde va el vuelo?", opcoes: [{ texto: "A Ciudad de México", certa: true }, { texto: "A Buenos Aires" }, { texto: "A Madrid" }], explicacao: "Valeria pergunta: \"¿Este es el vuelo a Ciudad de México?\"" },
+          { pergunta: "¿Qué asiento tiene el señor Ramírez?", opcoes: [{ texto: "8A" }, { texto: "23C", certa: true }, { texto: "32C" }], explicacao: "\"Tengo el asiento 23C.\"" },
+          { pergunta: "¿Qué tipo de asiento tiene Valeria?", opcoes: [{ texto: "Pasillo" }, { texto: "Del medio" }, { texto: "Ventanilla", certa: true }], explicacao: "\"Usted tiene el 8A, ventanilla.\"" },
+        ],
+      },
+      { tipo: "ditado", frases: ["Bienvenido a bordo.", "¿Me permite su tarjeta de embarque?", "Su asiento está a la izquierda."] },
+      {
+        tipo: "ordenar",
+        instrucao: "Coloque o atendimento na porta na ordem certa.",
+        falas: ["Buenas noches, señora. Bienvenida a bordo.", "Buenas noches. Tengo el 14D.", "¿Me permite su tarjeta de embarque?", "Claro, aquí tiene.", "Gracias. Siga derecho, a la derecha."],
+      },
+      {
+        tipo: "ligar",
+        instrucao: "Ligue o espanhol ao português.",
+        pares: [
+          ["ventanilla", "assento na janela"],
+          ["derecho", "reto, em frente"],
+          ["derecha", "direita"],
+          ["tarjeta de embarque", "cartão de embarque"],
+          ["Aquí tiene.", "Aqui está."],
+        ],
+      },
+      {
+        tipo: "lacunas",
+        itens: [
+          { frase: "Buenas tardes, señora. ___ a bordo.", resposta: "Bienvenida" },
+          { frase: "¿Me ___ su tarjeta de embarque?", resposta: "permite" },
+          { frase: "Claro, aquí ___.", resposta: "tiene" },
+          { frase: "Siga ___ por este pasillo.", resposta: "derecho", aceitas: ["recto"] },
+          { frase: "¡Que ___ un buen vuelo!", resposta: "tenga" },
+        ],
+      },
+      {
+        tipo: "falar",
+        frases: [
+          { en: "Buenas tardes. Bienvenidos a bordo.", pt: "Boa tarde. Bem-vindos a bordo." },
+          { en: "¿Me permite su tarjeta de embarque, por favor?", pt: "Me permite o seu cartão de embarque, por favor?" },
+          { en: "Su asiento está a la derecha, en la ventanilla.", pt: "Seu assento fica à direita, na janela." },
+        ],
+      },
+      {
+        tipo: "roleplay",
+        situacao: "Voo da noite. Receba o passageiro na porta.",
+        voce: "Comissário(a)",
+        turnos: [
+          { outro: "Buenas noches.", modelo: "Buenas noches, señor. Bienvenido a bordo." },
+          { outro: "Tengo el 17F.", modelo: "¿Me permite su tarjeta de embarque, por favor?" },
+          { outro: "Sí, aquí tiene.", modelo: "Gracias. El 17F es ventanilla. Siga derecho, a la izquierda." },
+          { outro: "Gracias.", modelo: "De nada. ¡Que tenga un buen vuelo!" },
+        ],
+      },
+    ],
+    quiz: [
+      { pergunta: "São 20h. Como você cumprimenta?", opcoes: [{ texto: "Buenas tardes." }, { texto: "Buenas noches.", certa: true }, { texto: "Buen día." }], explicacao: "Depois que escurece, \"Buenas noches\" serve para cumprimentar." },
+      { pergunta: "Como se diz \"assento na janela\"?", opcoes: [{ texto: "ventana" }, { texto: "ventanilla", certa: true }, { texto: "janela" }], explicacao: "No avião, a janelinha e o assento na janela são \"ventanilla\"." },
+      { pergunta: "\"Siga derecho\" significa:", opcoes: [{ texto: "Vire à direita." }, { texto: "Siga reto.", certa: true }, { texto: "Siga com cuidado." }], explicacao: "\"Derecho\" = reto; \"a la derecha\" = à direita." },
+      { pergunta: "Com passageiros, qual forma é a correta?", opcoes: [{ texto: "¿Me das tu tarjeta?" }, { texto: "¿Me permite su tarjeta?", certa: true }, { texto: "¿Me permites tu tarjeta?" }], explicacao: "Com passageiros, use \"usted\": \"su tarjeta\", \"permite\"." },
+      { pergunta: "O passageiro entrega o cartão e diz:", opcoes: [{ texto: "Aquí tiene.", certa: true }, { texto: "Aquí está usted." }, { texto: "Tenga aquí." }], explicacao: "\"Aquí tiene\" acompanha a entrega de algo." },
+    ],
+  },
+
+  /* ------------------------------------------------------------------ 2.2 */
+  {
+    modulo: 2,
+    numero: 2,
+    titulo: "Assento ocupado e troca de lugar",
+    tituloEn: "Alguien está en mi asiento",
+    objetivo: "Resolver assento errado e pedidos de troca com educação e segurança.",
+    foto: "/img/ingles/cena-08.jpg",
+    fotoAlt: "Comissária ajuda um passageiro com documentos no corredor",
+    minutos: 15,
+    intro:
+      "É comum alguém sentar no lugar errado. Confira os cartões dos dois passageiros, explique com calma e indique o assento certo. Para pedir algo com educação, use \"¿Podría…?\" (o senhor poderia…?).",
+    dialogo: {
+      titulo: "Alguien está en mi asiento",
+      contexto: "Durante o embarque, Valeria encontra o senhor Ortega no assento dela. Ana ajuda.",
+      personagens: ["Valeria", "Ana", "Ortega"],
+      falas: [
+        { quem: "Valeria", en: "Disculpe, creo que hay alguien en mi asiento.", pt: "Com licença, acho que tem alguém no meu assento." },
+        { quem: "Ana", en: "Un momento, lo reviso. ¿Me permite su tarjeta?", pt: "Um momento, vou conferir. Me permite o seu cartão?" },
+        { quem: "Valeria", en: "Sí. Dice 12A.", pt: "Sim. Diz 12A." },
+        { quem: "Ana", en: "Disculpe, señor. ¿Podría mostrarme su tarjeta de embarque, por favor?", pt: "Com licença, senhor. O senhor poderia me mostrar seu cartão de embarque, por favor?" },
+        { quem: "Ortega", en: "Aquí está. Yo tengo el 12A, ¿no?", pt: "Aqui está. Eu estou no 12A, não?" },
+        { quem: "Ana", en: "En realidad, usted tiene el 21A, señor. También es ventanilla, unas filas más atrás.", pt: "Na verdade, o senhor está no 21A. Também é janela, algumas fileiras para trás." },
+        { quem: "Ortega", en: "Ay, perdón. Me equivoqué de fila.", pt: "Ai, desculpe. Errei a fileira." },
+        { quem: "Ana", en: "No se preocupe. Le ayudo con su maleta.", pt: "Não se preocupe. Eu ajudo o senhor com a mala." },
+        { quem: "Valeria", en: "Gracias. ¿Y podría cambiarme a un asiento de pasillo?", pt: "Obrigada. E eu poderia trocar para um assento no corredor?" },
+        { quem: "Ana", en: "Primero vamos a terminar el embarque. Después lo reviso con la jefa de cabina, ¿de acuerdo?", pt: "Primeiro vamos terminar o embarque. Depois eu verifico com a chefe de cabine, combinado?" },
+      ],
+    },
+    vocabulario: [
+      { en: "fila", pt: "fileira" },
+      { en: "equivocarse", pt: "errar, se enganar" },
+      { en: "cambiar de asiento", pt: "trocar de assento" },
+      { en: "maleta", pt: "mala" },
+      { en: "embarque", pt: "embarque" },
+      { en: "ocupado / libre", pt: "ocupado / livre" },
+      { en: "más atrás / más adelante", pt: "mais para trás / mais para a frente" },
+      { en: "en realidad", pt: "na verdade" },
+    ],
+    expressoes: [
+      { en: "Disculpe.", pt: "Com licença / Desculpe.", uso: "Para chamar a atenção de alguém com educação." },
+      { en: "¿Podría mostrarme su tarjeta?", pt: "O senhor poderia me mostrar o cartão?", uso: "\"¿Podría…?\" é a forma mais educada de pedir." },
+      { en: "Me equivoqué de fila.", pt: "Errei a fileira.", uso: "\"Equivocarse de\" + lugar = errar o lugar." },
+      { en: "No se preocupe.", pt: "Não se preocupe.", uso: "Para tranquilizar, com \"usted\"." },
+      { en: "¿De acuerdo?", pt: "Combinado? / Tudo bem?", uso: "Para confirmar um combinado." },
+    ],
+    dica: "Nunca autorize troca de assento antes de terminar o embarque: o lugar pode estar vendido. Diga \"Primero terminamos el embarque\". Falso amigo: \"exquisito\" em espanhol é delicioso, não esquisito; esquisito é \"raro\".",
+    atividades: [
+      {
+        tipo: "compreensao",
+        questoes: [
+          { pergunta: "¿Qué asiento tiene Valeria?", opcoes: [{ texto: "21A" }, { texto: "12A", certa: true }, { texto: "12C" }], explicacao: "\"Dice 12A.\"" },
+          { pergunta: "¿Cuál es el asiento correcto del señor Ortega?", opcoes: [{ texto: "21A", certa: true }, { texto: "12A" }, { texto: "21C" }], explicacao: "\"Usted tiene el 21A.\"" },
+          { pergunta: "¿Qué quiere Valeria al final?", opcoes: [{ texto: "Una manta" }, { texto: "Un asiento de pasillo", certa: true }, { texto: "Cambiar de vuelo" }], explicacao: "\"¿Podría cambiarme a un asiento de pasillo?\"" },
+        ],
+      },
+      { tipo: "ditado", frases: ["Creo que hay alguien en mi asiento.", "No se preocupe.", "Me equivoqué de fila."] },
+      {
+        tipo: "ordenar",
+        instrucao: "Resolva o assento ocupado na ordem certa.",
+        falas: ["Disculpe, hay alguien en mi asiento.", "Un momento, lo reviso.", "Señor, ¿podría mostrarme su tarjeta?", "Usted tiene el 21A, unas filas más atrás.", "Perdón, me equivoqué de fila."],
+      },
+      {
+        tipo: "ligar",
+        instrucao: "Ligue as expressões.",
+        pares: [
+          ["maleta", "mala"],
+          ["equivocarse", "errar"],
+          ["en realidad", "na verdade"],
+          ["¿De acuerdo?", "Combinado?"],
+          ["exquisito", "delicioso"],
+        ],
+      },
+      {
+        tipo: "lacunas",
+        itens: [
+          { frase: "___, creo que hay alguien en mi asiento.", resposta: "Disculpe" },
+          { frase: "¿___ mostrarme su tarjeta, por favor?", resposta: "Podría", aceitas: ["podria"] },
+          { frase: "Me ___ de fila.", resposta: "equivoqué", aceitas: ["equivoque"] },
+          { frase: "No se ___.", resposta: "preocupe" },
+          { frase: "Primero vamos a terminar el ___.", resposta: "embarque" },
+        ],
+      },
+      {
+        tipo: "falar",
+        frases: [
+          { en: "Disculpe, señor. ¿Podría mostrarme su tarjeta de embarque?", pt: "Com licença, senhor. Poderia me mostrar seu cartão de embarque?" },
+          { en: "Usted tiene el veintiuno A, unas filas más atrás.", pt: "O senhor está no 21A, algumas fileiras para trás." },
+          { en: "Primero vamos a terminar el embarque.", pt: "Primeiro vamos terminar o embarque." },
+        ],
+      },
+      {
+        tipo: "roleplay",
+        situacao: "Uma passageira diz que o assento dela está ocupado.",
+        voce: "Comissário(a)",
+        turnos: [
+          { outro: "Disculpe, hay un señor en mi asiento.", modelo: "Un momento, lo reviso. ¿Me permite su tarjeta?" },
+          { outro: "Aquí tiene. Es el 15C.", modelo: "Disculpe, señor. ¿Podría mostrarme su tarjeta de embarque?" },
+          { outro: "Sí. Ah, tengo el 16C.", modelo: "Su asiento es el 16C, una fila más atrás. No se preocupe." },
+          { outro: "¿Y puedo cambiarme a ventanilla?", modelo: "Primero vamos a terminar el embarque. Después lo reviso, ¿de acuerdo?" },
+        ],
+      },
+    ],
+    quiz: [
+      { pergunta: "Qual é a forma mais educada de pedir?", opcoes: [{ texto: "Muéstrame tu tarjeta." }, { texto: "¿Podría mostrarme su tarjeta?", certa: true }, { texto: "Dame la tarjeta." }], explicacao: "\"¿Podría…?\" com \"usted\" é a forma mais cortês." },
+      { pergunta: "O passageiro diz \"Me equivoqué de fila\". Ele:", opcoes: [{ texto: "Errou a fileira.", certa: true }, { texto: "Perdeu a fila do embarque." }, { texto: "Quer trocar de fileira." }], explicacao: "\"Equivocarse\" = errar, se enganar." },
+      { pergunta: "Quando avaliar uma troca de assento?", opcoes: [{ texto: "Na hora, na porta" }, { texto: "Depois do embarque, com a chefe de cabine", certa: true }, { texto: "Só depois do pouso" }], explicacao: "O assento pode estar vendido: primeiro termine o embarque." },
+      { pergunta: "\"Exquisito\" em espanhol significa:", opcoes: [{ texto: "Esquisito, estranho" }, { texto: "Delicioso", certa: true }, { texto: "Exigente" }], explicacao: "Falso amigo! Estranho é \"raro\"." },
+      { pergunta: "Como dizer \"mais para trás\"?", opcoes: [{ texto: "más atrás", certa: true }, { texto: "más detrás de" }, { texto: "más tras" }], explicacao: "\"Unas filas más atrás\" = algumas fileiras para trás." },
+    ],
+  },
+
+  /* ------------------------------------------------------------------ 2.3 */
+  {
+    modulo: 2,
+    numero: 3,
+    titulo: "Bagagem de mão",
+    tituloEn: "El equipaje de mano",
+    objetivo: "Orientar onde guardar a bagagem: compartimento superior, embaixo do assento e despacho na porta.",
+    foto: "/img/ingles/cena-09.jpg",
+    fotoAlt: "Comissária fecha o bagageiro enquanto uma passageira se acomoda",
+    minutos: 15,
+    intro:
+      "Bagagem é a maior causa de atraso no embarque. Você precisa explicar onde guardar a mala, pedir que a bolsa vá embaixo do assento e, quando não houver espaço, despachar a mala na porta.",
+    dialogo: {
+      titulo: "No cabe la maleta",
+      contexto: "O bagageiro está cheio. Sofía ajuda a senhora Fernández, que viaja com o filho Mateo.",
+      personagens: ["Fernández", "Sofía", "Mateo"],
+      falas: [
+        { quem: "Fernández", en: "Señorita, mi maleta no cabe en el compartimento.", pt: "Moça, minha mala não cabe no compartimento." },
+        { quem: "Sofía", en: "No se preocupe, señora. Voy a buscar espacio más adelante.", pt: "Não se preocupe, senhora. Vou procurar espaço mais para a frente." },
+        { quem: "Sofía", en: "Y la mochila del niño, ¿podría ponerla debajo del asiento de adelante?", pt: "E a mochila do menino, poderia colocá-la embaixo do assento da frente?" },
+        { quem: "Mateo", en: "¡Pero ahí están mis juguetes!", pt: "Mas aí estão os meus brinquedos!" },
+        { quem: "Sofía", en: "Puedes sacar un juguete ahora, y la mochila va abajo. ¿Trato hecho?", pt: "Você pode tirar um brinquedo agora, e a mochila vai embaixo. Combinado?" },
+        { quem: "Mateo", en: "¡Trato hecho!", pt: "Combinado!" },
+        { quem: "Sofía", en: "Señora, los compartimentos están llenos. Vamos a despachar su maleta en la puerta. Es gratis.", pt: "Senhora, os compartimentos estão cheios. Vamos despachar sua mala na porta. É gratuito." },
+        { quem: "Fernández", en: "¿Y dónde la recojo?", pt: "E onde eu retiro?" },
+        { quem: "Sofía", en: "En la cinta de equipaje, en Buenos Aires. ¿Lleva algo de valor o medicamentos dentro?", pt: "Na esteira de bagagem, em Buenos Aires. A senhora leva algo de valor ou remédios dentro?" },
+        { quem: "Fernández", en: "Sí, el pasaporte. Lo saco ahora mismo.", pt: "Sim, o passaporte. Vou tirar agora mesmo." },
+      ],
+    },
+    vocabulario: [
+      { en: "equipaje de mano", pt: "bagagem de mão" },
+      { en: "compartimento superior", pt: "compartimento superior, bagageiro" },
+      { en: "debajo del asiento", pt: "embaixo do assento" },
+      { en: "mochila", pt: "mochila" },
+      { en: "bolso / cartera", pt: "bolsa" },
+      { en: "despachar", pt: "despachar" },
+      { en: "cinta de equipaje", pt: "esteira de bagagem" },
+      { en: "lleno / vacío", pt: "cheio / vazio" },
+    ],
+    expressoes: [
+      { en: "No cabe.", pt: "Não cabe.", uso: "Verbo \"caber\": \"cabe\", \"no cabe\"." },
+      { en: "¿Podría ponerla debajo del asiento?", pt: "Poderia colocá-la embaixo do assento?", uso: "Para bolsas e mochilas." },
+      { en: "Los compartimentos están llenos.", pt: "Os compartimentos estão cheios.", uso: "Para explicar por que despachar." },
+      { en: "Vamos a despachar su maleta.", pt: "Vamos despachar sua mala.", uso: "No avião, a mala vai para o porão." },
+      { en: "¿Lleva algo de valor dentro?", pt: "Leva algo de valor dentro?", uso: "Sempre pergunte antes de despachar." },
+    ],
+    dica: "Falso amigo importante: \"bolso\" na Espanha é a bolsa feminina (na América Latina, \"cartera\" ou \"bolsa\"), e \"cartera\" na Espanha é a carteira de dinheiro. Na dúvida, diga \"su bolso o mochila\". Antes de despachar, peça para retirar documentos, remédios, eletrônicos e baterias de lítio.",
+    atividades: [
+      {
+        tipo: "compreensao",
+        questoes: [
+          { pergunta: "¿Cuál es el problema de la señora Fernández?", opcoes: [{ texto: "Perdió la maleta" }, { texto: "La maleta no cabe", certa: true }, { texto: "No tiene asiento" }], explicacao: "\"Mi maleta no cabe en el compartimento.\"" },
+          { pergunta: "¿Dónde va la mochila de Mateo?", opcoes: [{ texto: "Debajo del asiento de adelante", certa: true }, { texto: "En el compartimento" }, { texto: "En la bodega" }], explicacao: "Sofía pede para colocar embaixo do assento da frente." },
+          { pergunta: "¿Qué saca la señora antes de despachar la maleta?", opcoes: [{ texto: "Medicamentos" }, { texto: "Un juguete" }, { texto: "El pasaporte", certa: true }], explicacao: "\"Sí, el pasaporte. Lo saco ahora mismo.\"" },
+        ],
+      },
+      { tipo: "ditado", frases: ["Mi maleta no cabe.", "Los compartimentos están llenos.", "¿Lleva algo de valor dentro?"] },
+      {
+        tipo: "ordenar",
+        instrucao: "Coloque o despacho da mala na ordem.",
+        falas: ["Mi maleta no cabe en el compartimento.", "Los compartimentos están llenos, señor.", "Vamos a despachar su maleta en la puerta.", "¿Lleva algo de valor o medicamentos dentro?", "No, nada. Gracias."],
+      },
+      {
+        tipo: "ligar",
+        instrucao: "Ligue o espanhol ao português.",
+        pares: [
+          ["equipaje de mano", "bagagem de mão"],
+          ["cinta de equipaje", "esteira de bagagem"],
+          ["lleno", "cheio"],
+          ["debajo", "embaixo"],
+          ["vacío", "vazio"],
+        ],
+      },
+      {
+        tipo: "lacunas",
+        itens: [
+          { frase: "Mi maleta no ___ en el compartimento.", resposta: "cabe" },
+          { frase: "¿Podría ponerla ___ del asiento?", resposta: "debajo" },
+          { frase: "Los compartimentos están ___.", resposta: "llenos" },
+          { frase: "Vamos a ___ su maleta en la puerta.", resposta: "despachar" },
+          { frase: "La recoge en la ___ de equipaje.", resposta: "cinta" },
+        ],
+      },
+      {
+        tipo: "falar",
+        frases: [
+          { en: "¿Podría poner su bolso debajo del asiento de adelante?", pt: "Poderia colocar sua bolsa embaixo do assento da frente?" },
+          { en: "Los compartimentos están llenos. Vamos a despachar su maleta.", pt: "Os compartimentos estão cheios. Vamos despachar sua mala." },
+          { en: "¿Lleva algo de valor o medicamentos dentro?", pt: "Leva algo de valor ou remédios dentro?" },
+        ],
+      },
+      {
+        tipo: "roleplay",
+        situacao: "Um passageiro chega no fim do embarque com uma mala grande e não há espaço.",
+        voce: "Comissário(a)",
+        turnos: [
+          { outro: "No encuentro espacio para mi maleta.", modelo: "Lo siento, señor. Los compartimentos están llenos." },
+          { outro: "¿Y entonces?", modelo: "Vamos a despachar su maleta en la puerta. Es gratis." },
+          { outro: "Bueno. ¿Dónde la recojo?", modelo: "En la cinta de equipaje, al llegar. ¿Lleva algo de valor dentro?" },
+          { outro: "Sí, mi computadora.", modelo: "Entonces, por favor, sáquela y llévela con usted." },
+        ],
+      },
+    ],
+    quiz: [
+      { pergunta: "\"La maleta no cabe\" significa:", opcoes: [{ texto: "A mala não cabe.", certa: true }, { texto: "A mala não é minha." }, { texto: "A mala é pesada." }], explicacao: "Verbo \"caber\"." },
+      { pergunta: "Onde vão bolsas e mochilas pequenas?", opcoes: [{ texto: "En la cinta" }, { texto: "Debajo del asiento de adelante", certa: true }, { texto: "En el pasillo" }], explicacao: "Embaixo do assento da frente." },
+      { pergunta: "\"Cinta de equipaje\" é:", opcoes: [{ texto: "Etiqueta da mala" }, { texto: "Esteira de bagagem", certa: true }, { texto: "Cinto de segurança" }], explicacao: "É onde o passageiro retira a mala despachada." },
+      { pergunta: "Antes de despachar a mala na porta, você pergunta:", opcoes: [{ texto: "¿Lleva algo de valor dentro?", certa: true }, { texto: "¿Le gusta su maleta?" }, { texto: "¿Cuánto pesa usted?" }], explicacao: "Documentos, remédios e eletrônicos ficam com o passageiro." },
+      { pergunta: "\"Los compartimentos están llenos\":", opcoes: [{ texto: "Estão vazios" }, { texto: "Estão cheios", certa: true }, { texto: "Estão quebrados" }], explicacao: "\"Lleno\" = cheio; \"vacío\" = vazio." },
+    ],
+  },
+];

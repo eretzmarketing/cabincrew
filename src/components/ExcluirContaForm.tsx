@@ -35,7 +35,7 @@ export default function ExcluirContaForm() {
       <div className="flex flex-col gap-2 text-[15px] leading-relaxed text-navy">
         <strong className="font-display text-lg text-brand-deep">Atenção: esta ação não pode ser desfeita.</strong>
         <ul className="list-disc pl-5">
-          <li>Você perde o acesso ao Head Hunter, ao Flight Attendant English e a todo o conteúdo da Cabin Crew.</li>
+          <li>Você perde o acesso ao Head Hunter, ao Flight Attendant English, ao Flight Attendant Spanish e a todo o conteúdo da Cabin Crew.</li>
           <li>Seu progresso, notas, medalhas, relatos e dados de cadastro são apagados.</li>
           <li><strong>Se você tiver um curso pago em andamento, perde o acesso sem direito a reembolso.</strong></li>
           <li>Você recebe uma confirmação no WhatsApp e, depois dela, não recebe mais avisos.</li>
