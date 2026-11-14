@@ -66,6 +66,7 @@ export const GRUPOS: Grupo[] = [
       { href: "/admin/configuracoes", label: "Geral" },
       { href: "/admin/whatsapp", label: "WhatsApp" },
       { href: "/admin/pagamentos", label: "Pagamentos" },
+      { href: "/admin/envios", label: "Envios (SuperFrete)" },
     ],
   },
 ];

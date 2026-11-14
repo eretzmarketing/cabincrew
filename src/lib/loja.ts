@@ -3,6 +3,7 @@
 export type ProdutoLoja = {
   slug: string; nome: string; resumo: string | null; descricao: string | null; preco: number; preco_de: number | null;
   desconto_pix: number; imagens: string[]; frete: number; prazo: string; estoque: number | null; ativo: boolean; ordem: number;
+  peso_g?: number; altura_cm?: number; largura_cm?: number; comprimento_cm?: number;
 };
 
 export type Endereco = { cep: string; rua: string; numero: string; complemento?: string; bairro?: string; cidade: string; uf: string };
@@ -12,6 +13,7 @@ export type PedidoLoja = {
   total: number; total_pix: number; status: StatusPedido; metodo: string | null; pago_valor: number | null; mp_id: string | null;
   nome: string; cpf: string | null; telefone: string | null; email: string | null; endereco: Endereco; rastreio: string | null;
   observacao: string | null; criado_em: string; pago_em: string | null; enviado_em: string | null; entregue_em: string | null;
+  etiqueta_id?: string | null; etiqueta_status?: string | null; etiqueta_servico?: number | null; etiqueta_url?: string | null; etiqueta_preco?: number | null;
 };
 
 export type StatusPedido = "aguardando" | "pago" | "enviado" | "entregue" | "cancelado" | "reembolsado";

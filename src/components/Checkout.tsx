@@ -112,8 +112,8 @@ export default function Checkout({ publicKey, base, email, nome, cupomInicial, e
 type Cobranca = { url?: string; extra?: Record<string, unknown>; textoAceite?: string };
 type ProdutoPagamento = Pick<Produto, "slug" | "preco" | "pix" | "cupom">;
 
-export function PagarPix({ produto, aceite, aoAprovar, cobranca }: { produto: ProdutoPagamento; aceite: boolean; aoAprovar: () => void; cobranca?: Cobranca }) {
-  const [cpf, setCpf] = useState("");
+export function PagarPix({ produto, aceite, aoAprovar, cobranca, cpfInicial }: { produto: ProdutoPagamento; aceite: boolean; aoAprovar: () => void; cobranca?: Cobranca; cpfInicial?: string }) {
+  const [cpf, setCpf] = useState(cpfInicial ? formatarCpf(cpfInicial) : "");
   const [erro, setErro] = useState("");
   const [pend, setPend] = useState(false);
   const [pix, setPix] = useState<Pix | null>(null);

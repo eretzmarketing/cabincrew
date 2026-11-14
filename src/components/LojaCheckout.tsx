@@ -12,13 +12,20 @@ const UFS = ["AC", "AL", "AM", "AP", "BA", "CE", "DF", "ES", "GO", "MA", "MG", "
 const campo = "min-h-12 w-full rounded-xl border border-[#c9cedb] bg-white px-4 text-[16px] outline-none focus:border-navy";
 const rot = "flex flex-col gap-1 text-[14px] font-semibold";
 const formatarCep = (v: string) => v.replace(/\D/g, "").slice(0, 8).replace(/(\d{5})(\d)/, "$1-$2");
+const formatarCpf = (v: string) => v.replace(/\D/g, "").slice(0, 11).replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+function cpfValido(v: string) {
+  const d = v.replace(/\D/g, "");
+  if (d.length !== 11 || /^(\d)\1{10}$/.test(d)) return false;
+  const dig = (n: number) => { let s = 0; for (let i = 0; i < n; i++) s += Number(d[i]) * (n + 1 - i); const r = (s * 10) % 11; return r === 10 ? 0 : r; };
+  return dig(9) === Number(d[9]) && dig(10) === Number(d[10]);
+}
 
 export default function LojaCheckout({ publicKey, produto, quantidadeInicial, email, nome, telefone, cupomInicial, erroCupomInicial }: {
   publicKey: string; produto: Produto; quantidadeInicial: number; email: string; nome: string; telefone: string; cupomInicial?: Cupom | null; erroCupomInicial?: string;
 }) {
   const [cupom, setCupom] = useState<Cupom | null>(cupomInicial ?? null);
   const [qtd, setQtd] = useState(quantidadeInicial);
-  const [d, setD] = useState({ nome, telefone, cep: "", rua: "", numero: "", complemento: "", bairro: "", cidade: "", uf: "" });
+  const [d, setD] = useState({ nome, cpf: "", telefone, cep: "", rua: "", numero: "", complemento: "", bairro: "", cidade: "", uf: "" });
   const [buscando, setBuscando] = useState(false);
   const [avisoCep, setAvisoCep] = useState("");
   const [etapa, setEtapa] = useState<"entrega" | "pagamento">("entrega");
@@ -52,6 +59,7 @@ export default function LojaCheckout({ publicKey, produto, quantidadeInicial, em
     e.preventDefault();
     setErro("");
     if (d.nome.trim().split(/\s+/).length < 2) return setErro("Informe o nome completo de quem vai receber.");
+    if (!cpfValido(d.cpf)) return setErro("Informe um CPF válido de quem vai receber (os Correios exigem para a etiqueta).");
     if (d.telefone.replace(/\D/g, "").length < 10) return setErro("Informe um WhatsApp com DDD para receber o código de rastreio.");
     if (d.cep.replace(/\D/g, "").length !== 8 || !d.rua.trim() || !d.numero.trim() || !d.cidade.trim() || !UFS.includes(d.uf)) return setErro("Preencha o endereço completo: CEP, rua, número, cidade e UF.");
     setEtapa("pagamento");
@@ -60,7 +68,7 @@ export default function LojaCheckout({ publicKey, produto, quantidadeInicial, em
 
   const entrega = useMemo(() => {
     const endereco: Endereco = { cep: d.cep.replace(/\D/g, ""), rua: d.rua, numero: d.numero, complemento: d.complemento, bairro: d.bairro, cidade: d.cidade, uf: d.uf };
-    return { nome: d.nome, telefone: d.telefone, endereco };
+    return { nome: d.nome, cpf: d.cpf.replace(/\D/g, ""), telefone: d.telefone, endereco };
   }, [d]);
   const cobranca = useMemo(() => ({
     url: "/api/loja/pagar", extra: { quantidade: qtd, entrega },
@@ -91,6 +99,10 @@ export default function LojaCheckout({ publicKey, produto, quantidadeInicial, em
           <div className="grid gap-3 sm:grid-cols-2">
             <label className={`${rot} sm:col-span-2`}>Nome completo de quem vai receber
               <input value={d.nome} onChange={(e) => mudar("nome", e.target.value)} autoComplete="name" className={campo} />
+            </label>
+            <label className={rot}>CPF de quem vai receber
+              <input value={d.cpf} onChange={(e) => mudar("cpf", formatarCpf(e.target.value))} inputMode="numeric" autoComplete="off" placeholder="000.000.000-00" className={campo} />
+              <span className="text-[12px] font-normal text-muted">Exigido pelos Correios para a etiqueta de envio.</span>
             </label>
             <label className={rot}>WhatsApp com DDD
               <input value={d.telefone} onChange={(e) => mudar("telefone", e.target.value)} inputMode="tel" autoComplete="tel" placeholder="(11) 90000-0000" className={campo} />
@@ -129,7 +141,7 @@ export default function LojaCheckout({ publicKey, produto, quantidadeInicial, em
       ) : (
         <section className="flex flex-col gap-5 rounded-[22px] bg-white p-5 shadow-sm md:p-7">
           <div className="flex flex-wrap items-start justify-between gap-2 rounded-2xl bg-soft px-4 py-3 text-[15px]">
-            <span><strong>Entregar para:</strong> {d.nome}<br />{d.rua}, {d.numero}{d.complemento ? ` · ${d.complemento}` : ""} · {d.bairro ? `${d.bairro} · ` : ""}{d.cidade}/{d.uf} · CEP {d.cep}</span>
+            <span><strong>Entregar para:</strong> {d.nome} · CPF {d.cpf}<br />{d.rua}, {d.numero}{d.complemento ? ` · ${d.complemento}` : ""} · {d.bairro ? `${d.bairro} · ` : ""}{d.cidade}/{d.uf} · CEP {d.cep}</span>
             <button type="button" onClick={() => setEtapa("entrega")} className="min-h-10 cursor-pointer font-semibold text-navy underline underline-offset-4">Alterar</button>
           </div>
           <h2 className="font-display text-xl font-extrabold">2. Pagamento</h2>
@@ -147,7 +159,7 @@ export default function LojaCheckout({ publicKey, produto, quantidadeInicial, em
             ))}
           </div>
           {metodo === "pix"
-            ? <PagarPix key={`pix-${qtd}-${cupom?.codigo ?? ""}`} aceite={aceite} produto={pagamento} cobranca={cobranca} aoAprovar={() => setFim("aprovado")} />
+            ? <PagarPix key={`pix-${qtd}-${cupom?.codigo ?? ""}`} cpfInicial={d.cpf} aceite={aceite} produto={pagamento} cobranca={cobranca} aoAprovar={() => setFim("aprovado")} />
             : <PagarCartao key={`cartao-${qtd}-${cupom?.codigo ?? ""}`} aceite={aceite} publicKey={publicKey} produto={pagamento} email={email} cobranca={cobranca} aoAprovar={() => setFim("aprovado")} aoAnalisar={() => setFim("analise")} />}
         </section>
       )}

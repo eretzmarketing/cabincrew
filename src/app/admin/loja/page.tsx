@@ -3,7 +3,8 @@ import Link from "next/link";
 import { alterarStatusPedido, salvarObservacaoPedido } from "@/app/loja-actions";
 import { Card, Numero, Titulo, btnSecundario } from "@/components/admin-ui";
 import CopiarTexto from "@/components/CopiarTexto";
-import { EnviarPedidoForm } from "@/components/LojaAdminForms";
+import { EnviarPedidoForm, EtiquetaPedido } from "@/components/LojaAdminForms";
+import { configSuperfrete } from "@/lib/superfrete";
 import { STATUS_PEDIDO, linkRastreio, reais, type PedidoLoja, type StatusPedido } from "@/lib/loja";
 import { getUser } from "@/lib/supabase/server";
 
@@ -22,6 +23,7 @@ export default async function PedidosLoja({ searchParams }: { searchParams: Prom
   else q = q.neq("status", "aguardando");
   const [{ data, error }, { data: todos }] = await Promise.all([q, supabase.from("loja_pedidos").select("status, pago_valor, pago_em")]);
   const pedidos = (data ?? []) as PedidoLoja[];
+  const sf = configSuperfrete();
   const t = (todos ?? []) as { status: StatusPedido; pago_valor: number | null; pago_em: string | null }[];
   const mes = new Date().toISOString().slice(0, 7);
   const vendidoMes = t.filter((x) => x.pago_em?.startsWith(mes) && x.status !== "reembolsado").reduce((s, x) => s + Number(x.pago_valor ?? 0), 0);
@@ -29,7 +31,7 @@ export default async function PedidosLoja({ searchParams }: { searchParams: Prom
   return (
     <>
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <Titulo sub="Pedidos de apostilas: confira o endereço, poste nos Correios e informe o código de rastreio. O aluno recebe o aviso no WhatsApp.">Pedidos da loja</Titulo>
+        <Titulo sub="Pedidos de apostilas: gere a etiqueta do SuperFrete com um clique, imprima, poste e marque como enviado. O aluno recebe o rastreio no WhatsApp.">Pedidos da loja</Titulo>
         <Link href="/admin/loja/produtos" className={btnSecundario}>Produtos e preços</Link>
       </div>
       {error && <p className="rounded-2xl bg-brand-soft p-5 text-brand-deep">Rode o SQL <strong>0055_loja.sql</strong> no Supabase para ativar a loja.</p>}
@@ -64,7 +66,11 @@ export default async function PedidosLoja({ searchParams }: { searchParams: Prom
                 <CopiarTexto texto={etiqueta} rotulo="Copiar endereço para a etiqueta" />
               </div>
               <div className="flex flex-col gap-3">
-                {(p.status === "pago" || p.status === "enviado") && <EnviarPedidoForm id={p.id} rastreio={p.rastreio} temTelefone={!!p.telefone} />}
+                {(p.status === "pago" || p.status === "enviado") && (
+                  <EtiquetaPedido id={p.id} etiquetaId={p.etiqueta_id ?? null} status={p.etiqueta_status ?? null} url={p.etiqueta_url ?? null}
+                    servico={p.etiqueta_servico ?? null} preco={p.etiqueta_preco ?? null} servicoPadrao={sf?.servico ?? 1} conectado={!!sf} />
+                )}
+                {(p.status === "pago" || p.status === "enviado") && <EnviarPedidoForm id={p.id} rastreio={p.rastreio} temTelefone={!!p.telefone} enviado={p.status === "enviado"} />}
                 {p.rastreio && <a href={linkRastreio(p.rastreio)} target="_blank" rel="noreferrer" className="text-[14px] font-semibold text-navy underline">Rastrear {p.rastreio} nos Correios ↗</a>}
                 <div className="flex flex-wrap gap-2">
                   {p.status === "enviado" && <form action={alterarStatusPedido}><input type="hidden" name="id" value={p.id} /><button name="acao" value="entregue" className="min-h-10 cursor-pointer rounded-full bg-[#e5f6ec] px-4 text-[14px] font-semibold text-[#0f6b3a]">Marcar como entregue</button></form>}
