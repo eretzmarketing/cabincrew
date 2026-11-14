@@ -19,6 +19,8 @@ import { STATUS_COMPRA, dataHoraBR, dinheiro, fimArrependimento, type Compra } f
 import { cursoIdioma, infoCursos } from "@/lib/cursos-dados";
 import { FeedbackVisual } from "@/components/VideoIA";
 import type { FeedbackIA } from "@/lib/ia-video-tipos";
+import { POR_ALUNO_PADRAO, configIA, saldoVideoIA } from "@/lib/ia-video";
+import { LiberarIAForm } from "@/components/IAForm";
 
 export const metadata: Metadata = { title: "Aluno · Head Hunter" };
 export const dynamic = "force-dynamic";
@@ -41,6 +43,9 @@ export default async function AlunoPage({ params }: { params: Promise<{ id: stri
   ]);
   const l = ((linha ?? []) as LinhaAluno[])[0];
   if (!l) notFound();
+  const cfgIA = configIA();
+  const saldoIA = await saldoVideoIA(supabase, id, cfgIA?.porAluno ?? POR_ALUNO_PADRAO);
+  const temHH = ((acessosAluno ?? []) as { produto: string }[]).some((a) => a.produto === "head-hunter");
   const { data: videosIA } = await supabase.from("video_treinos").select("created_at, duracao_seg, meta_seg, nota_ia, ia, transcricao").eq("user_id", id).not("ia", "is", null).order("created_at", { ascending: false }).limit(6);
 
   const st = situacao(l);
@@ -158,6 +163,21 @@ export default async function AlunoPage({ params }: { params: Promise<{ id: stri
               </ul>
             )}
           </Card>
+
+          {(temHH || !!(videosIA ?? []).length) && !("erro" in saldoIA) && (
+            <Card>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h2 className="font-display text-xl font-extrabold">🤖 Análises da IA no vídeo</h2>
+                <span className={`rounded-full px-3 py-1 text-[13px] font-semibold ${saldoIA.restantes > 0 ? "bg-[#e5f6ec] text-[#0f6b3a]" : "bg-brand-soft text-brand-deep"}`}>
+                  {saldoIA.restantes > 0 ? `${saldoIA.restantes} disponível(is)` : "Esgotadas"}
+                </span>
+              </div>
+              <p className="text-[15px] text-ink-2">
+                Usou <strong>{saldoIA.usadas}</strong> de <strong>{saldoIA.limite}</strong> ({cfgIA?.porAluno ?? POR_ALUNO_PADRAO} do Head Hunter{saldoIA.extras ? ` + ${saldoIA.extras} liberada(s) por você` : ""}).
+              </p>
+              <LiberarIAForm aluno={id} />
+            </Card>
+          )}
 
           {!!(videosIA ?? []).length && (
             <Card>

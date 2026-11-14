@@ -25,7 +25,7 @@ function escolherFormato() {
   return "";
 }
 
-export default function VideoTreino({ companhia, ia = false }: { companhia?: string; ia?: boolean }) {
+export default function VideoTreino({ companhia, ia = false, restantesIA = null }: { companhia?: string; ia?: boolean; restantesIA?: number | null }) {
   const [fase, setFase] = useState<Fase>("roteiro");
   const [meta, setMeta] = useState(90);
   const [topicos, setTopicos] = useState<Record<string, string>>({});
@@ -295,7 +295,7 @@ export default function VideoTreino({ companhia, ia = false }: { companhia?: str
         </div>
       )}
 
-      {ia && video && <VideoIA key={video.url} video={video} meta={meta} topicos={topicos} companhia={companhia} onAnalisado={() => { setAnalisado(true); router.refresh(); }} />}
+      {ia && video && <VideoIA key={video.url} restantes={restantesIA} video={video} meta={meta} topicos={topicos} companhia={companhia} onAnalisado={() => { setAnalisado(true); router.refresh(); }} />}
 
       <section className="flex flex-col gap-5 rounded-[24px] border border-line bg-white p-6 md:p-8">
         {ia && <h3 className="font-display text-xl font-extrabold">{analisado ? "Autoavaliação (opcional)" : "Ou faça a autoavaliação"}</h3>}

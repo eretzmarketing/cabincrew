@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { CRITERIOS_IA, type FeedbackIA } from "@/lib/ia-video-tipos";
 
@@ -99,8 +100,10 @@ export function FeedbackVisual({ f, transcricao }: { f: FeedbackIA; transcricao?
   );
 }
 
-export default function VideoIA({ video, meta, topicos, companhia, onAnalisado }: {
+export default function VideoIA({ video, meta, topicos, companhia, onAnalisado, restantes = null }: {
   video: { url: string; blob: Blob; ext: string; duracao: number }; meta: number; topicos: Record<string, string>; companhia?: string; onAnalisado: () => void;
+  /** análises que o aluno ainda pode pedir (null = sem limite, para o admin) */
+  restantes?: number | null;
 }) {
   const [aceito, setAceito] = useState(false);
   const [etapa, setEtapa] = useState<"" | "fotos" | "enviando" | "analisando">("");
@@ -139,7 +142,15 @@ export default function VideoIA({ video, meta, topicos, companhia, onAnalisado }
     <section aria-labelledby="ia-titulo" className="flex flex-col gap-4 rounded-[24px] border-2 border-navy bg-white p-6 md:p-8">
       <h3 id="ia-titulo" className="font-display text-2xl font-extrabold">🤖 Feedback da IA</h3>
       <FeedbackVisual f={res.feedback} transcricao={res.transcricao} />
-      <p className="text-[14px] text-muted">Esta gravação foi salva com a nota da IA no seu histórico.{res.restantes !== null ? ` Você ainda pode pedir ${res.restantes} análise(s) hoje.` : ""}</p>
+      <p className="text-[14px] text-muted">Esta gravação foi salva com a nota da IA no seu histórico.{res.restantes === null ? "" : res.restantes > 0 ? ` Você ainda pode pedir ${res.restantes === 1 ? "mais 1 análise" : `mais ${res.restantes} análises`} da IA: grave de novo quando tiver aplicado as dicas.` : " Essa foi a sua última análise da IA: continue treinando com a autoavaliação."}</p>
+    </section>
+  );
+
+  if (restantes === 0) return (
+    <section aria-labelledby="ia-titulo" className="flex flex-col gap-3 rounded-[24px] border-2 border-line bg-white p-6 md:p-8">
+      <h3 id="ia-titulo" className="font-display text-2xl font-extrabold">🤖 Feedback da IA</h3>
+      <p className="text-[16px] leading-relaxed text-ink-2">Você já usou as suas análises da IA. Os feedbacks estão no seu histórico, logo abaixo. Continue treinando com a autoavaliação e compare com as dicas que a IA te deu.</p>
+      <p className="text-[15px] text-ink-2">Precisa de uma nova análise? <Link href="/conta/suporte?aba=novo" className="font-semibold text-navy underline">Fale com a gente pelo suporte</Link>.</p>
     </section>
   );
 
@@ -148,6 +159,11 @@ export default function VideoIA({ video, meta, topicos, companhia, onAnalisado }
     <section aria-labelledby="ia-titulo" className="flex flex-col gap-4 rounded-[24px] border-2 border-navy bg-white p-6 md:p-8">
       <h3 id="ia-titulo" className="font-display text-2xl font-extrabold">🤖 Feedback da IA</h3>
       <p className="text-[16px] leading-relaxed text-ink-2">A IA assiste à sua gravação como um recrutador: ouve o que você fala e olha a sua postura, o olhar, o sorriso, a luz e o fundo. Em cerca de 1 minuto você recebe nota, pontos fortes e o que melhorar.</p>
+      {restantes !== null && (
+        <p className="rounded-xl bg-[#fff6dd] px-4 py-3 text-[15px] text-[#7a5a00]">
+          Você tem <strong>{restantes === 1 ? "1 análise" : `${restantes} análises`}</strong> da IA. Use quando a gravação estiver do jeito que você enviaria para a companhia: antes, treine com a autoavaliação.
+        </p>
+      )}
       <label className="flex min-h-11 cursor-pointer items-start gap-3 text-[15px]">
         <input type="checkbox" checked={aceito} onChange={(e) => setAceito(e.target.checked)} disabled={ocupado} className="mt-0.5 h-5 w-5 shrink-0 accent-[#c8102e]" />
         <span>Autorizo enviar esta gravação para análise pela IA (OpenAI). O vídeo é usado só para gerar o feedback e é descartado em seguida: a Cabin Crew guarda apenas a nota, o feedback e o texto da fala.</span>

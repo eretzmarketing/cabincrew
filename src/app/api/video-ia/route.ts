@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { ErroIA, avaliarVideo, configIA, transcrever } from "@/lib/ia-video";
+import { ErroIA, avaliarVideo, configIA, saldoVideoIA, transcrever } from "@/lib/ia-video";
 import { anonimo, configMP } from "@/lib/mercadopago";
 import { getUser } from "@/lib/supabase/server";
 import { getConfig } from "@/lib/config";
@@ -29,9 +29,11 @@ export async function POST(req: NextRequest) {
   }
 
   const servidor = anonimo();
-  const { data: hoje, error: e0 } = await servidor.rpc("video_ia_hoje", { p_chave: mp.chave, p_user: user.id });
-  if (e0) return erro(e0.message.includes("video_ia_hoje") ? "Falta rodar o SQL 0061_video_ia.sql no Supabase." : "Não foi possível conferir o limite agora.", 500);
-  if (!profile?.is_admin && Number(hoje) >= cfg.porDia) return erro(`Você já usou as ${cfg.porDia} análises de hoje. Amanhã tem mais: enquanto isso, treine com a autoavaliação.`, 429);
+  const saldo = await saldoVideoIA(supabase, user.id, cfg.porAluno);
+  if ("erro" in saldo) return erro(saldo.erro, 500);
+  if (!profile?.is_admin && saldo.restantes <= 0) {
+    return erro(`Você já usou ${saldo.limite === 1 ? "a sua análise" : `as suas ${saldo.limite} análises`} da IA. Continue treinando com a autoavaliação; se precisar de uma nova análise, fale com a gente em Minha conta › Suporte.`, 429);
+  }
 
   let form: FormData;
   try { form = await req.formData(); } catch { return erro("Não foi possível receber o vídeo. Tente de novo."); }
@@ -54,7 +56,7 @@ export async function POST(req: NextRequest) {
       p_chave: mp.chave, p_user: user.id, p_duracao: duracao, p_meta: meta, p_nota: feedback.nota, p_ia: feedback, p_transcricao: transcricao,
     });
     if (error) return erro("A análise ficou pronta, mas não foi possível salvar. Tente de novo.", 500);
-    return NextResponse.json({ id, feedback, transcricao, restantes: profile?.is_admin ? null : Math.max(0, cfg.porDia - Number(hoje) - 1) });
+    return NextResponse.json({ id, feedback, transcricao, restantes: profile?.is_admin ? null : Math.max(0, saldo.restantes - 1) });
   } catch (e) {
     return erro(e instanceof ErroIA ? e.message : "Não foi possível analisar o vídeo agora. Tente de novo em instantes.", 502);
   }

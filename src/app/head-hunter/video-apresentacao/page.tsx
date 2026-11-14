@@ -3,7 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import VideoTreino from "@/components/VideoTreino";
 import { FeedbackVisual } from "@/components/VideoIA";
-import { configIA, type FeedbackIA } from "@/lib/ia-video";
+import { configIA, saldoVideoIA, type FeedbackIA } from "@/lib/ia-video";
 import { exigirCrewSelect } from "@/lib/crew-gate";
 import { COMPANHIAS } from "@/lib/jornada";
 import { lerCheckin } from "@/lib/jornada-dados";
@@ -13,14 +13,17 @@ export const metadata: Metadata = { title: "Vídeo de apresentação · Head Hun
 export const dynamic = "force-dynamic";
 
 export default async function VideoApresentacaoPage() {
-  const { supabase, user, liberado } = await exigirCrewSelect("/head-hunter/video-apresentacao");
+  const { supabase, user, profile, liberado } = await exigirCrewSelect("/head-hunter/video-apresentacao");
   if (!liberado) redirect("/head-hunter");
   const [{ data: hist }, checkin] = await Promise.all([
     supabase.from("video_treinos").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(8),
     lerCheckin(supabase, user.id),
   ]);
   const historico = (hist ?? []) as { nota: number; duracao_seg: number; meta_seg: number; created_at: string; nota_ia?: number | null; ia?: FeedbackIA | null; transcricao?: string | null }[];
-  const ia = !!configIA()?.ativo;
+  const cfgIA = configIA();
+  const ia = !!cfgIA?.ativo;
+  const saldo = ia && cfgIA ? await saldoVideoIA(supabase, user.id, cfgIA.porAluno) : null;
+  const restantesIA = profile?.is_admin || !saldo || "erro" in saldo ? null : saldo.restantes;
   const companhia = COMPANHIAS.find((c) => c.slug === checkin.companhias[0])?.nome;
 
   return (
@@ -38,7 +41,7 @@ export default async function VideoApresentacaoPage() {
       </section>
 
       <div className="mx-auto flex max-w-[900px] flex-col gap-8 px-4 pt-8 md:px-6">
-        <VideoTreino companhia={companhia} ia={ia} />
+        <VideoTreino companhia={companhia} ia={ia} restantesIA={restantesIA} />
 
         {historico.length > 0 && (
           <section aria-labelledby="hist" className="flex flex-col gap-3">
