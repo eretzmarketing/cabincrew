@@ -6,6 +6,7 @@ import { alternarAulaConcluida, iniciarSimulado } from "@/app/crew-actions";
 import CursoPlayer from "@/components/CursoPlayer";
 import { Arrow, Check } from "@/components/icons";
 import { exigirCrewSelect } from "@/lib/crew-gate";
+import { audioDaAula } from "@/lib/audio-aulas";
 import { navegacaoHeadHunter } from "@/lib/curso-navegacao";
 import { TIPO_AULA, duracao, numeroModulo, videoEmbed, type Aula, type Modulo, type Simulado, type Tentativa } from "@/lib/crew";
 
@@ -24,7 +25,7 @@ export default async function AulaPage({ params, searchParams }: { params: Promi
   const aula = data as Aula | null;
   if (!aula || (!aula.publicado && !profile.is_admin)) notFound();
 
-  const [{ data: modulo }, { data: feita }, simRes, tentRes, nav] = await Promise.all([
+  const [{ data: modulo }, { data: feita }, simRes, tentRes, nav, audio] = await Promise.all([
     supabase.from("modulos").select("*").eq("id", aula.modulo_id).single(),
     supabase.from("progresso").select("aula_id").eq("user_id", user.id).eq("aula_id", aula.id).maybeSingle(),
     aula.simulado_id
@@ -34,6 +35,7 @@ export default async function AulaPage({ params, searchParams }: { params: Promi
       ? supabase.from("tentativas").select("*").eq("user_id", user.id).eq("simulado_id", aula.simulado_id).order("iniciada_em", { ascending: false }).limit(10)
       : Promise.resolve({ data: [] }),
     navegacaoHeadHunter(supabase, user.id, { aulaId: id }),
+    aula.tipo === "texto" ? audioDaAula(aula.id) : Promise.resolve(null),
   ]);
   const simulado = simRes.data as Simulado | null;
   const tentativas = (tentRes.data ?? []) as Tentativa[];
@@ -105,6 +107,14 @@ export default async function AulaPage({ params, searchParams }: { params: Promi
 
         {simulado && (
           <CartaoSimulado simulado={simulado} tentativas={tentativas} aulaId={aula.id} erro={!!erro} />
+        )}
+
+        {audio && (
+          <section aria-label="Ouvir esta aula" className="flex flex-col gap-2 rounded-[20px] bg-navy p-5 text-white">
+            <span className="text-xs font-bold tracking-[.12em] text-[#ffb3c4] uppercase">🎧 Ouça esta aula</span>
+            <audio controls preload="none" src={audio} className="w-full" />
+            <span className="text-[13px] text-white/75">Ouça no caminho ou acompanhe lendo o texto abaixo.</span>
+          </section>
         )}
 
         {aula.conteudo && (

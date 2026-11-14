@@ -7,6 +7,7 @@
 #
 # Opções (depois do .sh):  --curso spanish   --custo   --modulo 3   --aula 3.2   --vozes
 # (sem --curso: Flight Attendant English)
+# Narração das aulas de texto do Head Hunter:  --head-hunter --modulo 12   (--custo  --voz)
 # A chave da API é pedida sem aparecer na tela e não fica salva em lugar nenhum.
 # =====================================================================
 set -euo pipefail
@@ -22,4 +23,9 @@ if [ -z "${ELEVENLABS_API_KEY:-}" ] && [[ " $* " != *" --custo "* ]]; then
   export ELEVENLABS_API_KEY
 fi
 
-npx --yes tsx@4 scripts/gerar-audios-ingles.ts "$@"
+if [ "${1:-}" = "--head-hunter" ]; then
+  shift
+  npx --yes tsx@4 scripts/gerar-audios-aulas.ts "$@"
+else
+  npx --yes tsx@4 scripts/gerar-audios-ingles.ts "$@"
+fi
