@@ -26,14 +26,14 @@ export async function POST(req: NextRequest) {
   const pasta = decodeURIComponent(req.headers.get("x-pasta") ?? "").trim().slice(0, 60) || null;
   const ext = extensao(nome);
   const formato = FORMATOS[ext];
-  if (!formato) return erro(`Formato .${ext || "?"} não aceito. Use JPG, PNG, WebP, GIF, MP4, WebM, MOV, MP3, M4A, WAV, OGG ou AAC.`);
+  if (!formato) return erro(`Formato .${ext || "?"} não aceito. Use JPG, PNG, WebP, GIF, MP4, WebM, MOV, MP3, M4A, WAV, OGG, AAC ou PDF.`);
   const limite = formato.max * 1024 * 1024;
   const declarado = Number(req.headers.get("content-length") || 0);
   if (declarado > limite) return erro(`Arquivo grande demais (máximo ${formato.max} MB para esse tipo).`, 413);
   if (!req.body) return erro("Arquivo vazio.");
 
   const mes = new Date().toISOString().slice(0, 7);
-  const sub = { imagem: "imagens", video: "videos", audio: "audios" }[formato.tipo];
+  const sub = { imagem: "imagens", video: "videos", audio: "audios", documento: "documentos" }[formato.tipo];
   const dir = path.join(PASTA_MIDIA, sub, mes);
   await mkdir(dir, { recursive: true });
   const id = randomBytes(8).toString("hex");

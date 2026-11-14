@@ -64,6 +64,8 @@ const num = (form: FormData, k: string) => {
 };
 function urlOuNull(v: string | null) {
   if (!v) return null;
+  // arquivo da galeria de Mídia do próprio site
+  if (/^\/midia\/[A-Za-z0-9/_.\-]+$/.test(v) && !v.includes("..")) return v;
   try {
     const u = new URL(v);
     return u.protocol === "https:" || u.protocol === "http:" ? u.toString() : null;
@@ -109,7 +111,7 @@ export async function salvarAula(_: FormState, form: FormData): Promise<FormStat
   const dados = {
     modulo_id: num(form, "modulo_id"),
     titulo: txt(form, "titulo", 160),
-    tipo: ["texto", "video", "pdf", "simulado"].includes(tipo) ? tipo : "texto",
+    tipo: ["texto", "video", "audio", "ao_vivo", "pdf", "simulado"].includes(tipo) ? tipo : "texto",
     resumo: txt(form, "resumo", 400),
     conteudo: txt(form, "conteudo", 100000),
     video_url: urlOuNull(videoBruto),
@@ -123,18 +125,32 @@ export async function salvarAula(_: FormState, form: FormData): Promise<FormStat
   if (!dados.modulo_id) return { erro: "Escolha o módulo." };
   if (!dados.titulo || dados.titulo.length < 2) return { erro: "Informe o título da aula." };
   if (dados.tipo === "simulado" && !dados.simulado_id) return { erro: "Escolha qual simulado esta aula abre." };
-  if (videoBruto && !dados.video_url) return { erro: "O link do vídeo não é válido." };
+  if (videoBruto && !dados.video_url) return { erro: dados.tipo === "audio" ? "O áudio não é válido." : "O link do vídeo não é válido." };
+  if (dados.tipo === "video" && !dados.video_url) return { erro: "Escolha o vídeo da galeria ou cole o link do YouTube/Vimeo." };
+  if (dados.tipo === "audio" && !dados.video_url) return { erro: "Escolha o áudio da galeria." };
+  if (dados.tipo === "pdf" && !dados.arquivo_url) return { erro: "Escolha o PDF da galeria ou cole o link do material." };
+  let aoVivo: Record<string, string | null> = {};
+  if (dados.tipo === "ao_vivo") {
+    const quando = String(form.get("ao_vivo_em") ?? "").trim();
+    if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(quando)) return { erro: "Informe a data e a hora da aula ao vivo." };
+    if (!dados.video_url) return { erro: "Cole o link da transmissão (YouTube, Zoom, Google Meet…)." };
+    const gravBruto = txt(form, "gravacao_url", 500);
+    const gravacao = urlOuNull(gravBruto);
+    if (gravBruto && !gravacao) return { erro: "O link da gravação não é válido." };
+    aoVivo = { ao_vivo_em: `${quando}:00-03:00`, gravacao_url: gravacao };
+  }
   if (arquivoBruto && !dados.arquivo_url) return { erro: "O link do material não é válido." };
   if (dados.duracao_min !== null && !(dados.duracao_min >= 1 && dados.duracao_min <= 600)) return { erro: "Duração entre 1 e 600 minutos." };
 
+  const erroSql = (e: { message: string }) => (/aulas_tipo_check|ao_vivo_em|gravacao_url/.test(e.message) ? "Rode o SQL 0059_tipos_de_aula.sql no Supabase para usar aulas de áudio e ao vivo." : null);
   if (UUID.test(id)) {
-    const { error } = await supabase.from("aulas").update(dados).eq("id", id);
-    if (error) return { erro: "Não foi possível salvar a aula." };
+    const { error } = await supabase.from("aulas").update({ ...dados, ...aoVivo }).eq("id", id);
+    if (error) return { erro: erroSql(error) ?? "Não foi possível salvar a aula." };
     revalidatePath("/", "layout");
     return { ok: true, msg: "Aula salva." };
   }
-  const { data, error } = await supabase.from("aulas").insert(dados).select("id").single();
-  if (error || !data) return { erro: "Não foi possível criar a aula." };
+  const { data, error } = await supabase.from("aulas").insert({ ...dados, ...aoVivo }).select("id").single();
+  if (error || !data) return { erro: (error && erroSql(error)) ?? "Não foi possível criar a aula." };
   revalidatePath("/", "layout");
   redirect(`/admin/cursos/head-hunter/aula/${data.id}?criada=1`);
 }

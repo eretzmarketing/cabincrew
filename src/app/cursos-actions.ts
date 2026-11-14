@@ -275,3 +275,14 @@ export async function salvarAulaIdioma(_: FormState, form: FormData): Promise<Fo
   atualizar(alvo.curso);
   return { ok: true, msg: "Aula salva. Já aparece para os alunos." };
 }
+
+/* ------------------------------------------------------------------ galeria (para escolher mídia nas aulas) */
+
+export type MidiaEscolha = { id: string; tipo: string; arquivo: string; miniatura: string | null; nome: string; titulo: string | null; pasta: string | null; tamanho: number; created_at: string };
+
+export async function listarMidias(tipo: string): Promise<MidiaEscolha[]> {
+  const { supabase } = await admin();
+  if (!["imagem", "video", "audio", "documento"].includes(tipo)) return [];
+  const { data } = await supabase.from("midias").select("id, tipo, arquivo, miniatura, nome, titulo, pasta, tamanho, created_at").eq("tipo", tipo).order("created_at", { ascending: false }).limit(1000);
+  return (data ?? []) as MidiaEscolha[];
+}

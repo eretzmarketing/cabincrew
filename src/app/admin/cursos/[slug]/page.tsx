@@ -9,6 +9,7 @@ import {
 import { Titulo, btnSecundario } from "@/components/admin-ui";
 import { ModuloForm } from "@/components/admin-forms";
 import { CursoInfoForm, ModuloIdiomaForm } from "@/components/AdminCursosForms";
+import NovaAulaBotao from "@/components/NovaAulaBotao";
 import { TIPO_AULA, duracao, numeroModulo, type Aula, type Modulo } from "@/lib/crew";
 import { CURSOS, ehCurso } from "@/lib/cursos";
 import { CURSOS_IDIOMA } from "@/lib/cursos-idioma";
@@ -187,7 +188,7 @@ async function ConteudoHH({ editar }: { editar?: string }) {
                 ))}
               </ol>
             ) : <p className="text-[15px] text-ink-2">Nenhuma aula ainda. Os alunos veem este módulo como “Em breve”.</p>}
-            <Link href={`/admin/cursos/head-hunter/aula/nova?modulo=${m.id}&ordem=${proxima}`} className="inline-flex min-h-11 items-center justify-center self-start rounded-full border-2 border-dashed border-[#c9cedb] px-5 text-[14px] font-semibold text-navy hover:border-navy">+ Adicionar aula</Link>
+            <NovaAulaBotao href={`/admin/cursos/head-hunter/aula/nova?modulo=${m.id}&ordem=${proxima}`} />
           </ModuloCaixa>
         );
       })}

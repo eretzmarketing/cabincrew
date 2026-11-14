@@ -14,7 +14,7 @@ export type Aula = {
   modulo_id: number;
   ordem: number;
   titulo: string;
-  tipo: "texto" | "video" | "pdf" | "simulado";
+  tipo: "texto" | "video" | "audio" | "ao_vivo" | "pdf" | "simulado";
   resumo: string | null;
   conteudo: string | null;
   video_url: string | null;
@@ -22,6 +22,8 @@ export type Aula = {
   duracao_min: number | null;
   publicado: boolean;
   simulado_id: number | null;
+  ao_vivo_em?: string | null;
+  gravacao_url?: string | null;
 };
 
 export type Simulado = {
@@ -76,9 +78,14 @@ export const BANCOS: Record<string, string> = {
 export const TIPO_AULA: Record<Aula["tipo"], string> = {
   texto: "Leitura",
   video: "Vídeo",
+  audio: "Áudio",
+  ao_vivo: "Aula ao vivo",
   pdf: "Material em PDF",
   simulado: "Simulado",
 };
+
+/** Arquivo de vídeo ou áudio guardado no próprio site (galeria de Mídia) ou link direto para .mp4/.mp3. */
+export const arquivoDeMidia = (url: string | null | undefined) => !!url && (/^\/midia\//.test(url) || /\.(mp4|webm|mov|m4v|mp3|m4a|wav|ogg|aac|opus)(\?|$)/i.test(url));
 
 export function numeroModulo(ordem: number) {
   return String(ordem).padStart(2, "0");

@@ -40,6 +40,7 @@ export const GRUPOS: Grupo[] = [
     ],
   },
   { id: "certificados", label: "Certificados", itens: [{ href: "/admin/certificados", label: "Certificados" }] },
+  { id: "midia", label: "Galeria de mídia", itens: [{ href: "/admin/midia", label: "Galeria de mídia" }] },
 
   // ---------- Alunos e vendas ----------
   {
@@ -62,9 +63,8 @@ export const GRUPOS: Grupo[] = [
 
   // ---------- Site ----------
   {
-    id: "site", label: "Site e comunidade", secao: "Site",
+    id: "site", label: "Fórum de Seleções", secao: "Site",
     itens: [
-      { href: "/admin/midia", label: "Mídia" },
       { href: "/admin/forum", label: "Fórum de Seleções" },
     ],
   },

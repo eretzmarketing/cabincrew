@@ -9,7 +9,7 @@ import AvisoTreino from "@/components/AvisoTreino";
 import { exigirCrewSelect, revisaoAte } from "@/lib/crew-gate";
 import { audioDaAula } from "@/lib/audio-aulas";
 import { navegacaoHeadHunter } from "@/lib/curso-navegacao";
-import { TIPO_AULA, duracao, numeroModulo, videoEmbed, type Aula, type Modulo, type Simulado, type Tentativa } from "@/lib/crew";
+import { TIPO_AULA, arquivoDeMidia, duracao, numeroModulo, videoEmbed, type Aula, type Modulo, type Simulado, type Tentativa } from "@/lib/crew";
 
 export const metadata: Metadata = { title: "Aula · Head Hunter", robots: { index: false } };
 
@@ -45,6 +45,7 @@ export default async function AulaPage({ params, searchParams }: { params: Promi
   const proximaId = proxima?.href.split("/").pop() ?? "";
   const concluida = !!feita;
   const embed = videoEmbed(aula.video_url);
+  const agora = new Date().getTime();
 
   const rodape = (
     <>
@@ -93,19 +94,18 @@ export default async function AulaPage({ params, searchParams }: { params: Promi
           {aula.resumo && <p className="text-[17px] leading-relaxed text-ink-2">{aula.resumo}</p>}
         </header>
 
-        {embed ? (
-          <div className="relative aspect-video overflow-hidden rounded-[20px] bg-navy">
-            <iframe
-              src={embed}
-              title={aula.titulo}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-              allowFullScreen
-              className="absolute inset-0 h-full w-full"
-            />
-          </div>
-        ) : aula.video_url ? (
-          <a href={aula.video_url} target="_blank" rel="noreferrer" className="rounded-2xl border border-line bg-white p-5 font-semibold">Assistir ao vídeo da aula ↗</a>
-        ) : null}
+        {aula.tipo === "ao_vivo" ? <AoVivo aula={aula} agora={agora} /> : aula.tipo === "audio" ? (
+          aula.video_url && (
+            <section aria-label="Áudio da aula" className="flex flex-col gap-2 rounded-[20px] bg-navy p-5 text-white">
+              <span className="text-xs font-bold tracking-[.12em] text-[#ffb3c4] uppercase">🎧 Ouça a aula</span>
+              <audio controls preload="metadata" src={aula.video_url} className="w-full" />
+            </section>
+          )
+        ) : <Player url={aula.video_url} titulo={aula.titulo} embed={embed} />}
+
+        {aula.tipo === "pdf" && aula.arquivo_url?.startsWith("/midia/") && (
+          <iframe src={aula.arquivo_url} title={`Material: ${aula.titulo}`} className="h-[75vh] w-full rounded-[20px] border border-line bg-white" />
+        )}
 
         {simulado && (
           <CartaoSimulado simulado={simulado} tentativas={tentativas} aulaId={aula.id} erro={!!erro} />
@@ -127,11 +127,50 @@ export default async function AulaPage({ params, searchParams }: { params: Promi
 
         {aula.arquivo_url && (
           <a href={aula.arquivo_url} target="_blank" rel="noreferrer" className="flex items-center justify-between gap-4 rounded-2xl border border-line bg-white p-5 font-semibold text-navy hover:border-navy">
-            Baixar material de apoio <span aria-hidden="true">↓</span>
+            {aula.tipo === "pdf" ? "Baixar o material" : "Baixar material de apoio"} <span aria-hidden="true">↓</span>
           </a>
         )}
       </article>
     </CursoPlayer>
+  );
+}
+
+/** Vídeo da aula: YouTube/Vimeo, arquivo da galeria do site ou link externo. */
+function Player({ url, titulo, embed }: { url: string | null; titulo: string; embed: string | null }) {
+  if (embed) return (
+    <div className="relative aspect-video overflow-hidden rounded-[20px] bg-navy">
+      <iframe src={embed} title={titulo} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowFullScreen className="absolute inset-0 h-full w-full" />
+    </div>
+  );
+  if (arquivoDeMidia(url)) return <video src={url!} controls preload="metadata" playsInline controlsList="nodownload" className="aspect-video w-full rounded-[20px] bg-navy" />;
+  if (url) return <a href={url} target="_blank" rel="noreferrer" className="rounded-2xl border border-line bg-white p-5 font-semibold">Assistir ao vídeo da aula ↗</a>;
+  return null;
+}
+
+const horaBR = (d: Date) => d.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", weekday: "long", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+
+/** Aula ao vivo: antes mostra quando começa; na hora, o link da transmissão; depois, a gravação (se houver). */
+function AoVivo({ aula, agora }: { aula: Aula; agora: number }) {
+  const inicio = aula.ao_vivo_em ? new Date(aula.ao_vivo_em) : null;
+  const fase = !inicio ? "sem-data" : agora < inicio.getTime() - 15 * 60_000 ? "antes" : agora < inicio.getTime() + 3 * 3600_000 ? "agora" : "depois";
+  const grav = aula.gravacao_url ? <Player url={aula.gravacao_url} titulo={`Gravação: ${aula.titulo}`} embed={videoEmbed(aula.gravacao_url)} /> : null;
+  return (
+    <section aria-label="Aula ao vivo" className="flex flex-col gap-4">
+      <div className={`flex flex-wrap items-center justify-between gap-4 rounded-[20px] p-5 md:p-6 ${fase === "agora" ? "bg-brand-strong text-white" : "bg-navy text-white"}`}>
+        <span className="flex flex-col gap-1">
+          <span className="text-xs font-bold tracking-[.12em] uppercase opacity-80">{fase === "agora" ? "🔴 Ao vivo agora" : fase === "depois" ? "Aula ao vivo encerrada" : "📡 Aula ao vivo"}</span>
+          {inicio && <strong className="font-display text-xl first-letter:uppercase">{horaBR(inicio)}</strong>}
+          {fase === "antes" && <span className="text-[14px] opacity-85">O link abre a transmissão. Entre uns minutos antes.</span>}
+          {fase === "depois" && <span className="text-[14px] opacity-85">{grav ? "Assista à gravação abaixo." : "A gravação vai aparecer aqui quando estiver pronta."}</span>}
+        </span>
+        {aula.video_url && fase !== "depois" && (
+          <a href={aula.video_url} target="_blank" rel="noreferrer" className={`inline-flex min-h-12 items-center rounded-full px-6 font-display font-bold ${fase === "agora" ? "bg-white text-brand-deep" : "bg-brand-strong text-white hover:bg-brand-deep"}`}>
+            Entrar na transmissão ↗
+          </a>
+        )}
+      </div>
+      {grav}
+    </section>
   );
 }
 

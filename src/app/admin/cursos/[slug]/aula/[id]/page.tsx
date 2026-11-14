@@ -17,7 +17,7 @@ export const dynamic = "force-dynamic";
 
 const UUID = /^[0-9a-f-]{36}$/i;
 
-type Props = { params: Promise<{ slug: string; id: string }>; searchParams: Promise<{ modulo?: string; ordem?: string; criada?: string; restaurada?: string }> };
+type Props = { params: Promise<{ slug: string; id: string }>; searchParams: Promise<{ modulo?: string; ordem?: string; criada?: string; restaurada?: string; tipo?: string }> };
 
 export default async function AdminAula({ params, searchParams }: Props) {
   const { slug, id } = await params;
@@ -52,7 +52,7 @@ async function AulaHH({ id, sp }: { id: string; sp: Awaited<Props["searchParams"
       </div>
       {sp.criada && <p role="status" className="rounded-xl bg-[#e5f6ec] px-4 py-3 text-[15px] text-[#0f6b3a]">Aula criada.</p>}
       <Card>
-        <AulaForm a={a ?? undefined} modulos={lista} simulados={sims ?? []} moduloId={moduloId} proximaOrdem={Number(sp.ordem) || 1} />
+        <AulaForm a={a ?? undefined} modulos={lista} simulados={sims ?? []} moduloId={moduloId} proximaOrdem={Number(sp.ordem) || 1} tipoInicial={sp.tipo} />
       </Card>
       {a && (
         <details className="rounded-[20px] border border-line bg-white p-6">

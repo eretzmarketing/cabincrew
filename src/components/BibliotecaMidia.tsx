@@ -16,7 +16,15 @@ const ABAS: { k: "todos" | TipoMidia; rotulo: string; icone: string }[] = [
   { k: "imagem", rotulo: "Fotos", icone: "🖼" },
   { k: "video", rotulo: "Vídeos", icone: "🎬" },
   { k: "audio", rotulo: "Áudios", icone: "🎧" },
+  { k: "documento", rotulo: "PDFs", icone: "📄" },
 ];
+
+const ORDENS = {
+  recentes: { rotulo: "Mais recentes", f: (a: Midia, b: Midia) => b.created_at.localeCompare(a.created_at) },
+  antigos: { rotulo: "Mais antigos", f: (a: Midia, b: Midia) => a.created_at.localeCompare(b.created_at) },
+  nome: { rotulo: "Nome (A–Z)", f: (a: Midia, b: Midia) => (a.titulo || a.nome).localeCompare(b.titulo || b.nome, "pt-BR") },
+  maiores: { rotulo: "Maiores primeiro", f: (a: Midia, b: Midia) => Number(b.tamanho) - Number(a.tamanho) },
+} as const;
 
 /** Envia um arquivo com barra de progresso (XHR mostra o progresso do upload; fetch não). */
 function enviar(f: File, pasta: string, onProgresso: (p: number) => void): Promise<Midia> {
@@ -44,6 +52,7 @@ export default function BibliotecaMidia({ inicial }: { inicial: Midia[] }) {
   const [aba, setAba] = useState<(typeof ABAS)[number]["k"]>("todos");
   const [busca, setBusca] = useState("");
   const [pastaFiltro, setPastaFiltro] = useState("");
+  const [ordem, setOrdem] = useState<keyof typeof ORDENS>("recentes");
   const [pastaEnvio, setPastaEnvio] = useState("");
   const [envios, setEnvios] = useState<Envio[]>([]);
   const [arrastando, setArrastando] = useState(false);
@@ -62,7 +71,7 @@ export default function BibliotecaMidia({ inicial }: { inicial: Midia[] }) {
     (aba === "todos" || m.tipo === aba) &&
     (!pastaFiltro || m.pasta === pastaFiltro) &&
     (!busca || `${m.titulo} ${m.nome} ${m.descricao} ${m.pasta}`.toLowerCase().includes(busca.toLowerCase())),
-  );
+  ).sort(ORDENS[ordem].f);
   const total = itens.reduce((s, m) => s + Number(m.tamanho), 0);
   const conta = (t: TipoMidia) => itens.filter((m) => m.tipo === t).length;
 
@@ -139,9 +148,9 @@ export default function BibliotecaMidia({ inicial }: { inicial: Midia[] }) {
           className={`flex min-h-32 cursor-pointer flex-col items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed px-6 py-6 text-center ${arrastando ? "border-navy bg-soft" : "border-[#c9cedb] hover:border-navy hover:bg-soft"}`}
         >
           <span aria-hidden="true" className="text-3xl">⬆</span>
-          <span className="font-semibold text-navy">Arraste fotos, vídeos ou áudios aqui ou clique para escolher</span>
-          <span className="text-[13px] text-muted">Fotos até 25 MB (viram WebP otimizado) · vídeos até 500 MB · áudios até 100 MB · vários de uma vez</span>
-          <input ref={input} type="file" multiple accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime,audio/*" className="sr-only" onChange={(e) => e.target.files && receber(e.target.files)} />
+          <span className="font-semibold text-navy">Arraste fotos, vídeos, áudios ou PDFs aqui ou clique para escolher</span>
+          <span className="text-[13px] text-muted">Fotos até 25 MB (viram WebP otimizado) · vídeos até 500 MB · áudios e PDFs até 100 MB · vários de uma vez</span>
+          <input ref={input} type="file" multiple accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime,audio/*,application/pdf,.pdf" className="sr-only" onChange={(e) => e.target.files && receber(e.target.files)} />
         </label>
         <label className="flex flex-wrap items-center gap-2 text-sm font-semibold text-navy">
           Guardar na pasta
@@ -179,6 +188,9 @@ export default function BibliotecaMidia({ inicial }: { inicial: Midia[] }) {
             {pastas.map((p) => <option key={p} value={p}>{p}</option>)}
           </select>
         )}
+        <select value={ordem} onChange={(e) => setOrdem(e.target.value as keyof typeof ORDENS)} aria-label="Ordenar" className="min-h-11 rounded-xl border border-[#c9cedb] bg-white px-3 text-[15px]">
+          {Object.entries(ORDENS).map(([k, o]) => <option key={k} value={k}>{o.rotulo}</option>)}
+        </select>
         <span className="ml-auto text-[13px] text-muted">{tamanhoLegivel(total)} usados no servidor</span>
       </div>
 
@@ -227,6 +239,8 @@ export default function BibliotecaMidia({ inicial }: { inicial: Midia[] }) {
                       <video src={`${urlMidia(m.arquivo)}#t=1`} preload="metadata" muted className="h-full w-full object-cover" />
                       <span aria-hidden="true" className="absolute inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/90 text-navy">▶</span>
                     </>
+                  ) : m.tipo === "documento" ? (
+                    <span aria-hidden="true" className="flex flex-col items-center gap-1 text-4xl">📄<span className="rounded bg-brand-deep px-1.5 text-[11px] font-bold text-white">PDF</span></span>
                   ) : (
                     <span aria-hidden="true" className="text-4xl">🎧</span>
                   )}
@@ -273,6 +287,8 @@ export default function BibliotecaMidia({ inicial }: { inicial: Midia[] }) {
                 <img src={urlMidia(aberta.arquivo)} alt={aberta.descricao ?? ""} className="max-h-[70vh] w-full object-contain" />
               ) : aberta.tipo === "video" ? (
                 <video src={urlMidia(aberta.arquivo)} controls className="max-h-[70vh] w-full" />
+              ) : aberta.tipo === "documento" ? (
+                <iframe src={urlMidia(aberta.arquivo)} title={aberta.titulo || aberta.nome} className="h-[70vh] w-full bg-white" />
               ) : (
                 <div className="flex w-full flex-col items-center gap-4 p-8 text-white"><span aria-hidden="true" className="text-6xl">🎧</span><audio src={urlMidia(aberta.arquivo)} controls className="w-full" /></div>
               )}

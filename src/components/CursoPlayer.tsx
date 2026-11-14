@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
-export type TipoItem = "texto" | "video" | "pdf" | "simulado" | "audio" | "treino";
+export type TipoItem = "texto" | "video" | "pdf" | "simulado" | "audio" | "ao_vivo" | "treino";
 export type ItemCurso = {
   href: string; titulo: string; tipo: TipoItem; minutos?: number | null;
   feita?: boolean; bloqueada?: boolean; atual?: boolean;
@@ -13,7 +13,7 @@ export type ItemCurso = {
 };
 export type SecaoCurso = { id: string; rotulo: string; titulo: string; href?: string; atual?: boolean; itens: ItemCurso[] };
 
-const ROTULO_TIPO: Record<TipoItem, string> = { texto: "Leitura", video: "Vídeo", pdf: "Material", simulado: "Simulado", audio: "Aula com áudio", treino: "Treino" };
+const ROTULO_TIPO: Record<TipoItem, string> = { texto: "Leitura", video: "Vídeo", pdf: "Material", simulado: "Simulado", audio: "Aula com áudio", ao_vivo: "Ao vivo", treino: "Treino" };
 
 function IconeTipo({ tipo }: { tipo: TipoItem }) {
   const p = { width: 16, height: 16, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const, "aria-hidden": true };
@@ -21,6 +21,7 @@ function IconeTipo({ tipo }: { tipo: TipoItem }) {
     case "video": return <svg {...p}><circle cx="12" cy="12" r="9" /><path d="M10 8.5l5.5 3.5-5.5 3.5z" /></svg>;
     case "audio": return <svg {...p}><path d="M4 10v4h4l5 4V6L8 10z" /><path d="M16.5 9a4 4 0 010 6M19 6.5a7.5 7.5 0 010 11" /></svg>;
     case "simulado": return <svg {...p}><rect x="5" y="4" width="14" height="17" rx="2" /><path d="M9 4V3h6v1M9 12l2 2 4-4" /></svg>;
+    case "ao_vivo": return <svg {...p}><circle cx="12" cy="12" r="2.5" /><path d="M7.8 7.8a6 6 0 000 8.4M16.2 7.8a6 6 0 010 8.4M5 5a10 10 0 000 14M19 5a10 10 0 010 14" /></svg>;
     case "pdf": return <svg {...p}><path d="M12 4v11M7 10l5 5 5-5M5 20h14" /></svg>;
     case "treino": return <svg {...p}><circle cx="12" cy="12" r="8.5" /><circle cx="12" cy="12" r="4.5" /><circle cx="12" cy="12" r="1" /></svg>;
     default: return <svg {...p}><path d="M7 3h7l4 4v14H7z" /><path d="M14 3v4h4M10 12h5M10 16h5" /></svg>;

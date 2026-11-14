@@ -1,6 +1,6 @@
 /** Partes da biblioteca de mídia que servem no navegador e no servidor. */
 
-export type TipoMidia = "imagem" | "video" | "audio";
+export type TipoMidia = "imagem" | "video" | "audio" | "documento";
 
 /** Formatos aceitos (sem SVG, que pode conter código). */
 export const FORMATOS: Record<string, { tipo: TipoMidia; mime: string; max: number }> = {
@@ -18,6 +18,7 @@ export const FORMATOS: Record<string, { tipo: TipoMidia; mime: string; max: numb
   ogg: { tipo: "audio", mime: "audio/ogg", max: 100 },
   aac: { tipo: "audio", mime: "audio/aac", max: 100 },
   opus: { tipo: "audio", mime: "audio/ogg", max: 100 },
+  pdf: { tipo: "documento", mime: "application/pdf", max: 100 },
 };
 
 export const extensao = (nome: string) => nome.toLowerCase().match(/\.([a-z0-9]+)$/)?.[1] ?? "";

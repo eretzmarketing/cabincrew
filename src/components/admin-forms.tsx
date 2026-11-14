@@ -6,6 +6,7 @@ import Conteudo from "@/components/Conteudo";
 import type { FormState } from "@/app/actions";
 import { salvarAula, salvarModulo, salvarSimulado } from "@/app/crew-actions";
 import { BANCOS, type Aula, type Modulo, type Simulado } from "@/lib/crew";
+import { CampoMidia } from "@/components/SeletorMidia";
 
 const input = "min-h-12 w-full rounded-xl border border-[#c9cedb] bg-white px-3.5 text-[15px] text-navy placeholder:text-muted";
 const label = "flex flex-col gap-2 text-sm font-semibold";
@@ -74,15 +75,45 @@ export function ModuloForm({ m, proximaOrdem = 0 }: { m?: Modulo; proximaOrdem?:
 }
 
 /* ---------- Aula ---------- */
-export function AulaForm({ a, modulos, simulados = [], moduloId, proximaOrdem = 1 }: { a?: Aula; modulos: Modulo[]; simulados?: { id: number; titulo: string }[]; moduloId?: number; proximaOrdem?: number }) {
+export const TIPOS_AULA: { k: Aula["tipo"]; nome: string; icone: string; dica: string }[] = [
+  { k: "texto", nome: "Texto", icone: "📄", dica: "Leitura com títulos, listas e destaques" },
+  { k: "video", nome: "Vídeo", icone: "🎬", dica: "Da galeria ou link do YouTube/Vimeo" },
+  { k: "audio", nome: "Áudio", icone: "🎧", dica: "MP3 da galeria, com texto opcional" },
+  { k: "ao_vivo", nome: "Ao vivo", icone: "📡", dica: "Transmissão com data e hora (YouTube, Zoom, Meet)" },
+  { k: "pdf", nome: "PDF / material", icone: "📎", dica: "Apostila ou material para baixar" },
+  { k: "simulado", nome: "Simulado", icone: "✅", dica: "Prova com questões do banco" },
+];
+
+/** "2026-11-20T19:30:00-03:00" → "2026-11-20T19:30" (horário de Brasília) para o campo de data e hora. */
+function paraCampoData(iso: string | null | undefined) {
+  if (!iso) return "";
+  const d = new Date(new Date(iso).getTime() - 3 * 3600_000);
+  return d.toISOString().slice(0, 16);
+}
+
+export function AulaForm({ a, modulos, simulados = [], moduloId, proximaOrdem = 1, tipoInicial }: { a?: Aula; modulos: Modulo[]; simulados?: { id: number; titulo: string }[]; moduloId?: number; proximaOrdem?: number; tipoInicial?: string }) {
   const [state, action] = useActionState(salvarAula, undefined);
   const [conteudo, setConteudo] = useState(a?.conteudo ?? "");
   const [ver, setVer] = useState<"editar" | "previa">("editar");
-  const [tipo, setTipo] = useState<string>(a?.tipo ?? "texto");
+  const [tipo, setTipo] = useState<string>(a?.tipo ?? (TIPOS_AULA.some((t) => t.k === tipoInicial) ? tipoInicial! : "texto"));
+  const textoOpcional = tipo !== "texto";
 
   return (
     <form action={action} className="flex flex-col gap-5">
       {a && <input type="hidden" name="id" value={a.id} />}
+      <fieldset className="flex flex-col gap-2">
+        <legend className="pb-2 text-sm font-semibold">Tipo de aula</legend>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+          {TIPOS_AULA.map((t) => (
+            <label key={t.k} className={`flex min-h-16 cursor-pointer items-start gap-3 rounded-2xl border-2 p-3 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-navy ${tipo === t.k ? "border-navy bg-soft" : "border-line bg-white hover:border-[#c9cedb]"}`}>
+              <input type="radio" name="tipo" value={t.k} checked={tipo === t.k} onChange={() => setTipo(t.k)} className="sr-only" />
+              <span aria-hidden="true" className="text-2xl leading-none">{t.icone}</span>
+              <span className="flex flex-col"><strong className="text-[15px]">{t.nome}</strong><span className="text-[12px] leading-snug font-normal text-muted">{t.dica}</span></span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
+
       <div className="flex flex-wrap gap-4">
         <label className={`${label} flex-[1_1_260px]`}>
           Módulo
@@ -94,30 +125,11 @@ export function AulaForm({ a, modulos, simulados = [], moduloId, proximaOrdem = 
           Ordem
           <input name="ordem" type="number" min={0} max={999} defaultValue={a?.ordem ?? proximaOrdem} className={input} />
         </label>
-        <label className={`${label} flex-[0_1_180px]`}>
-          Tipo
-          <select name="tipo" value={tipo} onChange={(e) => setTipo(e.target.value)} className={input}>
-            <option value="texto">Leitura</option>
-            <option value="video">Vídeo</option>
-            <option value="pdf">Material em PDF</option>
-            <option value="simulado">Simulado</option>
-          </select>
-        </label>
         <label className={`${label} flex-[0_1_150px]`}>
           Duração (min)
           <input name="duracao_min" type="number" min={1} max={600} defaultValue={a?.duracao_min ?? ""} className={input} />
         </label>
       </div>
-
-      {tipo === "simulado" && (
-        <label className={label}>
-          Simulado que esta aula abre
-          <select name="simulado_id" required defaultValue={a?.simulado_id ?? ""} className={input}>
-            <option value="" disabled>Escolha o simulado</option>
-            {simulados.map((s) => <option key={s.id} value={s.id}>{s.titulo}</option>)}
-          </select>
-        </label>
-      )}
 
       <label className={label}>
         Título da aula
@@ -128,20 +140,48 @@ export function AulaForm({ a, modulos, simulados = [], moduloId, proximaOrdem = 
         <input name="resumo" maxLength={400} defaultValue={a?.resumo ?? ""} className={input} />
       </label>
 
-      <div className="flex flex-wrap gap-4">
-        <label className={`${label} flex-[1_1_300px]`}>
-          Link do vídeo <span className="font-normal text-muted">(YouTube, Vimeo ou outro)</span>
-          <input name="video_url" type="url" defaultValue={a?.video_url ?? ""} placeholder="https://youtu.be/…" className={input} />
+      {tipo === "simulado" && (
+        <label className={label}>
+          Simulado que esta aula abre
+          <select name="simulado_id" required defaultValue={a?.simulado_id ?? ""} className={input}>
+            <option value="" disabled>Escolha o simulado</option>
+            {simulados.map((s) => <option key={s.id} value={s.id}>{s.titulo}</option>)}
+          </select>
         </label>
-        <label className={`${label} flex-[1_1_300px]`}>
-          Link do material <span className="font-normal text-muted">(PDF, Google Drive…)</span>
-          <input name="arquivo_url" type="url" defaultValue={a?.arquivo_url ?? ""} placeholder="https://…" className={input} />
-        </label>
-      </div>
+      )}
+      {tipo === "video" && (
+        <CampoMidia key="video" name="video_url" tipo="video" inicial={a?.tipo === "audio" || a?.tipo === "ao_vivo" ? "" : a?.video_url ?? ""} rotulo="Vídeo da aula" dica="(da galeria ou link do YouTube/Vimeo)" placeholder="https://youtu.be/… ou escolha da galeria" />
+      )}
+      {tipo === "audio" && (
+        <CampoMidia key="audio" name="video_url" tipo="audio" aceitaLink={false} inicial={a?.tipo === "audio" ? a.video_url ?? "" : ""} rotulo="Áudio da aula" dica="(MP3 da galeria)" />
+      )}
+      {tipo === "ao_vivo" && (
+        <div className="flex flex-col gap-4 rounded-2xl bg-soft p-4">
+          <div className="flex flex-wrap gap-4">
+            <label className={`${label} flex-[0_1_260px]`}>
+              Data e hora (Brasília)
+              <input name="ao_vivo_em" type="datetime-local" required defaultValue={paraCampoData(a?.ao_vivo_em)} className={input} />
+            </label>
+            <label className={`${label} flex-[1_1_300px]`}>
+              Link da transmissão
+              <input name="video_url" type="url" required defaultValue={a?.tipo === "ao_vivo" ? a.video_url ?? "" : ""} placeholder="YouTube ao vivo, Zoom, Google Meet…" className={input} />
+            </label>
+          </div>
+          <CampoMidia key="gravacao" name="gravacao_url" tipo="video" inicial={a?.gravacao_url ?? ""} rotulo="Gravação" dica="(opcional: depois da aula, coloque aqui para quem não assistiu ao vivo)" placeholder="Link do YouTube ou escolha da galeria" />
+        </div>
+      )}
+      {tipo === "pdf" ? (
+        <CampoMidia key="pdf" name="arquivo_url" tipo="documento" inicial={a?.arquivo_url ?? ""} rotulo="Material em PDF" dica="(da galeria ou link do Google Drive)" placeholder="https://… ou escolha da galeria" />
+      ) : (
+        <CampoMidia key="apoio" name="arquivo_url" tipo="documento" inicial={a?.arquivo_url ?? ""} rotulo="Material de apoio" dica="(opcional: PDF para o aluno baixar)" placeholder="https://… ou escolha da galeria" />
+      )}
+      {(tipo === "texto" || tipo === "pdf" || tipo === "simulado") && (
+        <CampoMidia key="video-opcional" name="video_url" tipo="video" inicial={a?.video_url ?? ""} rotulo="Vídeo" dica="(opcional: aparece no topo da aula)" placeholder="https://youtu.be/… ou escolha da galeria" />
+      )}
 
       <div className="flex flex-col gap-2">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <span className="text-sm font-semibold" id="conteudo-rotulo">Conteúdo da aula</span>
+          <span className="text-sm font-semibold" id="conteudo-rotulo">{textoOpcional ? "Texto da aula (opcional)" : "Conteúdo da aula"}</span>
           <div className="flex gap-1 rounded-full bg-soft p-1" role="tablist" aria-label="Modo do editor">
             {(["editar", "previa"] as const).map((m) => (
               <button
@@ -160,7 +200,7 @@ export function AulaForm({ a, modulos, simulados = [], moduloId, proximaOrdem = 
         <textarea
           name="conteudo"
           aria-labelledby="conteudo-rotulo"
-          rows={18}
+          rows={textoOpcional ? 8 : 18}
           value={conteudo}
           onChange={(e) => setConteudo(e.target.value)}
           placeholder={"## Título de uma seção\n\nTexto normal. Use **negrito** e listas:\n\n- item 1\n- item 2\n\n> Dica em destaque"}

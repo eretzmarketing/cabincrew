@@ -12,7 +12,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ cami
   const relativo = caminho.join("/");
   const ext = extensao(relativo);
   const formato = FORMATOS[ext];
-  const arquivo = formato && /^(imagens|videos|audios)\//.test(relativo) ? caminhoSeguro(relativo) : null;
+  const arquivo = formato && /^(imagens|videos|audios|documentos)\//.test(relativo) ? caminhoSeguro(relativo) : null;
   if (!arquivo) return new Response("Não encontrado", { status: 404 });
 
   let tamanho: number;
