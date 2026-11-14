@@ -291,6 +291,15 @@ export async function alternarQuestao(form: FormData) {
   revalidatePath("/admin/questoes", "layout");
 }
 
+/** Admin: coloca nos simulados (ou tira) as questões marcadas na lista. */
+export async function alterarQuestoesMassa(form: FormData) {
+  const { supabase } = await admin();
+  const ids = form.getAll("ids").map(String).filter((x) => UUID.test(x)).slice(0, 500);
+  if (!ids.length) return;
+  await supabase.from("questoes").update({ ativo: form.get("acao") === "ativar" }).in("id", ids);
+  revalidatePath("/admin/questoes", "layout");
+}
+
 /** Admin: coloca nos simulados todas as questões "fora dos simulados" do filtro atual (banco, tema e busca). */
 export async function ativarQuestoesFiltro(form: FormData) {
   const { supabase } = await admin();
@@ -301,6 +310,7 @@ export async function ativarQuestoesFiltro(form: FormData) {
   let q = supabase.from("questoes").update({ ativo: true }).eq("banco", banco).eq("ativo", false);
   if (cat) q = q.eq("categoria", cat);
   if (busca) q = q.ilike("enunciado", `%${busca.replace(/[%_\\]/g, (c) => `\\${c}`)}%`);
+  if (form.get("novas") === "1") q = q.like("origem_id", "cc2611-%");
   await q;
   revalidatePath("/admin/questoes", "layout");
 }

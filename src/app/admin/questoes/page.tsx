@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { alternarQuestao, ativarQuestoesFiltro } from "@/app/crew-actions";
+import { alterarQuestoesMassa, alternarQuestao, ativarQuestoesFiltro } from "@/app/crew-actions";
+import MarcarTodas from "@/components/MarcarTodas";
 import { Titulo, btnPrimario, btnSecundario } from "@/components/admin-ui";
 import { BANCOS, type Alternativa } from "@/lib/crew";
 import { getUser } from "@/lib/supabase/server";
@@ -9,7 +10,7 @@ export const metadata: Metadata = { title: "Banco de questões" };
 
 const POR_PAGINA = 50;
 
-type Sp = { banco?: string; q?: string; cat?: string; status?: string; p?: string };
+type Sp = { banco?: string; q?: string; cat?: string; status?: string; p?: string; novas?: string };
 
 export default async function AdminQuestoes({ searchParams }: { searchParams: Promise<Sp> }) {
   const sp = await searchParams;
@@ -26,6 +27,8 @@ export default async function AdminQuestoes({ searchParams }: { searchParams: Pr
   if (sp.cat) consulta = consulta.eq("categoria", sp.cat);
   if (status === "ativas") consulta = consulta.eq("ativo", true);
   if (status === "fora") consulta = consulta.eq("ativo", false);
+  const novas = sp.novas === "1";
+  if (novas) consulta = consulta.like("origem_id", "cc2611-%");
   if (busca) consulta = consulta.ilike("enunciado", `%${busca.replace(/[%_\\]/g, (c) => `\\${c}`)}%`);
 
   const [{ data, count }, { data: totais }, { data: cats }] = await Promise.all([
@@ -49,11 +52,12 @@ export default async function AdminQuestoes({ searchParams }: { searchParams: Pr
 
   const url = (mudar: Partial<Sp>) => {
     const p = new URLSearchParams();
-    const v = { banco, q: busca, cat: sp.cat, status, p: String(pagina), ...mudar };
+    const v = { banco, q: busca, cat: sp.cat, status, p: String(pagina), novas: novas ? "1" : "", ...mudar };
     if (v.banco) p.set("banco", v.banco);
     if (v.q) p.set("q", v.q);
     if (v.cat) p.set("cat", v.cat);
     if (v.status && v.status !== "todas") p.set("status", v.status);
+    if (v.novas) p.set("novas", "1");
     if (v.p && v.p !== "1") p.set("p", v.p);
     return `/admin/questoes?${p.toString()}`;
   };
@@ -100,6 +104,9 @@ export default async function AdminQuestoes({ searchParams }: { searchParams: Pr
           <option value="ativas">Nos simulados</option>
           <option value="fora">Fora dos simulados</option>
         </select>
+        <label className="inline-flex min-h-12 cursor-pointer items-center gap-2 px-1 text-[15px] font-semibold">
+          <input type="checkbox" name="novas" value="1" defaultChecked={novas} className="h-5 w-5 accent-[#1f2a44]" /> Só as questões novas (nov/2026)
+        </label>
         <button className="min-h-12 cursor-pointer rounded-xl bg-navy px-6 font-semibold text-white">Filtrar</button>
       </form>
 
@@ -108,6 +115,7 @@ export default async function AdminQuestoes({ searchParams }: { searchParams: Pr
           <input type="hidden" name="banco" value={banco} />
           <input type="hidden" name="cat" value={sp.cat ?? ""} />
           <input type="hidden" name="q" value={busca} />
+          {novas && <input type="hidden" name="novas" value="1" />}
           <span className="flex-1 text-[15px] text-[#7a5a00]">Revisou? Coloque nos simulados as {total.toLocaleString("pt-BR")} questões desta lista de uma vez.</span>
           <button className="min-h-11 cursor-pointer rounded-full bg-navy px-5 font-semibold text-white hover:bg-navy-deep">Colocar todas desta lista nos simulados</button>
         </form>
@@ -115,13 +123,24 @@ export default async function AdminQuestoes({ searchParams }: { searchParams: Pr
 
       <p className="text-[15px] text-ink-2">
         {total.toLocaleString("pt-BR")} {total === 1 ? "questão encontrada" : "questões encontradas"}
-        {(busca || sp.cat || status !== "todas") && <> · <Link href={`/admin/questoes?banco=${banco}`} className="font-semibold">limpar filtros</Link></>}
+        {(busca || sp.cat || status !== "todas" || novas) && <> · <Link href={`/admin/questoes?banco=${banco}`} className="font-semibold">limpar filtros</Link></>}
       </p>
+
+      {lista.length > 0 && (
+        <form id="massa" action={alterarQuestoesMassa} className="flex flex-wrap items-center gap-3 rounded-2xl border border-line bg-white px-4 py-2">
+          <MarcarTodas form="massa" />
+          <span className="flex-1" />
+          <span className="text-[14px] text-muted">Com as marcadas:</span>
+          <button name="acao" value="ativar" className="min-h-10 cursor-pointer rounded-full bg-[#e5f6ec] px-4 text-[14px] font-semibold text-[#0f6b3a] hover:bg-[#d3efdf]">Colocar nos simulados</button>
+          <button name="acao" value="desativar" className="min-h-10 cursor-pointer rounded-full bg-[#fff3e0] px-4 text-[14px] font-semibold text-[#8a4b00] hover:bg-[#ffe8c7]">Tirar dos simulados</button>
+        </form>
+      )}
 
       <div className="overflow-x-auto rounded-2xl border border-line bg-white">
         <table className="w-full min-w-[820px] text-left text-[15px]">
           <thead className="border-b border-line text-sm text-muted">
             <tr>
+              <th className="w-10 p-3"><span className="sr-only">Marcar</span></th>
               <th className="p-3 font-semibold">Tema</th>
               <th className="p-3 font-semibold">Questão</th>
               <th className="p-3 text-center font-semibold">Resposta</th>
@@ -134,6 +153,9 @@ export default async function AdminQuestoes({ searchParams }: { searchParams: Pr
               const certa = q.alternativas?.find((a) => a.letra === q.correta);
               return (
                 <tr key={q.id} className={`border-b border-[#eceef3] align-top last:border-0 ${q.ativo ? "" : "bg-[#fbfbfc]"}`}>
+                  <td className="p-3 pt-4">
+                    <input type="checkbox" name="ids" value={q.id} form="massa" aria-label={`Marcar: ${q.enunciado.slice(0, 60)}`} className="h-5 w-5 accent-[#1f2a44]" />
+                  </td>
                   <td className="w-44 p-3">
                     {q.categoria ? <span className="inline-block rounded-full bg-[#efeaff] px-2.5 py-1 text-xs font-semibold text-[#5b3cc4]">{q.categoria}</span> : <span className="text-muted">—</span>}
                   </td>
@@ -170,7 +192,7 @@ export default async function AdminQuestoes({ searchParams }: { searchParams: Pr
                 </tr>
               );
             })}
-            {!lista.length && <tr><td colSpan={5} className="p-8 text-center text-ink-2">Nenhuma questão encontrada.</td></tr>}
+            {!lista.length && <tr><td colSpan={6} className="p-8 text-center text-ink-2">Nenhuma questão encontrada.</td></tr>}
           </tbody>
         </table>
       </div>
