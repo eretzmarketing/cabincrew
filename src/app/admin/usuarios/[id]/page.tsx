@@ -17,6 +17,8 @@ import { alterarAcesso } from "@/app/pagamentos-actions";
 import { CURSOS_CERT } from "@/lib/certificados";
 import { STATUS_COMPRA, dataHoraBR, dinheiro, fimArrependimento, type Compra } from "@/lib/compras";
 import { cursoIdioma, infoCursos } from "@/lib/cursos-dados";
+import { FeedbackVisual } from "@/components/VideoIA";
+import type { FeedbackIA } from "@/lib/ia-video-tipos";
 
 export const metadata: Metadata = { title: "Aluno · Head Hunter" };
 export const dynamic = "force-dynamic";
@@ -39,6 +41,7 @@ export default async function AlunoPage({ params }: { params: Promise<{ id: stri
   ]);
   const l = ((linha ?? []) as LinhaAluno[])[0];
   if (!l) notFound();
+  const { data: videosIA } = await supabase.from("video_treinos").select("created_at, duracao_seg, meta_seg, nota_ia, ia, transcricao").eq("user_id", id).not("ia", "is", null).order("created_at", { ascending: false }).limit(6);
 
   const st = situacao(l);
   const rs = riscos(l);
@@ -155,6 +158,25 @@ export default async function AlunoPage({ params }: { params: Promise<{ id: stri
               </ul>
             )}
           </Card>
+
+          {!!(videosIA ?? []).length && (
+            <Card>
+              <h2 className="font-display text-xl font-extrabold">🤖 Vídeos de apresentação avaliados pela IA</h2>
+              <ul className="flex flex-col gap-2">
+                {((videosIA ?? []) as { created_at: string; duracao_seg: number; meta_seg: number; nota_ia: number; ia: FeedbackIA; transcricao: string | null }[]).map((v, i) => (
+                  <li key={v.created_at}>
+                    <details open={i === 0} className="rounded-2xl border border-line px-4 py-2">
+                      <summary className="flex min-h-11 cursor-pointer flex-wrap items-center justify-between gap-2 py-1 text-[15px]">
+                        <span>{dataHoraBR(v.created_at)} · {Math.floor(v.duracao_seg / 60)}:{String(v.duracao_seg % 60).padStart(2, "0")}</span>
+                        <span className={`rounded-full px-3 py-0.5 font-semibold ${v.nota_ia >= 80 ? "bg-[#e5f6ec] text-[#0f6b3a]" : "bg-brand-soft text-brand-deep"}`}>{v.nota_ia}/100</span>
+                      </summary>
+                      <div className="pt-3 pb-2"><FeedbackVisual f={v.ia} transcricao={v.transcricao} /></div>
+                    </details>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          )}
 
           <Card>
             <h2 className="font-display text-xl font-extrabold">Acesso aos cursos</h2>

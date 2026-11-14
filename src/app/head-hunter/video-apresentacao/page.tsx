@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import VideoTreino from "@/components/VideoTreino";
+import { FeedbackVisual } from "@/components/VideoIA";
+import { configIA, type FeedbackIA } from "@/lib/ia-video";
 import { exigirCrewSelect } from "@/lib/crew-gate";
 import { COMPANHIAS } from "@/lib/jornada";
 import { lerCheckin } from "@/lib/jornada-dados";
@@ -14,10 +16,11 @@ export default async function VideoApresentacaoPage() {
   const { supabase, user, liberado } = await exigirCrewSelect("/head-hunter/video-apresentacao");
   if (!liberado) redirect("/head-hunter");
   const [{ data: hist }, checkin] = await Promise.all([
-    supabase.from("video_treinos").select("nota, duracao_seg, meta_seg, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(8),
+    supabase.from("video_treinos").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(8),
     lerCheckin(supabase, user.id),
   ]);
-  const historico = (hist ?? []) as { nota: number; duracao_seg: number; meta_seg: number; created_at: string }[];
+  const historico = (hist ?? []) as { nota: number; duracao_seg: number; meta_seg: number; created_at: string; nota_ia?: number | null; ia?: FeedbackIA | null; transcricao?: string | null }[];
+  const ia = !!configIA()?.ativo;
   const companhia = COMPANHIAS.find((c) => c.slug === checkin.companhias[0])?.nome;
 
   return (
@@ -35,17 +38,25 @@ export default async function VideoApresentacaoPage() {
       </section>
 
       <div className="mx-auto flex max-w-[900px] flex-col gap-8 px-4 pt-8 md:px-6">
-        <VideoTreino companhia={companhia} />
+        <VideoTreino companhia={companhia} ia={ia} />
 
         {historico.length > 0 && (
           <section aria-labelledby="hist" className="flex flex-col gap-3">
             <h2 id="hist" className="font-display text-xl font-extrabold">Suas gravações</h2>
             <ul className="flex flex-col gap-2">
               {historico.map((h) => (
-                <li key={h.created_at} className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-line bg-white px-4 py-3 text-[15px]">
-                  <span>{new Date(h.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" })}</span>
-                  <span className="text-muted">{mmss(h.duracao_seg)} de {mmss(h.meta_seg)}</span>
-                  <span className={`rounded-full px-3 py-0.5 font-semibold ${h.nota >= NOTA_VIDEO ? "bg-[#e5f6ec] text-[#0f6b3a]" : "bg-brand-soft text-brand-deep"}`}>{h.nota}%</span>
+                <li key={h.created_at} className="rounded-2xl border border-line bg-white px-4 py-3 text-[15px]">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span>{new Date(h.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" })}</span>
+                    <span className="text-muted">{mmss(h.duracao_seg)} de {mmss(h.meta_seg)}</span>
+                    <span className={`rounded-full px-3 py-0.5 font-semibold ${h.nota >= NOTA_VIDEO ? "bg-[#e5f6ec] text-[#0f6b3a]" : "bg-brand-soft text-brand-deep"}`}>{h.ia ? "🤖 " : ""}{h.nota}%</span>
+                  </div>
+                  {h.ia && (
+                    <details className="pt-2">
+                      <summary className="min-h-10 cursor-pointer py-2 text-[14px] font-semibold text-navy">Ver o feedback da IA</summary>
+                      <div className="pt-2"><FeedbackVisual f={h.ia} transcricao={h.transcricao} /></div>
+                    </details>
+                  )}
                 </li>
               ))}
             </ul>

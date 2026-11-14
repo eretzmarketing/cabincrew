@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { salvarVideoTreino } from "@/app/crew-actions";
+import VideoIA from "@/components/VideoIA";
 import { BLOCOS_VIDEO, CHECKLIST_VIDEO, METAS_VIDEO, NOTA_VIDEO, dentroDoTempo, marcosVideo, mmss } from "@/lib/video";
 
 const btnPrim = "inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-full bg-brand-strong px-6 font-display font-bold text-white hover:bg-brand-deep disabled:cursor-not-allowed disabled:opacity-50";
@@ -23,7 +24,7 @@ function escolherFormato() {
   return "";
 }
 
-export default function VideoTreino({ companhia }: { companhia?: string }) {
+export default function VideoTreino({ companhia, ia = false }: { companhia?: string; ia?: boolean }) {
   const [fase, setFase] = useState<Fase>("roteiro");
   const [meta, setMeta] = useState(90);
   const [topicos, setTopicos] = useState<Record<string, string>>({});
@@ -32,7 +33,8 @@ export default function VideoTreino({ companhia }: { companhia?: string }) {
   const [contagem, setContagem] = useState(0);
   const [gravando, setGravando] = useState(false);
   const [tempo, setTempo] = useState(0);
-  const [video, setVideo] = useState<{ url: string; ext: string; duracao: number } | null>(null);
+  const [video, setVideo] = useState<{ url: string; ext: string; duracao: number; blob: Blob } | null>(null);
+  const [analisado, setAnalisado] = useState(false);
   const [marcados, setMarcados] = useState<Set<string>>(new Set());
   const [salvo, setSalvo] = useState<number | null>(null);
   const [erro, setErro] = useState("");
@@ -107,14 +109,16 @@ export default function VideoTreino({ companhia }: { companhia?: string }) {
       if (n > 0) return;
       window.clearInterval(t);
       const formato = escolherFormato() || undefined;
-      const r = new MediaRecorder(stream.current!, formato ? { mimeType: formato } : undefined);
+      // qualidade suficiente para a seleção e leve para enviar à análise da IA (cerca de 10 MB por minuto e meio)
+      const r = new MediaRecorder(stream.current!, { ...(formato ? { mimeType: formato } : {}), videoBitsPerSecond: 900_000, audioBitsPerSecond: 64_000 });
       pedacos.current = [];
       r.ondataavailable = (ev) => { if (ev.data.size) pedacos.current.push(ev.data); };
       r.onstop = () => {
         const tipo = r.mimeType || formato || "video/webm";
         const blob = new Blob(pedacos.current, { type: tipo });
         const duracao = Math.max(1, Math.round((Date.now() - inicio.current) / 1000));
-        setVideo({ url: URL.createObjectURL(blob), ext: tipo.includes("mp4") ? "mp4" : "webm", duracao });
+        setVideo({ url: URL.createObjectURL(blob), ext: tipo.includes("mp4") ? "mp4" : "webm", duracao, blob });
+        setAnalisado(false);
         setMarcados(new Set(dentroDoTempo(duracao, meta) ? ["tempo"] : []));
         setSalvo(null);
         setFase("revisar");
@@ -257,7 +261,7 @@ export default function VideoTreino({ companhia }: { companhia?: string }) {
           </span>
         </div>
         <p className="rounded-xl bg-soft px-4 py-3 text-[14px] text-ink-2">
-          🔒 O vídeo fica só no seu aparelho. Nada é enviado para a Cabin Crew: guardamos apenas a sua autoavaliação e o tempo da gravação.
+          🔒 O vídeo fica só no seu aparelho. Nada é enviado para a Cabin Crew{ia ? ", a não ser que você peça o feedback da IA depois de gravar" : ""}: guardamos apenas a avaliação e o tempo da gravação.
         </p>
       </div>
     );
@@ -285,7 +289,10 @@ export default function VideoTreino({ companhia }: { companhia?: string }) {
         </div>
       )}
 
+      {ia && video && <VideoIA key={video.url} video={video} meta={meta} topicos={topicos} companhia={companhia} onAnalisado={() => { setAnalisado(true); router.refresh(); }} />}
+
       <section className="flex flex-col gap-5 rounded-[24px] border border-line bg-white p-6 md:p-8">
+        {ia && <h3 className="font-display text-xl font-extrabold">{analisado ? "Autoavaliação (opcional)" : "Ou faça a autoavaliação"}</h3>}
         <p className="text-[16px] leading-relaxed text-ink-2">Assista ao vídeo inteiro, de preferência duas vezes: uma com som e outra sem som (para ver só a postura e a expressão). Marque o que você <strong>realmente</strong> fez.</p>
         {grupos.map((g) => (
           <fieldset key={g} className="flex flex-col gap-2">
@@ -301,7 +308,8 @@ export default function VideoTreino({ companhia }: { companhia?: string }) {
         ))}
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">
           <strong className="font-display text-xl">Nota da autoavaliação: {nota}%</strong>
-          <button type="button" className={btnPrim} disabled={pend || salvo !== null} onClick={salvar}>{pend ? "Salvando…" : salvo !== null ? "Salvo ✓" : "Salvar autoavaliação"}</button>
+          {analisado ? <span className="text-[14px] text-muted">Esta gravação já foi salva com a nota da IA.</span>
+            : <button type="button" className={btnPrim} disabled={pend || salvo !== null} onClick={salvar}>{pend ? "Salvando…" : salvo !== null ? "Salvo ✓" : "Salvar autoavaliação"}</button>}
         </div>
         {salvo !== null && (
           <p role="status" className={`rounded-xl px-4 py-3 ${salvo >= NOTA_VIDEO ? "bg-[#e5f6ec] text-[#0f6b3a]" : "bg-[#fff8e6] text-[#7a5a00]"}`}>

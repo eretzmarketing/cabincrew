@@ -17,6 +17,7 @@ export default function PrivacidadePage() {
       <ul>
         <li><strong>Cadastro:</strong> nome completo, e-mail, WhatsApp, escola de aviação, senha (guardada de forma criptografada) e foto de perfil.</li>
         <li><strong>Uso dos cursos:</strong> aulas concluídas, respostas e notas de simulados e treinos, check-in (companhias de interesse e datas), perfil comportamental, progresso no inglês, treinos de vídeo, ranking e medalhas.</li>
+        <li><strong>Feedback da IA no vídeo de apresentação (opcional):</strong> só quando você pede, a gravação é enviada para análise e descartada em seguida; guardamos a nota, o feedback e o texto da sua fala.</li>
         <li><strong>Compras:</strong> plano, valor, forma de pagamento, parcelas, ID da transação, data e hora, cupom usado e CPF informado no pagamento. <strong>Não recebemos nem guardamos os dados do cartão</strong>: eles vão direto para o Mercado Pago.</li>
         <li><strong>Registros de aceite e acesso:</strong> data, hora, endereço IP e navegador ao aceitar estes documentos, ao comprar e ao excluir a conta.</li>
         <li><strong>Lista “Em breve”:</strong> nome e WhatsApp de quem pediu para ser avisado do lançamento.</li>
@@ -31,6 +32,7 @@ export default function PrivacidadePage() {
         <li><strong>Avisos pelo WhatsApp</strong> (confirmações, lembretes de estudo, conclusões) — execução de contrato e legítimo interesse.</li>
         <li><strong>Ofertas e cupons</strong> — legítimo interesse ou consentimento; você pode recusar a qualquer momento.</li>
         <li><strong>Segurança e prevenção de fraudes</strong> (banimento por compartilhamento de conta, registros de acesso) — legítimo interesse e Marco Civil da Internet.</li>
+        <li><strong>Feedback da IA no vídeo de apresentação</strong> — consentimento, pedido a cada envio.</li>
         <li><strong>Melhorar os cursos</strong> com estatísticas de uso — legítimo interesse.</li>
       </ul>
       <p>Não vendemos seus dados.</p>
@@ -41,6 +43,7 @@ export default function PrivacidadePage() {
         <li><strong>Wawp / WhatsApp</strong> — envio das mensagens (seu número e o texto da mensagem).</li>
         <li><strong>Supabase</strong> — banco de dados e autenticação; <strong>Hostinger</strong> — hospedagem do site.</li>
         <li><strong>ElevenLabs</strong> — geração dos áudios das aulas (não recebe dados de alunos).</li>
+        <li><strong>OpenAI</strong> — só quando você pede o feedback da IA: recebe a gravação do vídeo de apresentação para transcrever e avaliar. Pela política da OpenAI para a API, esses dados não são usados para treinar modelos.</li>
         <li>Autoridades, quando exigido por lei ou ordem judicial.</li>
       </ul>
       <p>Alguns desses fornecedores podem armazenar dados fora do Brasil, com as garantias exigidas pela LGPD.</p>

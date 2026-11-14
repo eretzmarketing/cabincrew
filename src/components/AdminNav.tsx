@@ -75,6 +75,7 @@ export const GRUPOS: Grupo[] = [
       { href: "/admin/whatsapp", label: "WhatsApp" },
       { href: "/admin/pagamentos", label: "Pagamentos" },
       { href: "/admin/envios", label: "Envios (SuperFrete)" },
+      { href: "/admin/ia", label: "Inteligência artificial" },
     ],
   },
 ];
