@@ -18,11 +18,15 @@ export default async function CertificadosPage({ searchParams }: { searchParams:
   const { curso: c = "head-hunter" } = await searchParams;
   const curso = ehCurso(c) ? c : "head-hunter";
   const { supabase } = await getUser();
-  const [{ data: mod, error }, { data: certs }] = await Promise.all([
-    supabase.from("certificado_modelos").select("*").eq("curso", curso).maybeSingle(),
+  const [{ data: mods, error }, { data: certs }] = await Promise.all([
+    supabase.from("certificado_modelos").select("*"),
     supabase.from("certificados").select("*").order("emitido_em", { ascending: false }).limit(300),
   ]);
-  const modelo: Modelo = (mod as Modelo | null) ?? { curso, imagem: null, largura: 3508, altura: 2480, campos: CAMPOS_PADRAO, ativo: true };
+  const todos = (mods ?? []) as Modelo[];
+  const mod = todos.find((x) => x.curso === curso) ?? null;
+  // outros cursos que já têm modelo com imagem ou campos: dá para copiar o visual
+  const outros = todos.filter((x) => x.curso !== curso && (x.imagem || x.campos?.length)).map((x) => ({ curso: x.curso, nome: CURSOS_CERT[x.curso] ?? x.curso, imagem: x.imagem, largura: x.largura, altura: x.altura, campos: x.campos }));
+  const modelo: Modelo = mod ?? { curso, imagem: null, largura: 3508, altura: 2480, campos: CAMPOS_PADRAO, ativo: true };
   const lista = (certs ?? []) as Cert[];
   const cargaAuto = await cargaDoCurso(supabase, curso);
 
@@ -37,7 +41,7 @@ export default async function CertificadosPage({ searchParams }: { searchParams:
                 className={`inline-flex min-h-11 items-center rounded-full px-5 font-semibold ${curso === k ? "bg-navy text-white" : "text-navy"}`}>{r}</Link>
             ))}
           </nav>
-          <EditorCertificado key={curso} inicial={modelo} site={SITE} cargaAuto={cargaAuto} />
+          <EditorCertificado key={curso} inicial={modelo} site={SITE} cargaAuto={cargaAuto} outros={outros} />
 
           <section className="flex flex-col gap-3">
             <h2 className="font-display text-2xl font-extrabold">Certificados emitidos</h2>

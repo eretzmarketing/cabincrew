@@ -8,7 +8,10 @@ import { CAMPOS_PADRAO, EXEMPLO, FONTES, NOMES_CURSO_CERT, ROTULO_CAMPO, type Ca
 const campo = "w-full rounded-xl border border-[#c9cedb] bg-white px-3 py-2 text-[14px] outline-none focus:border-navy";
 const rot = "text-[13px] font-semibold";
 
-export default function EditorCertificado({ inicial, site, cargaAuto }: { inicial: Modelo; site: string; cargaAuto?: string | null }) {
+type Outro = { curso: string; nome: string; imagem: string | null; largura: number; altura: number; campos: Campo[] };
+
+export default function EditorCertificado({ inicial, site, cargaAuto, outros = [] }: { inicial: Modelo; site: string; cargaAuto?: string | null; outros?: Outro[] }) {
+  const [copiarDe, setCopiarDe] = useState(outros[0]?.curso ?? "");
   const [m, setM] = useState<Modelo>({ ...inicial, campos: inicial.campos?.length ? inicial.campos : CAMPOS_PADRAO });
   const [ativo, setAtivo] = useState(inicial.ativo !== false);
   const [carga, setCarga] = useState(inicial.carga_horaria ?? "");
@@ -57,9 +60,26 @@ export default function EditorCertificado({ inicial, site, cargaAuto }: { inicia
   const faltando = (["nome", "curso", "data", "nota", "codigo"] as CampoId[]).filter((t) => !m.campos.some((c) => c.tipo === t));
   const dados = { ...EXEMPLO, curso: NOMES_CURSO_CERT[m.curso] ?? m.curso, carga: carga || cargaAuto || "" };
 
+  function copiar() {
+    const o = outros.find((x) => x.curso === copiarDe);
+    if (!o) return;
+    setM((x) => ({ ...x, imagem: o.imagem, largura: o.largura, altura: o.altura, campos: o.campos.map((c) => ({ ...c })) }));
+    setRes({ msg: `Visual copiado de ${o.nome}. Confira e clique em Salvar para gravar.` });
+  }
+
   return (
     <div className="grid gap-5 xl:grid-cols-[1fr_320px]">
       <div className="flex flex-col gap-3">
+        {outros.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2 rounded-xl bg-soft px-4 py-3 text-[14px]">
+            <label htmlFor="copiar-de" className="font-semibold">Copiar o modelo de outro curso:</label>
+            <select id="copiar-de" value={copiarDe} onChange={(e) => setCopiarDe(e.target.value)} className="min-h-10 rounded-lg border border-[#c9cedb] bg-white px-2">
+              {outros.map((o) => <option key={o.curso} value={o.curso}>{o.nome}</option>)}
+            </select>
+            <button type="button" onClick={copiar} className="min-h-10 cursor-pointer rounded-full bg-navy px-4 font-semibold text-white hover:bg-navy-deep">Copiar</button>
+            <span className="text-[13px] text-muted">Copia a imagem de fundo e os textos. Carga horária e descrição continuam as deste curso.</span>
+          </div>
+        )}
         <div ref={caixa} onPointerMove={mover} onPointerUp={() => (arraste.current = null)} onPointerCancel={() => (arraste.current = null)}
           onPointerDown={(e) => { if (e.target === e.currentTarget.firstChild || (e.target as HTMLElement).tagName === "IMG") setSel(null); }}
           className="overflow-hidden rounded-xl border border-line shadow-sm">
