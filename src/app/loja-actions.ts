@@ -212,14 +212,17 @@ export async function gerarEtiqueta(_: Estado, form: FormData): Promise<Estado> 
   if (!reserva) return { erro: "A etiqueta deste pedido já está sendo gerada. Aguarde alguns segundos e atualize a página." };
 
   const dims = p.loja_produtos ?? { peso_g: 1000, altura_cm: 5, largura_cm: 25, comprimento_cm: 30 };
+  // envelope de segurança: cabem até 3 apostilas em cada um (o combo já são 3)
+  const apostilas = p.quantidade * (p.produto === "combo-3-apostilas" ? 3 : 1);
+  const envelopes = Math.max(1, Math.ceil(apostilas / 3));
   let etiquetaId: string;
   try {
     etiquetaId = await criarEtiqueta(cfg, {
       pedido: p.id, nome: p.nome, cpf: p.cpf, email: p.email, telefone: p.telefone, endereco: p.endereco,
       produto: p.produto_nome, quantidade: p.quantidade, valorUnitario: Number(p.valor_itens) / p.quantidade,
       pacote: {
-        altura: Number(dims.altura_cm ?? 5) * p.quantidade, largura: Number(dims.largura_cm ?? 25),
-        comprimento: Number(dims.comprimento_cm ?? 30), pesoG: Number(dims.peso_g ?? 1000) * p.quantidade,
+        altura: Number(dims.altura_cm ?? 5) * envelopes, largura: Number(dims.largura_cm ?? 25),
+        comprimento: Number(dims.comprimento_cm ?? 30), pesoG: Number(dims.peso_g ?? 1000) * envelopes,
       },
     }, servico);
   } catch (e) {

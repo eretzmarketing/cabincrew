@@ -56,7 +56,7 @@ function Campos({ p }: { p?: ProdutoLoja }) {
         <label className={rot}>Ordem<input name="ordem" inputMode="numeric" defaultValue={v(p?.ordem ?? 0)} className={campo} /></label>
       </div>
       <fieldset className="grid gap-3 rounded-xl bg-soft p-3 md:grid-cols-4">
-        <legend className="px-1 text-[13px] font-semibold">Pacote para a etiqueta (1 unidade) <span className="font-normal text-muted">· várias unidades: a altura e o peso somam</span></legend>
+        <legend className="px-1 text-[13px] font-semibold">Envelope para a etiqueta <span className="font-normal text-muted">· cabem até 3 apostilas em cada envelope; acima disso, a altura e o peso somam</span></legend>
         <label className={rot}>Peso (g)<input name="peso_g" inputMode="numeric" defaultValue={v(p?.peso_g ?? 1000)} className={campo} /></label>
         <label className={rot}>Altura (cm)<input name="altura_cm" inputMode="decimal" defaultValue={v(p?.altura_cm ?? 5)} className={campo} /></label>
         <label className={rot}>Largura (cm)<input name="largura_cm" inputMode="decimal" defaultValue={v(p?.largura_cm ?? 25)} className={campo} /></label>
