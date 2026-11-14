@@ -5,7 +5,7 @@ import { Card, Numero, Titulo, btnSecundario } from "@/components/admin-ui";
 import CopiarTexto from "@/components/CopiarTexto";
 import { EnviarPedidoForm, EtiquetaPedido } from "@/components/LojaAdminForms";
 import { configSuperfrete } from "@/lib/superfrete";
-import { STATUS_PEDIDO, linkRastreio, reais, type PedidoLoja, type StatusPedido } from "@/lib/loja";
+import { STATUS_PEDIDO, linkRastreio, transportadora, reais, type PedidoLoja, type StatusPedido } from "@/lib/loja";
 import { getUser } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Pedidos da loja" };
@@ -71,7 +71,7 @@ export default async function PedidosLoja({ searchParams }: { searchParams: Prom
                     servico={p.etiqueta_servico ?? null} preco={p.etiqueta_preco ?? null} servicoPadrao={sf?.servico ?? 1} conectado={!!sf} />
                 )}
                 {(p.status === "pago" || p.status === "enviado") && <EnviarPedidoForm id={p.id} rastreio={p.rastreio} temTelefone={!!p.telefone} enviado={p.status === "enviado"} />}
-                {p.rastreio && <a href={linkRastreio(p.rastreio)} target="_blank" rel="noreferrer" className="text-[14px] font-semibold text-navy underline">Rastrear {p.rastreio} nos Correios ↗</a>}
+                {p.rastreio && <a href={linkRastreio(p.rastreio, p.etiqueta_servico)} target="_blank" rel="noreferrer" className="text-[14px] font-semibold text-navy underline">Rastrear {p.rastreio} ({transportadora(p.etiqueta_servico)}) ↗</a>}
                 <div className="flex flex-wrap gap-2">
                   {p.status === "enviado" && <form action={alterarStatusPedido}><input type="hidden" name="id" value={p.id} /><button name="acao" value="entregue" className="min-h-10 cursor-pointer rounded-full bg-[#e5f6ec] px-4 text-[14px] font-semibold text-[#0f6b3a]">Marcar como entregue</button></form>}
                   {(p.status === "enviado" || p.status === "entregue") && <form action={alterarStatusPedido}><input type="hidden" name="id" value={p.id} /><button name="acao" value="voltar-pago" className="min-h-10 cursor-pointer rounded-full border border-line px-4 text-[14px] font-semibold">Voltar para &quot;a enviar&quot;</button></form>}

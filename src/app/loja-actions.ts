@@ -2,7 +2,7 @@
 
 import { chmod, writeFile } from "node:fs/promises";
 import { revalidatePath } from "next/cache";
-import { enderecoEmLinha, type PedidoLoja } from "@/lib/loja";
+import { enderecoEmLinha, linkRastreio, transportadora, type PedidoLoja } from "@/lib/loja";
 import { getUser } from "@/lib/supabase/server";
 import { enviarWhatsapp, preencher } from "@/lib/whatsapp";
 import {
@@ -42,7 +42,7 @@ export async function marcarEnviado(_: Estado, form: FormData): Promise<Estado> 
   if (avisar && p.telefone) {
     const { data: modelo } = await supabase.from("whatsapp_modelos").select("texto, ativo").eq("evento", "loja_enviado").maybeSingle();
     if (modelo?.ativo && modelo.texto) {
-      const texto = preencher(modelo.texto, { nome: p.nome.split(" ")[0], pedido: p.id, produto: `${p.quantidade > 1 ? `${p.quantidade}× ` : ""}${p.produto_nome}`, rastreio, endereco: enderecoEmLinha(p.endereco) });
+      const texto = preencher(modelo.texto, { nome: p.nome.split(" ")[0], pedido: p.id, produto: `${p.quantidade > 1 ? `${p.quantidade}× ` : ""}${p.produto_nome}`, rastreio, link_rastreio: linkRastreio(rastreio, p.etiqueta_servico), transportadora: transportadora(p.etiqueta_servico), endereco: enderecoEmLinha(p.endereco) });
       const r = await enviarWhatsapp(p.telefone, texto);
       await supabase.from("whatsapp_envios").insert({ user_id: p.user_id, evento: "manual", ref: `loja-enviado-${p.id}-${Date.now()}`, telefone: p.telefone, texto, status: r.ok ? "enviada" : r.status, erro: r.ok ? null : r.erro });
       aviso = r.ok ? " Aviso enviado no WhatsApp." : ` O WhatsApp não foi enviado: ${r.erro}`;

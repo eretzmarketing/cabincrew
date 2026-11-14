@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { STATUS_PEDIDO, enderecoEmLinha, linkRastreio, reais, type PedidoLoja } from "@/lib/loja";
+import { ETAPAS_PEDIDO, STATUS_PEDIDO, enderecoEmLinha, etapaDoPedido, linkRastreio, reais, transportadora, type PedidoLoja } from "@/lib/loja";
 import { exigirLogin } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Meus pedidos", robots: { index: false } };
@@ -27,11 +27,28 @@ export default async function MeusPedidos() {
               </div>
               <span className={`rounded-full px-3 py-1 text-[13px] font-semibold ${STATUS_PEDIDO[p.status].cor}`}>{p.status === "pago" ? "Pagamento confirmado · em preparação" : STATUS_PEDIDO[p.status].rotulo}</span>
             </div>
+            {["pago", "enviado", "entregue"].includes(p.status) && (
+              <ol className="grid grid-cols-4 gap-1" aria-label="Andamento do pedido">
+                {ETAPAS_PEDIDO.map((nome, i) => {
+                  const feito = i <= etapaDoPedido(p);
+                  return (
+                    <li key={nome} aria-current={i === etapaDoPedido(p) ? "step" : undefined} className="flex flex-col gap-1.5">
+                      <span className={`h-1.5 rounded-full ${feito ? "bg-navy" : "bg-line"}`} />
+                      <span className={`text-[12px] leading-tight ${feito ? "font-semibold text-ink" : "text-muted"}`}>{nome}</span>
+                    </li>
+                  );
+                })}
+              </ol>
+            )}
             <p className="text-[14px] text-ink-2">Entrega em: {enderecoEmLinha(p.endereco)}</p>
-            {p.rastreio && (
-              <a href={linkRastreio(p.rastreio)} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center self-start rounded-full bg-navy px-5 text-[14px] font-semibold text-white hover:bg-navy-deep">
-                Rastrear nos Correios · {p.rastreio} ↗
-              </a>
+            {p.rastreio && (p.status === "enviado" || p.status === "entregue") && (
+              <div className="flex flex-col gap-1">
+                <span className="text-[14px] text-ink-2">Código de rastreio ({transportadora(p.etiqueta_servico)}): <strong className="font-mono select-all">{p.rastreio}</strong></span>
+                <a href={linkRastreio(p.rastreio, p.etiqueta_servico)} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center self-start rounded-full bg-navy px-5 text-[14px] font-semibold text-white hover:bg-navy-deep">
+                  Acompanhar a entrega ↗
+                </a>
+                {p.etiqueta_servico === 31 && <span className="text-[13px] text-muted">Na página do SuperFrete, cole o código acima.</span>}
+              </div>
             )}
           </section>
         ))}

@@ -59,5 +59,12 @@ end $$;
 revoke all on function loja_reservar_etiqueta(bigint, integer) from public, anon;
 grant execute on function loja_reservar_etiqueta(bigint, integer) to authenticated;
 
+-- aviso de "pedido enviado": o link de rastreio passa a ser o da transportadora (Correios ou Loggi)
+-- (só troca se o texto ainda for o original; se você editou o modelo, ele fica como está)
+update whatsapp_modelos
+   set texto = E'🚚 {nome}, seu pedido nº {pedido} ({produto}) foi postado ({transportadora})!\n\nCódigo de rastreio: {rastreio}\nAcompanhe a entrega:\n👉 {link_rastreio}\n\nVocê também acompanha em Minha conta › Meus pedidos:\n👉 {link}/conta/pedidos\n\nBons estudos! ✈️'
+ where evento = 'loja_enviado'
+   and texto = E'🚚 {nome}, seu pedido nº {pedido} ({produto}) foi postado nos Correios!\n\nCódigo de rastreio: {rastreio}\nAcompanhe a entrega:\n👉 https://rastreamento.correios.com.br/app/index.php?objetos={rastreio}\n\nBons estudos! ✈️';
+
 notify pgrst, 'reload schema';
 select 'superfrete pronto' as status;

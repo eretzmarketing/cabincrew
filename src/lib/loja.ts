@@ -32,7 +32,18 @@ export const reais = (v: number) => Number(v).toLocaleString("pt-BR", { style: "
 export const enderecoEmLinha = (e: Endereco) =>
   `${e.rua}, ${e.numero}${e.complemento ? ` · ${e.complemento}` : ""}${e.bairro ? ` · ${e.bairro}` : ""} · ${e.cidade}/${e.uf} · CEP ${e.cep.replace(/(\d{5})(\d{3})/, "$1-$2")}`;
 
-export const linkRastreio = (codigo: string) => `https://rastreamento.correios.com.br/app/index.php?objetos=${encodeURIComponent(codigo)}`;
+/** Onde acompanhar a entrega: Correios (PAC, SEDEX, Mini Envios) ou a página de rastreio do SuperFrete (Loggi). */
+export const linkRastreio = (codigo: string, servico?: number | null) =>
+  servico === 31 ? "https://superfrete.com/rastreio-de-encomendas" : `https://rastreamento.correios.com.br/app/index.php?objetos=${encodeURIComponent(codigo)}`;
+export const transportadora = (servico?: number | null) => (servico === 31 ? "Loggi" : "Correios");
+
+/** Etapas do pedido para o aluno acompanhar. */
+export const ETAPAS_PEDIDO = ["Pagamento confirmado", "Em preparação", "Enviado", "Entregue"] as const;
+export function etapaDoPedido(p: Pick<PedidoLoja, "status" | "etiqueta_id">): number {
+  if (p.status === "entregue") return 3;
+  if (p.status === "enviado") return 2;
+  return p.etiqueta_id ? 1 : 0;
+}
 
 /** external_reference dos pagamentos da loja: "cl:<pedido>:<user_id>" */
 export const referenciaLoja = (pedido: number, userId: string) => `cl:${pedido}:${userId}`;
