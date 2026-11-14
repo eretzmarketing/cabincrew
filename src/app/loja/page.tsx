@@ -20,7 +20,7 @@ export default async function LojaPage({ searchParams }: { searchParams: Promise
         <div className="mx-auto flex max-w-[1100px] flex-col items-center gap-3 px-6 pt-14 pb-24 text-center">
           <span className="rounded-full border border-white/25 bg-white/10 px-4 py-1.5 text-sm font-semibold">Loja Cabin Crew</span>
           <h1 className="font-display text-[34px] leading-tight font-extrabold md:text-[46px]">Apostilas <span className="text-[#ff5a7a]">impressas</span></h1>
-          <p className="max-w-[620px] text-[17px] leading-relaxed text-[#d7dbe6]">Explore nossa coleção de produtos exclusivos para impulsionar sua carreira na aviação.</p>
+          <p className="max-w-[900px] text-[17px] leading-relaxed text-balance text-[#d7dbe6]">Explore nossa coleção de produtos exclusivos para impulsionar sua carreira na aviação.</p>
         </div>
       </section>
       <div className="mx-auto -mt-14 grid max-w-[1100px] gap-5 px-4 pb-20 sm:grid-cols-2 lg:grid-cols-4 md:px-6">
