@@ -31,7 +31,7 @@ export default async function WhatsappAdminPage() {
   if (mods.error) {
     return (<><Titulo>WhatsApp</Titulo><p className="rounded-2xl bg-brand-soft p-5 text-brand-deep">Rode o SQL <strong>0036_whatsapp.sql</strong> no Supabase para ativar esta página.</p></>);
   }
-  const ordem = ["interessado", "boas_vindas", "compra_aprovada", "checkin", "modulo_concluido", "ingles_modulo", "ingles_concluido", "espanhol_modulo", "espanhol_concluido", "loja_pago", "loja_enviado", "loja_entregue", "jornada_concluida", "conta_excluida"];
+  const ordem = ["interessado", "boas_vindas", "compra_aprovada", "checkin", "modulo_concluido", "ingles_modulo", "ingles_concluido", "espanhol_modulo", "espanhol_concluido", "loja_pago", "loja_enviado", "loja_entregue", "ticket_respondido", "jornada_concluida", "conta_excluida"];
   const todos = (mods.data ?? []) as Modelo[];
   const modelos = todos.filter((m) => !m.personalizado).sort((a, b) => ordem.indexOf(a.evento) - ordem.indexOf(b.evento));
   const personalizados = todos.filter((m) => m.personalizado);
@@ -83,7 +83,7 @@ export default async function WhatsappAdminPage() {
 
       <section className="flex flex-col gap-4">
         <h2 className="font-display text-2xl font-extrabold">Avisos automáticos</h2>
-        <p className="text-[15px] text-ink-2">Variáveis: <code>{"{nome}"}</code> primeiro nome · <code>{"{link}"}</code> endereço do site · <code>{"{modulo}"}</code> nome do módulo · <code>{"{numero}"}</code> número do módulo · <code>{"{companhia}"}</code> companhia-alvo · loja: <code>{"{pedido}"}</code>, <code>{"{produto}"}</code>, <code>{"{rastreio}"}</code>, <code>{"{link_rastreio}"}</code>, <code>{"{transportadora}"}</code>.</p>
+        <p className="text-[15px] text-ink-2">Variáveis: <code>{"{nome}"}</code> primeiro nome · <code>{"{link}"}</code> endereço do site · <code>{"{modulo}"}</code> nome do módulo · <code>{"{numero}"}</code> número do módulo · <code>{"{companhia}"}</code> companhia-alvo · loja: <code>{"{pedido}"}</code>, <code>{"{produto}"}</code>, <code>{"{rastreio}"}</code>, <code>{"{link_rastreio}"}</code>, <code>{"{transportadora}"}</code> · suporte: <code>{"{assunto}"}</code>, <code>{"{chamado}"}</code>.</p>
         <details className="group rounded-[22px] border-2 border-dashed border-[#c9cedb] bg-white open:border-solid open:border-navy">
           <summary className="flex min-h-14 cursor-pointer list-none items-center gap-3 px-5 font-display text-lg font-extrabold text-navy">
             <span aria-hidden="true" className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-navy text-white transition-transform group-open:rotate-45">+</span>

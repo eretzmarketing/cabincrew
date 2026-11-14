@@ -34,6 +34,7 @@ export default async function Footer() {
               <Link href="/termos" className="hover:text-white">Termos de Uso</Link>
               <Link href="/privacidade" className="hover:text-white">Privacidade</Link>
               <Link href="/reembolso" className="hover:text-white">Reembolso</Link>
+              <Link href="/contato" className="hover:text-white">Contato</Link>
             </div>
           </nav>
         </div>

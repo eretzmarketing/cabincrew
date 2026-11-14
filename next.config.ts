@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // anexos do suporte (até 8 MB por mensagem)
+  experimental: { serverActions: { bodySizeLimit: "9mb" } },
   // Tailwind CSS v4 processado pelo Turbopack
   turbopack: {
     rules: {

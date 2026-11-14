@@ -59,6 +59,10 @@ export const GRUPOS: Grupo[] = [
     id: "loja", label: "Loja",
     itens: [{ href: "/admin/loja", label: "Pedidos" }, { href: "/admin/loja/produtos", label: "Produtos" }],
   },
+  {
+    id: "suporte", label: "Suporte",
+    itens: [{ href: "/admin/suporte", label: "Chamados" }, { href: "/admin/suporte/contatos", label: "Mensagens do site" }, { href: "/admin/suporte/configuracoes", label: "E-mail e avisos" }],
+  },
   { id: "campanhas", label: "Campanhas", itens: [{ href: "/admin/campanhas", label: "Campanhas" }] },
 
   // ---------- Site ----------
