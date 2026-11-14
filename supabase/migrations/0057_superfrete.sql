@@ -66,5 +66,89 @@ update whatsapp_modelos
  where evento = 'loja_enviado'
    and texto = E'🚚 {nome}, seu pedido nº {pedido} ({produto}) foi postado nos Correios!\n\nCódigo de rastreio: {rastreio}\nAcompanhe a entrega:\n👉 https://rastreamento.correios.com.br/app/index.php?objetos={rastreio}\n\nBons estudos! ✈️';
 
+
+-- ---------------------------------------------------------------- atualização automática das entregas
+-- Algumas vezes por dia o servidor do site pergunta ao SuperFrete a situação de cada etiqueta:
+--   postada  → pedido "Enviado" (o aluno recebe o rastreio no WhatsApp, se você ainda não marcou)
+--   entregue → pedido "Entregue" (o aluno recebe o aviso de entrega)
+
+-- Pedidos para conferir (servidor do site, com a chave)
+create or replace function loja_rastrear_lista(p_chave text)
+returns table (id bigint, etiqueta_id text, status text)
+language plpgsql stable security definer set search_path = public as $$
+begin
+  perform _confere_chave(p_chave);
+  return query
+    select lp.id, lp.etiqueta_id, lp.status from loja_pedidos lp
+     where lp.etiqueta_id is not null and lp.status in ('pago', 'enviado')
+       and coalesce(lp.etiqueta_status, '') not in ('canceled', 'criando')
+       and lp.criado_em > now() - interval '120 days'
+     order by lp.id;
+end $$;
+revoke all on function loja_rastrear_lista(text) from public;
+grant execute on function loja_rastrear_lista(text) to anon, authenticated;
+
+-- Grava a situação lida no SuperFrete e avança o pedido. Devolve a mensagem de WhatsApp a enviar (no máximo uma).
+create or replace function loja_rastrear_atualizar(p_chave text, p_pedido bigint, p_etiqueta_status text, p_rastreio text)
+returns table (status text, evento text, envio_id bigint, telefone text, nome text, texto text,
+               produto_nome text, quantidade int, endereco jsonb, rastreio text, etiqueta_servico int)
+language plpgsql security definer set search_path = public as $$
+declare v_ped loja_pedidos; v_era text; v_evento text; v_envio bigint; v_texto text; v_tel text; v_nome text;
+begin
+  perform _confere_chave(p_chave);
+  if p_etiqueta_status !~ '^[a-z_]{3,20}$' then raise exception 'situação inválida'; end if;
+  update loja_pedidos lp set etiqueta_status = p_etiqueta_status,
+         rastreio = coalesce(lp.rastreio, nullif(upper(regexp_replace(coalesce(p_rastreio, ''), '[^A-Za-z0-9]', '', 'g')), ''))
+   where lp.id = p_pedido and lp.etiqueta_id is not null and lp.status in ('pago', 'enviado')
+  returning * into v_ped;
+  if not found then return; end if;
+  v_era := v_ped.status;
+
+  if p_etiqueta_status in ('posted', 'delivered') and v_ped.status = 'pago' and v_ped.rastreio is not null then
+    update loja_pedidos lp set status = 'enviado', enviado_em = now() where lp.id = v_ped.id returning * into v_ped;
+  end if;
+  if p_etiqueta_status = 'delivered' and v_ped.status = 'enviado' then
+    update loja_pedidos lp set status = 'entregue', entregue_em = now() where lp.id = v_ped.id returning * into v_ped;
+  end if;
+
+  -- um aviso só: se pulou direto para entregue, manda só o de entrega
+  v_evento := case when v_ped.status = 'entregue' and v_era <> 'entregue' then 'loja_entregue'
+                   when v_ped.status = 'enviado' and v_era = 'pago' then 'loja_enviado' end;
+  if v_evento is not null then
+    select m.texto into v_texto from whatsapp_modelos m where m.evento = v_evento and m.ativo;
+    select coalesce(nullif(v_ped.telefone, ''), pr.whatsapp) into v_tel from profiles pr where pr.id = v_ped.user_id;
+    v_tel := coalesce(v_tel, nullif(v_ped.telefone, ''));
+    v_nome := split_part(v_ped.nome, ' ', 1);
+    if v_texto is not null and coalesce(v_tel, '') <> '' then
+      insert into whatsapp_envios (user_id, evento, ref, telefone) values (v_ped.user_id, v_evento, v_ped.id::text, v_tel)
+      on conflict do nothing returning id into v_envio;
+    end if;
+  end if;
+
+  return query select v_ped.status, v_evento, v_envio,
+    case when v_envio is not null then v_tel end, case when v_envio is not null then v_nome end, case when v_envio is not null then v_texto end,
+    v_ped.produto_nome, v_ped.quantidade, v_ped.endereco, v_ped.rastreio, v_ped.etiqueta_servico;
+end $$;
+revoke all on function loja_rastrear_atualizar(text, bigint, text, text) from public;
+grant execute on function loja_rastrear_atualizar(text, bigint, text, text) to anon, authenticated;
+
+-- resultado do envio do WhatsApp (agora também para enviado e entregue)
+create or replace function loja_whatsapp_resultado(p_chave text, p_id bigint, p_status text, p_texto text, p_erro text default null)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  perform _confere_chave(p_chave);
+  update whatsapp_envios set status = p_status, texto = left(p_texto, 4000), erro = left(p_erro, 500)
+   where id = p_id and evento in ('loja_pago', 'loja_enviado', 'loja_entregue') and p_status in ('enviada', 'erro', 'sem_whatsapp');
+end $$;
+revoke all on function loja_whatsapp_resultado(text, bigint, text, text, text) from public;
+grant execute on function loja_whatsapp_resultado(text, bigint, text, text, text) to anon, authenticated;
+
+insert into whatsapp_modelos (evento, titulo, quando, texto) values
+  ('loja_entregue', 'Loja: pedido entregue', 'Quando os Correios ou a Loggi confirmam a entrega (o site confere sozinho no SuperFrete).',
+   E'✅ {nome}, seu pedido nº {pedido} ({produto}) foi entregue!\n\nQualquer problema com a entrega, é só responder esta mensagem.\n\nBons estudos! ✈️')
+on conflict (evento) do nothing;
+update whatsapp_modelos set quando = 'Quando o pedido é postado: você marca como enviado ou o site percebe sozinho pelo SuperFrete.'
+ where evento = 'loja_enviado' and quando = 'Quando você marca o pedido como enviado e informa o código de rastreio.';
+
 notify pgrst, 'reload schema';
 select 'superfrete pronto' as status;

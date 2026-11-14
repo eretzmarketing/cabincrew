@@ -3,7 +3,7 @@ import Link from "next/link";
 import { alterarStatusPedido, salvarObservacaoPedido } from "@/app/loja-actions";
 import { Card, Numero, Titulo, btnSecundario } from "@/components/admin-ui";
 import CopiarTexto from "@/components/CopiarTexto";
-import { EnviarPedidoForm, EtiquetaPedido } from "@/components/LojaAdminForms";
+import { AtualizarEntregas, EnviarPedidoForm, EtiquetaPedido } from "@/components/LojaAdminForms";
 import { configSuperfrete } from "@/lib/superfrete";
 import { STATUS_PEDIDO, linkRastreio, transportadora, reais, type PedidoLoja, type StatusPedido } from "@/lib/loja";
 import { getUser } from "@/lib/supabase/server";
@@ -31,8 +31,11 @@ export default async function PedidosLoja({ searchParams }: { searchParams: Prom
   return (
     <>
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <Titulo sub="Pedidos de apostilas: gere a etiqueta do SuperFrete com um clique, imprima, poste e marque como enviado. O aluno recebe o rastreio no WhatsApp.">Pedidos da loja</Titulo>
-        <Link href="/admin/loja/produtos" className={btnSecundario}>Produtos e preços</Link>
+        <Titulo sub="Pedidos de apostilas: gere a etiqueta do SuperFrete com um clique, imprima e poste. O site confere o SuperFrete 3 vezes por dia: quando a etiqueta é postada, o pedido vira Enviado e o aluno recebe o rastreio no WhatsApp; quando é entregue, vira Entregue.">Pedidos da loja</Titulo>
+        <div className="flex flex-wrap items-start gap-2">
+          {sf && <AtualizarEntregas />}
+          <Link href="/admin/loja/produtos" className={btnSecundario}>Produtos e preços</Link>
+        </div>
       </div>
       {error && <p className="rounded-2xl bg-brand-soft p-5 text-brand-deep">Rode o SQL <strong>0055_loja.sql</strong> no Supabase para ativar a loja.</p>}
       <div className="flex flex-wrap gap-3">

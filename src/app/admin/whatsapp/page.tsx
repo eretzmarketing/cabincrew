@@ -31,7 +31,7 @@ export default async function WhatsappAdminPage() {
   if (mods.error) {
     return (<><Titulo>WhatsApp</Titulo><p className="rounded-2xl bg-brand-soft p-5 text-brand-deep">Rode o SQL <strong>0036_whatsapp.sql</strong> no Supabase para ativar esta página.</p></>);
   }
-  const ordem = ["interessado", "boas_vindas", "compra_aprovada", "checkin", "modulo_concluido", "ingles_modulo", "ingles_concluido", "espanhol_modulo", "espanhol_concluido", "loja_pago", "loja_enviado", "jornada_concluida", "conta_excluida"];
+  const ordem = ["interessado", "boas_vindas", "compra_aprovada", "checkin", "modulo_concluido", "ingles_modulo", "ingles_concluido", "espanhol_modulo", "espanhol_concluido", "loja_pago", "loja_enviado", "loja_entregue", "jornada_concluida", "conta_excluida"];
   const todos = (mods.data ?? []) as Modelo[];
   const modelos = todos.filter((m) => !m.personalizado).sort((a, b) => ordem.indexOf(a.evento) - ordem.indexOf(b.evento));
   const personalizados = todos.filter((m) => m.personalizado);

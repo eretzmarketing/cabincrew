@@ -3,6 +3,7 @@
 import { chmod, writeFile } from "node:fs/promises";
 import { revalidatePath } from "next/cache";
 import { enderecoEmLinha, linkRastreio, transportadora, type PedidoLoja } from "@/lib/loja";
+import { atualizarEntregas } from "@/lib/rastreio-loja";
 import { getUser } from "@/lib/supabase/server";
 import { enviarWhatsapp, preencher } from "@/lib/whatsapp";
 import {
@@ -269,4 +270,17 @@ export async function cancelarEtiquetaPedido(_: Estado, form: FormData): Promise
   }).eq("id", data.id);
   revalidar();
   return { ok: true, msg: "Etiqueta cancelada no SuperFrete. Se já estava paga, o valor volta para a carteira conforme as regras do SuperFrete." };
+}
+
+/** Admin: confere agora no SuperFrete o que já foi postado ou entregue (o servidor também faz isso sozinho, 3 vezes por dia). */
+export async function atualizarEntregasAgora(): Promise<Estado> {
+  await admin();
+  const r = await atualizarEntregas();
+  revalidar();
+  if (r.aviso) return { erro: r.aviso };
+  const partes = [`${r.conferidos} pedido(s) conferido(s)`];
+  if (r.enviados) partes.push(`${r.enviados} marcado(s) como enviado`);
+  if (r.entregues) partes.push(`${r.entregues} marcado(s) como entregue`);
+  if (!r.enviados && !r.entregues) partes.push("nenhuma mudança");
+  return r.erros.length ? { erro: `${partes.join(" · ")}. Com erro: ${r.erros.join("; ")}` } : { ok: true, msg: `${partes.join(" · ")}.` };
 }

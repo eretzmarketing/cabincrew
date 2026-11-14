@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { atualizarEtiqueta, cancelarEtiquetaPedido, criarProdutoLoja, gerarEtiqueta, marcarEnviado, salvarProdutoLoja, salvarSuperfrete } from "@/app/loja-actions";
+import { atualizarEntregasAgora, atualizarEtiqueta, cancelarEtiquetaPedido, criarProdutoLoja, gerarEtiqueta, marcarEnviado, salvarProdutoLoja, salvarSuperfrete } from "@/app/loja-actions";
 import type { Remetente } from "@/lib/superfrete";
 import type { ProdutoLoja } from "@/lib/loja";
 
@@ -21,7 +21,7 @@ export function EnviarPedidoForm({ id, rastreio, temTelefone, enviado }: { id: n
     <form action={acao} className="flex flex-col gap-2">
       <input type="hidden" name="id" value={id} />
       <div className="flex flex-wrap items-end gap-2">
-        <label className={`${rot} min-w-[200px] flex-1`}>Código de rastreio dos Correios
+        <label className={`${rot} min-w-[200px] flex-1`}>Código de rastreio
           <input key={rastreio ?? ""} name="rastreio" defaultValue={rastreio ?? ""} placeholder="AB123456789BR" autoComplete="off" className={`${campo} font-mono uppercase`} />
         </label>
         <button className={btn} disabled={pend}>{pend ? "Salvando…" : enviado ? "Atualizar rastreio" : "Marcar como enviado"}</button>
@@ -160,6 +160,18 @@ export function SuperfreteForm({ conectado, sandbox, servico, r }: { conectado: 
         <select name="servico" defaultValue={servico} className={campo}>{SERVICOS_ETIQUETA.map((x) => <option key={x.id} value={x.id}>{x.nome}</option>)}</select>
       </label>
       <div className="flex flex-wrap items-center gap-3"><button className={btn} disabled={pend}>{pend ? "Testando…" : conectado ? "Salvar e testar" : "Conectar"}</button><Aviso s={s} /></div>
+    </form>
+  );
+}
+
+export function AtualizarEntregas() {
+  const [s, acao, pend] = useActionState(atualizarEntregasAgora, {});
+  return (
+    <form action={acao} className="flex flex-col items-start gap-2">
+      <button className="inline-flex min-h-11 cursor-pointer items-center rounded-full border-2 border-navy bg-white px-4 text-[14px] font-semibold text-navy hover:bg-soft disabled:opacity-50" disabled={pend}>
+        {pend ? "Conferindo no SuperFrete…" : "🔄 Conferir entregas agora"}
+      </button>
+      <Aviso s={s} />
     </form>
   );
 }

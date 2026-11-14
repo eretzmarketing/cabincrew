@@ -86,7 +86,7 @@ const FORMA: Record<string, string> = { pix: "Pix", cartao_credito: "cartão de 
 const reais = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 /** Cliente sem sessão (as funções do banco conferem a chave do site). */
-const anonimo = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!, { auth: { persistSession: false, autoRefreshToken: false } });
+export const anonimo = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!, { auth: { persistSession: false, autoRefreshToken: false } });
 
 /**
  * Grava um pagamento do Mercado Pago no livro de compras e libera (ou retira) o acesso.
