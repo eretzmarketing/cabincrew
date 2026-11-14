@@ -39,11 +39,12 @@ function Publicado({ inicial, texto }: { inicial: boolean; texto: string }) {
 }
 
 /* ---------- Módulo ---------- */
-export function ModuloForm({ m, proximaOrdem = 0 }: { m?: Modulo; proximaOrdem?: number }) {
+export function ModuloForm({ m, proximaOrdem = 0, curso = "head-hunter", treino = true }: { m?: Modulo; proximaOrdem?: number; curso?: string; treino?: boolean }) {
   const [state, action] = useActionState(salvarModulo, undefined);
   return (
     <form action={action} className="flex flex-col gap-4">
       {m && <input type="hidden" name="id" value={m.id} />}
+      <input type="hidden" name="curso" value={curso} />
       <div className="flex flex-wrap gap-4">
         <label className={`${label} flex-[0_1_110px]`}>
           Ordem
@@ -63,11 +64,15 @@ export function ModuloForm({ m, proximaOrdem = 0 }: { m?: Modulo; proximaOrdem?:
         <textarea name="descricao" rows={2} maxLength={500} defaultValue={m?.descricao ?? ""} className="rounded-xl border border-[#c9cedb] p-3.5 text-[15px] font-normal" />
       </label>
       <Publicado inicial={m?.publicado ?? true} texto="Módulo visível para os alunos" />
-      <input type="hidden" name="treino_campo" value="1" />
-      <label className="flex min-h-11 cursor-pointer items-start gap-3 text-[15px]">
-        <input type="checkbox" name="treino_pos_curso" defaultChecked={!!m?.treino_pos_curso} className="mt-0.5 h-5 w-5 shrink-0 accent-brand-strong" />
-        <span>Módulo de treino <span className="block text-[13px] text-muted">Depois de concluir o Head Hunter, o aluno vê “Módulo disponível para treinamento até DD/MM/AAAA” neste módulo.</span></span>
-      </label>
+      {treino && (
+        <>
+          <input type="hidden" name="treino_campo" value="1" />
+          <label className="flex min-h-11 cursor-pointer items-start gap-3 text-[15px]">
+            <input type="checkbox" name="treino_pos_curso" defaultChecked={!!m?.treino_pos_curso} className="mt-0.5 h-5 w-5 shrink-0 accent-brand-strong" />
+            <span>Módulo de treino <span className="block text-[13px] text-muted">Depois de concluir o Head Hunter, o aluno vê “Módulo disponível para treinamento até DD/MM/AAAA” neste módulo.</span></span>
+          </label>
+        </>
+      )}
       <Aviso state={state} />
       <div><Salvar>{m ? "Salvar módulo" : "Criar módulo"}</Salvar></div>
     </form>

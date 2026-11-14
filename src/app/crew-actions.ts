@@ -23,16 +23,27 @@ export async function alternarAulaConcluida(form: FormData) {
   if (!user) redirect(`/entrar?modo=entrar&next=/head-hunter/aula/${aulaId}`);
   if (!UUID.test(aulaId)) return;
 
+  const curso = await cursoDaAula(supabase, aulaId);
+  const base = curso === "head-hunter" ? "/head-hunter" : `/curso/${curso}`;
   if (form.get("concluida") === "true") {
     await supabase.from("progresso").delete().eq("aula_id", aulaId).eq("user_id", user.id);
-    revalidatePath(`/head-hunter/aula/${aulaId}`);
+    revalidatePath(`${base}/aula/${aulaId}`);
     return;
   }
   await supabase.from("progresso").upsert({ aula_id: aulaId, user_id: user.id }, { ignoreDuplicates: true });
   await avisarSeModuloConcluido(supabase, user.id, aulaId);
-  revalidatePath("/head-hunter", "layout");
+  // curso criado no admin: concluiu todas as aulas, começa o período extra e libera o certificado
+  if (curso !== "head-hunter") await supabase.rpc("curso_concluir", { p_curso: curso });
+  revalidatePath(base, "layout");
   const proxima = String(form.get("proxima") ?? "");
-  if (UUID.test(proxima)) redirect(`/head-hunter/aula/${proxima}`);
+  if (UUID.test(proxima)) redirect(`${base}/aula/${proxima}`);
+}
+
+/** De qual curso é a aula (Head Hunter ou um curso criado no admin). */
+async function cursoDaAula(supabase: Awaited<ReturnType<typeof getUser>>["supabase"], aulaId: string) {
+  if (!UUID.test(aulaId)) return "head-hunter";
+  const { data } = await supabase.from("aulas").select("curso").eq("id", aulaId).maybeSingle();
+  return (data as { curso?: string } | null)?.curso ?? "head-hunter";
 }
 
 /** Se a aula fechou o módulo (todas as aulas publicadas concluídas), manda os parabéns no WhatsApp. */
@@ -77,6 +88,7 @@ function urlOuNull(v: string | null) {
 export async function salvarModulo(_: FormState, form: FormData): Promise<FormState> {
   const { supabase } = await admin();
   const id = num(form, "id");
+  const curso = String(form.get("curso") ?? "head-hunter").slice(0, 50);
   const dados = {
     titulo: txt(form, "titulo", 120),
     descricao: txt(form, "descricao", 500),
@@ -88,18 +100,19 @@ export async function salvarModulo(_: FormState, form: FormData): Promise<FormSt
   if (!dados.titulo || dados.titulo.length < 2) return { erro: "Informe o título do módulo." };
   const { error } = id
     ? await supabase.from("modulos").update(dados).eq("id", id)
-    : await supabase.from("modulos").insert(dados);
+    : await supabase.from("modulos").insert({ ...dados, curso });
   if (error) return { erro: error.message.includes("treino_pos_curso") ? "Rode o SQL 0058_cursos_admin.sql no Supabase." : "Não foi possível salvar o módulo." };
   revalidatePath("/", "layout");
-  if (!id) redirect("/admin/cursos/head-hunter");
+  if (!id) redirect(`/admin/cursos/${curso}`);
   return { ok: true, msg: "Módulo salvo." };
 }
 
 export async function excluirModulo(form: FormData) {
   const { supabase } = await admin();
+  const { data: m } = await supabase.from("modulos").select("curso").eq("id", Number(form.get("id"))).maybeSingle();
   await supabase.from("modulos").delete().eq("id", Number(form.get("id")));
   revalidatePath("/", "layout");
-  redirect("/admin/cursos/head-hunter");
+  redirect(`/admin/cursos/${(m as { curso?: string } | null)?.curso ?? "head-hunter"}`);
 }
 
 export async function salvarAula(_: FormState, form: FormData): Promise<FormState> {
@@ -152,16 +165,18 @@ export async function salvarAula(_: FormState, form: FormData): Promise<FormStat
   const { data, error } = await supabase.from("aulas").insert({ ...dados, ...aoVivo }).select("id").single();
   if (error || !data) return { erro: (error && erroSql(error)) ?? "Não foi possível criar a aula." };
   revalidatePath("/", "layout");
-  redirect(`/admin/cursos/head-hunter/aula/${data.id}?criada=1`);
+  const { data: mc } = await supabase.from("modulos").select("curso").eq("id", dados.modulo_id).maybeSingle();
+  redirect(`/admin/cursos/${(mc as { curso?: string } | null)?.curso ?? "head-hunter"}/aula/${data.id}?criada=1`);
 }
 
 export async function excluirAula(form: FormData) {
   const { supabase } = await admin();
   const id = String(form.get("id"));
   const modulo = String(form.get("modulo_id"));
+  const { data: mc } = await supabase.from("modulos").select("curso").eq("id", Number(modulo)).maybeSingle();
   await supabase.from("aulas").delete().eq("id", id);
   revalidatePath("/", "layout");
-  redirect(`/admin/cursos/head-hunter#m-${modulo}`);
+  redirect(`/admin/cursos/${(mc as { curso?: string } | null)?.curso ?? "head-hunter"}?editar=${modulo}#m-${modulo}`);
 }
 
 /* ---------- Configurações e usuários ---------- */
@@ -181,7 +196,8 @@ export async function iniciarSimulado(form: FormData) {
   const { supabase, user } = await getUser();
   const simulado = Number(form.get("simulado_id"));
   const aula = String(form.get("aula_id") ?? "");
-  const volta = aula ? `/head-hunter/aula/${aula}` : "/simulados-anac";
+  const cursoAula = UUID.test(aula) ? await cursoDaAula(supabase, aula) : "head-hunter";
+  const volta = aula ? `${cursoAula === "head-hunter" ? "/head-hunter" : `/curso/${cursoAula}`}/aula/${aula}` : "/simulados-anac";
   if (!user) redirect(`/entrar?modo=entrar&next=${volta}`);
   const { data, error } = await supabase.rpc("iniciar_simulado", { p_simulado: simulado });
   if (error || !data) redirect(`${volta}?erro=simulado`);
@@ -206,6 +222,8 @@ export async function finalizarSimulado(form: FormData) {
   // concluir o simulado marca a aula como feita
   if (UUID.test(aula)) {
     await supabase.from("progresso").upsert({ aula_id: aula, user_id: user.id }, { ignoreDuplicates: true });
+    const curso = await cursoDaAula(supabase, aula);
+    if (curso !== "head-hunter") await supabase.rpc("curso_concluir", { p_curso: curso });
   }
   revalidatePath("/head-hunter", "layout");
   redirect(`/head-hunter/simulado/${tentativa}/resultado${UUID.test(aula) ? `?aula=${aula}` : ""}`);

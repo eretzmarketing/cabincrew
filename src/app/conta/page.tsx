@@ -1,3 +1,4 @@
+import { nomesCursos } from "@/lib/cursos-dados";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { sair } from "@/app/actions";
@@ -13,6 +14,7 @@ export const metadata: Metadata = { title: "Minha conta", robots: { index: false
 export default async function ContaPage({ searchParams }: { searchParams: Promise<{ foto?: string; next?: string }> }) {
   const sp = await searchParams;
   const { supabase, user, profile } = await getUser();
+  const nomesCert = await nomesCursos();
   if (!user || !profile) redirect("/entrar?modo=entrar&next=/conta");
 
   const voltar = sp.next?.startsWith("/head-hunter") ? sp.next : sp.foto ? "/head-hunter" : null;
@@ -66,7 +68,7 @@ export default async function ContaPage({ searchParams }: { searchParams: Promis
               {((certs ?? []) as { codigo: string; curso: string; concluido_em: string }[]).map((c) => (
                 <li key={c.codigo}>
                   <Link href={`/certificado/${c.codigo}`} className="flex min-h-12 items-center justify-between gap-3 rounded-xl border border-line px-4 hover:border-navy">
-                    <span className="font-semibold">🎓 {CURSOS_CERT[c.curso] ?? c.curso}</span>
+                    <span className="font-semibold">🎓 {nomesCert[c.curso] ?? CURSOS_CERT[c.curso] ?? c.curso}</span>
                     <span className="text-[14px] text-muted">{new Date(c.concluido_em).toLocaleDateString("pt-BR")} · abrir</span>
                   </Link>
                 </li>

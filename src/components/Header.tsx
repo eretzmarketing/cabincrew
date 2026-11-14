@@ -15,15 +15,16 @@ export default async function Header() {
         </Link>
 
         {(user || !manutencao) && (
-          <nav aria-label="Principal" className="order-3 flex w-full flex-wrap items-center gap-x-7 gap-y-2 font-display text-[15px] font-semibold md:order-none md:w-auto">
+          <nav aria-label="Principal" className="order-3 flex w-full flex-wrap items-center gap-x-6 gap-y-2 font-display text-[15px] font-semibold md:order-none md:w-auto">
             {user && <Link href="/head-hunter" className={link}>Head Hunter</Link>}
             {user && <Link href="/english" className={link}>English</Link>}
             {user && <Link href="/spanish" className={link}>Spanish</Link>}
+            <Link href="/cursos" className={link}>Cursos</Link>
             <Link href="/simulados-anac" className={link}>Simulados ANAC</Link>
             <Link href="/planos" className={link}>Planos</Link>
             <Link href="/loja" className={link}>Loja</Link>
             {forum_ativo && <Link href="/forum" className={link}>Fórum de Seleções</Link>}
-            {profile?.is_admin && <Link href="/admin" className={link}>Administrador</Link>}
+            {profile?.is_admin && <Link href="/admin" className={link}>Admin</Link>}
           </nav>
         )}
 

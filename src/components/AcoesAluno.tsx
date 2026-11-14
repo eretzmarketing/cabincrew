@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { alterarCursoAluno, banirAluno, dadosGestaoAluno, excluirAluno, resetarModuloAluno, type DadosGestao } from "@/app/alunos-actions";
 import BotaoWhatsapp, { type Sugestao } from "@/components/BotaoWhatsapp";
-import { CURSOS } from "@/lib/cursos";
 
 type Aluno = { id: string; nome: string; email: string | null; whatsapp: string | null; bloqueado: boolean };
 type Res = { msg?: string; erro?: string };
@@ -44,7 +43,6 @@ function Aviso({ r }: { r: Res }) {
   return null;
 }
 
-const NOMES: Record<string, string> = Object.fromEntries(CURSOS.map((c) => [c.slug, c.nome]));
 const ST: Record<string, { t: string; cor: string }> = {
   ativo: { t: "Ativo", cor: "bg-[#e5f6ec] text-[#0f6b3a]" }, suspenso: { t: "Suspenso", cor: "bg-[#fff8e6] text-[#7a5a00]" },
   revogado: { t: "Removido", cor: "bg-[#eceef3] text-ink-2" }, concluido: { t: "Concluído", cor: "bg-[#eef1ff] text-navy" },
@@ -67,12 +65,12 @@ function Editar({ a, fechar }: { a: Aluno; fechar: () => void }) {
         <>
           <section className="flex flex-col gap-2">
             <h4 className="font-display font-extrabold">Cursos</h4>
-            {CURSOS.map(({ slug: c }) => {
+            {d.cursos.map(({ slug: c, nome }) => {
               const ac = d.acessos.find((x) => x.produto === c);
               const st = ac ? (ac.status === "ativo" && ac.expira_em && Date.parse(ac.expira_em) < agora ? "concluido" : ac.status) : null;
               return (
                 <div key={c} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-line px-4 py-3">
-                  <span className="flex items-center gap-2 font-semibold">{NOMES[c]}
+                  <span className="flex items-center gap-2 font-semibold">{nome}
                     <span className={`rounded-full px-2 py-0.5 text-[12px] font-semibold ${st ? ST[st]?.cor : "bg-[#eceef3] text-ink-2"}`}>{st ? ST[st]?.t ?? st : "Sem acesso"}</span>
                   </span>
                   <span className="flex flex-wrap gap-2">
@@ -88,7 +86,7 @@ function Editar({ a, fechar }: { a: Aluno; fechar: () => void }) {
             })}
           </section>
 
-          {([["head-hunter", "Módulos do Head Hunter", d.hh], ["english", "Módulos do Flight Attendant English", d.en], ["spanish", "Módulos do Flight Attendant Spanish", d.es ?? []]] as const).map(([c, t, mods]) => (
+          {d.secoes.filter((s) => s.mods.some((m) => m.total > 0)).map(({ curso: c, titulo: t, mods }) => (
             <section key={c} className="flex flex-col gap-2">
               <h4 className="font-display font-extrabold">{t}</h4>
               <ul className="flex flex-col divide-y divide-[#eceef3] rounded-xl border border-line">

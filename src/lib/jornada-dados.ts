@@ -16,8 +16,8 @@ export async function lerCheckin(supabase: SupabaseClient, userId: string) {
 
 export async function carregarJornada(supabase: SupabaseClient, userId: string) {
   const [mod, aul, prog, tent, sims, ing, opq, vid, anac, checkin, eng] = await Promise.all([
-    supabase.from("modulos").select("id, ordem, titulo").eq("publicado", true).order("ordem"),
-    supabase.from("aulas").select("id, modulo_id, ordem, titulo").eq("publicado", true).order("ordem"),
+    supabase.from("modulos").select("id, ordem, titulo").eq("publicado", true).eq("curso", "head-hunter").order("ordem"),
+    supabase.from("aulas").select("id, modulo_id, ordem, titulo").eq("publicado", true).eq("curso", "head-hunter").order("ordem"),
     supabase.from("progresso").select("aula_id, concluida_em").eq("user_id", userId),
     supabase.from("tentativas").select("simulado_id, nota, finalizada_em").eq("user_id", userId).not("finalizada_em", "is", null).order("finalizada_em", { ascending: false }).limit(1000),
     supabase.from("simulados").select("id, origem, bancos"),

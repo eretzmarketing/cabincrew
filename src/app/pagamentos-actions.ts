@@ -10,7 +10,7 @@ import { SITE } from "@/lib/mercadopago";
 import { enviarWhatsapp, preencher } from "@/lib/whatsapp";
 import { ARQUIVO_MP, configMP, hashChave, testarTokenMP } from "@/lib/mercadopago";
 import { getUser } from "@/lib/supabase/server";
-import { CURSOS, SLUGS_CURSOS, ehCurso } from "@/lib/cursos";
+import { infoCursos } from "@/lib/cursos-dados";
 
 type Estado = { ok?: boolean; msg?: string; erro?: string };
 
@@ -44,11 +44,13 @@ export async function salvarConexaoMP(_: Estado, form: FormData): Promise<Estado
   return { ok: true, msg: `Conectado à conta ${teste.conta} ✓${accessToken.startsWith("TEST-") ? " (modo de teste: nenhuma cobrança é real)" : ""}` };
 }
 
-const CURSOS_BASE = SLUGS_CURSOS;
-const ENDERECO: Record<string, string> = Object.fromEntries(CURSOS.map((c) => [c.slug, c.endereco]));
+async function listaCursos() {
+  const cursos = await infoCursos();
+  return { slugs: cursos.map((c) => c.slug), endereco: Object.fromEntries(cursos.map((c) => [c.slug, c.endereco])) as Record<string, string> };
+}
 
 /** Lê e confere os campos comuns de um plano. */
-function lerPlano(form: FormData) {
+function lerPlano(form: FormData, CURSOS_BASE: string[]) {
   const nome = String(form.get("nome") ?? "").trim().slice(0, 80);
   const preco = Number(String(form.get("preco") ?? "").replace(/\./g, "").replace(",", "."));
   const desconto = Number(String(form.get("desconto_pix") ?? "0").replace(",", ".") || 0);
@@ -82,7 +84,8 @@ function revalidarPlanos() {
 export async function salvarProduto(_: Estado, form: FormData): Promise<Estado> {
   const { supabase } = await admin();
   const slug = String(form.get("slug") ?? "");
-  const r = lerPlano(form);
+  const { slugs: CURSOS_BASE, endereco: ENDERECO } = await listaCursos();
+  const r = lerPlano(form, CURSOS_BASE);
   if ("erro" in r) return { erro: r.erro };
   const base = CURSOS_BASE.includes(slug);
   if (!base && !r.inclui.length) return { erro: "Marque pelo menos um curso que este plano libera." };
@@ -96,7 +99,8 @@ export async function salvarProduto(_: Estado, form: FormData): Promise<Estado> 
 /** Admin: cria um plano novo (ex.: promoção, combo diferente). */
 export async function criarProduto(_: Estado, form: FormData): Promise<Estado> {
   const { supabase } = await admin();
-  const r = lerPlano(form);
+  const { slugs: CURSOS_BASE, endereco: ENDERECO } = await listaCursos();
+  const r = lerPlano(form, CURSOS_BASE);
   if ("erro" in r) return { erro: r.erro };
   if (!r.inclui.length) return { erro: "Marque pelo menos um curso que este plano libera." };
   const base = r.dados.nome.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 30) || "plano";
@@ -116,7 +120,7 @@ export async function criarProduto(_: Estado, form: FormData): Promise<Estado> {
 export async function excluirProduto(form: FormData) {
   const { supabase } = await admin();
   const slug = String(form.get("slug") ?? "");
-  if (!slug || CURSOS_BASE.includes(slug)) return;
+  if (!slug || (await listaCursos()).slugs.includes(slug)) return;
   await supabase.from("produtos").update({ excluido: true, ativo: false, updated_at: new Date().toISOString() }).eq("slug", slug);
   revalidarPlanos();
 }
@@ -127,7 +131,7 @@ export async function alterarAcesso(form: FormData) {
   const userId = String(form.get("user_id") ?? "");
   const acao = String(form.get("acao") ?? "");
   const pedido = String(form.get("produto") ?? "head-hunter");
-  const produto = ehCurso(pedido) ? pedido : "head-hunter";
+  const produto = (await listaCursos()).slugs.includes(pedido) ? pedido : "head-hunter";
   if (!/^[0-9a-f-]{36}$/i.test(userId)) return;
   if (acao === "liberar") {
     await supabase.from("acessos").upsert({ user_id: userId, produto, status: "ativo", liberado_em: new Date().toISOString(), encerrado_em: null, concluido_em: null, expira_em: null, motivo: "liberado pelo administrador" });

@@ -16,8 +16,7 @@ import { emitirCertificadoAdmin } from "@/app/certificados-actions";
 import { alterarAcesso } from "@/app/pagamentos-actions";
 import { CURSOS_CERT } from "@/lib/certificados";
 import { STATUS_COMPRA, dataHoraBR, dinheiro, fimArrependimento, type Compra } from "@/lib/compras";
-import { CURSOS } from "@/lib/cursos";
-import { cursoIdioma } from "@/lib/cursos-dados";
+import { cursoIdioma, infoCursos } from "@/lib/cursos-dados";
 
 export const metadata: Metadata = { title: "Aluno · Head Hunter" };
 export const dynamic = "force-dynamic";
@@ -26,7 +25,8 @@ export default async function AlunoPage({ params }: { params: Promise<{ id: stri
   const { id } = await params;
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
   const { supabase } = await getUser();
-  const [{ todas: aulasEn }, { todas: aulasEs }] = await Promise.all([cursoIdioma("english"), cursoIdioma("spanish")]);
+  const [{ todas: aulasEn }, { todas: aulasEs }, todosCursos] = await Promise.all([cursoIdioma("english"), cursoIdioma("spanish"), infoCursos()]);
+  const CURSOS = todosCursos.map((c) => ({ slug: c.slug, nome: c.titulo }));
   const [{ data: linha }, { dados, dataMeta, jornada }, { data: recentes }, { data: comprasAluno }, { data: acessosAluno }, { data: certsAluno }, { data: aceitesAluno }, { count: espanholFeitas }] = await Promise.all([
     supabase.rpc("admin_hh_alunos", { p_busca: "", p_id: id }),
     carregarJornada(supabase, id),
@@ -201,7 +201,7 @@ export default async function AlunoPage({ params }: { params: Promise<{ id: stri
               const cert = ((certsAluno ?? []) as { codigo: string; curso: string; concluido_em: string; revogado: boolean }[]).find((x) => x.curso === curso && !x.revogado);
               return (
                 <div key={curso} className="flex flex-wrap items-center justify-between gap-2 border-t border-line pt-3 first-of-type:border-0 first-of-type:pt-0">
-                  <span className="text-[15px]"><strong className="font-display">{CURSOS_CERT[curso]}:</strong> {cert ? <>emitido · <Link href={`/certificado/${cert.codigo}`} target="_blank" className="font-mono font-semibold text-navy underline">{cert.codigo}</Link></> : "não emitido"}</span>
+                  <span className="text-[15px]"><strong className="font-display">{CURSOS.find((x) => x.slug === curso)?.nome ?? CURSOS_CERT[curso]}:</strong> {cert ? <>emitido · <Link href={`/certificado/${cert.codigo}`} target="_blank" className="font-mono font-semibold text-navy underline">{cert.codigo}</Link></> : "não emitido"}</span>
                   {!cert && (
                     <form action={emitirCertificadoAdmin} className="flex flex-wrap items-center gap-2">
                       <input type="hidden" name="user_id" value={l.id} /><input type="hidden" name="curso" value={curso} />

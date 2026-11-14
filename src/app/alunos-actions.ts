@@ -2,13 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { chaveAula } from "@/lib/ingles-a-bordo";
-import { cursoIdioma } from "@/lib/cursos-dados";
-import { SLUGS_CURSOS } from "@/lib/cursos";
+import { cursoIdioma, infoCursos } from "@/lib/cursos-dados";
 import { getUser } from "@/lib/supabase/server";
 
 type Estado = { ok?: boolean; msg?: string; erro?: string };
 const UUID = /^[0-9a-f-]{36}$/i;
-const CURSOS = SLUGS_CURSOS;
+const cursoExiste = async (slug: string) => (await infoCursos()).some((c) => c.slug === slug);
 
 async function admin() {
   const ctx = await getUser();
@@ -27,6 +26,8 @@ export type DadosGestao = {
   hh: { id: number; titulo: string; feitas: number; total: number }[];
   en: { id: number; titulo: string; feitas: number; total: number }[];
   es: { id: number; titulo: string; feitas: number; total: number }[];
+  cursos: { slug: string; nome: string }[];
+  secoes: { curso: string; titulo: string; mods: { id: number; titulo: string; feitas: number; total: number }[] }[];
 };
 
 /** Dados do painel "Editar aluno": cursos e progresso por módulo. */
@@ -35,7 +36,7 @@ export async function dadosGestaoAluno(id: string): Promise<DadosGestao | null> 
   if (!UUID.test(id)) return null;
   const [{ data: acs }, { data: mods }, { data: auls }, { data: prog }, { data: ing }, { data: esp }] = await Promise.all([
     supabase.from("acessos").select("produto, status, expira_em, concluido_em").eq("user_id", id),
-    supabase.from("modulos").select("id, titulo, ordem").order("ordem"),
+    supabase.from("modulos").select("id, titulo, ordem, curso").order("ordem"),
     supabase.from("aulas").select("id, modulo_id"),
     supabase.from("progresso").select("aula_id").eq("user_id", id),
     supabase.from("ingles_progresso").select("aula, concluida").eq("user_id", id),
@@ -50,18 +51,23 @@ export async function dadosGestaoAluno(id: string): Promise<DadosGestao | null> 
   }
   const espOk = new Set(((esp ?? []) as { aula: string; concluida: boolean }[]).filter((x) => x.concluida).map((x) => x.aula));
   const ingOk = new Set(((ing ?? []) as { aula: string; concluida: boolean }[]).filter((x) => x.concluida).map((x) => x.aula));
-  const [{ modulos: MODULOS_INGLES }, { modulos: MODULOS_ESPANHOL }] = await Promise.all([cursoIdioma("english"), cursoIdioma("spanish")]);
+  const [{ modulos: MODULOS_INGLES }, { modulos: MODULOS_ESPANHOL }, cursos] = await Promise.all([cursoIdioma("english"), cursoIdioma("spanish"), infoCursos()]);
+  const doCurso = (slug: string) => ((mods ?? []) as { id: number; titulo: string; curso?: string }[])
+    .filter((m) => (m.curso ?? "head-hunter") === slug)
+    .map((m) => ({ id: m.id, titulo: m.titulo, ...(porModulo.get(m.id) ?? { total: 0, feitas: 0 }) }));
+  const hh = doCurso("head-hunter");
+  const en = MODULOS_INGLES.map((m) => ({ id: m.numero, titulo: `${m.numero}. ${m.titulo}`, total: m.aulas.length, feitas: m.aulas.filter((a) => ingOk.has(chaveAula(a))).length }));
+  const es = MODULOS_ESPANHOL.map((m) => ({ id: m.numero, titulo: `${m.numero}. ${m.titulo}`, total: m.aulas.length, feitas: m.aulas.filter((a) => espOk.has(chaveAula(a))).length }));
   return {
-    acessos: (acs ?? []) as DadosGestao["acessos"],
-    hh: ((mods ?? []) as { id: number; titulo: string }[]).map((m) => ({ id: m.id, titulo: m.titulo, ...(porModulo.get(m.id) ?? { total: 0, feitas: 0 }) })),
-    en: MODULOS_INGLES.map((m) => ({ id: m.numero, titulo: `${m.numero}. ${m.titulo}`, total: m.aulas.length, feitas: m.aulas.filter((a) => ingOk.has(chaveAula(a))).length })),
-    es: MODULOS_ESPANHOL.map((m) => ({ id: m.numero, titulo: `${m.numero}. ${m.titulo}`, total: m.aulas.length, feitas: m.aulas.filter((a) => espOk.has(chaveAula(a))).length })),
+    acessos: (acs ?? []) as DadosGestao["acessos"], hh, en, es,
+    cursos: cursos.map((c) => ({ slug: c.slug, nome: c.titulo })),
+    secoes: cursos.map((c) => ({ curso: c.slug, titulo: `Módulos do ${c.titulo}`, mods: c.slug === "english" ? en : c.slug === "spanish" ? es : doCurso(c.slug) })),
   };
 }
 
 export async function resetarModuloAluno(id: string, curso: string, modulo: number): Promise<Estado> {
   const { supabase } = await admin();
-  if (!UUID.test(id) || !CURSOS.includes(curso) || !Number.isInteger(modulo)) return { erro: "Dados inválidos." };
+  if (!UUID.test(id) || !(await cursoExiste(curso)) || !Number.isInteger(modulo)) return { erro: "Dados inválidos." };
   const { data, error } = await supabase.rpc("admin_resetar_modulo", { p_user: id, p_curso: curso, p_modulo: modulo });
   if (error) return { erro: error.message.includes("admin_resetar_modulo") ? "Rode o SQL 0048_gestao_alunos.sql no Supabase." : "Não foi possível resetar." };
   revalidar(id);
@@ -71,7 +77,7 @@ export async function resetarModuloAluno(id: string, curso: string, modulo: numb
 /** Suspende (pausa) ou reativa o acesso a um curso; remover encerra de vez. */
 export async function alterarCursoAluno(id: string, curso: string, acao: "suspender" | "reativar" | "remover"): Promise<Estado> {
   const { supabase } = await admin();
-  if (!UUID.test(id) || !CURSOS.includes(curso)) return { erro: "Dados inválidos." };
+  if (!UUID.test(id) || !(await cursoExiste(curso))) return { erro: "Dados inválidos." };
   const agora = new Date().toISOString();
   const dados = acao === "suspender" ? { status: "suspenso", motivo: "suspenso pelo administrador", encerrado_em: agora }
     : acao === "reativar" ? { status: "ativo", motivo: "reativado pelo administrador", encerrado_em: null }

@@ -18,7 +18,6 @@ export function cargaIdioma(curso: string) {
  */
 export async function cargaDoCurso(supabase: SupabaseClient, curso: string): Promise<string | null> {
   if (curso === "english" || curso === "spanish") return soma((await cursoIdioma(curso)).todas);
-  if (curso !== "head-hunter") return null;
-  const { data } = await supabase.from("aulas").select("duracao_min").eq("publicado", true);
+  const { data } = await supabase.from("aulas").select("duracao_min").eq("publicado", true).eq("curso", curso);
   return horas(((data ?? []) as { duracao_min: number | null }[]).reduce((s, a) => s + (Number(a.duracao_min) || 0), 0));
 }

@@ -4,14 +4,13 @@ import { notFound } from "next/navigation";
 import { excluirAula, excluirModulo } from "@/app/crew-actions";
 import {
   alternarAulaHH, alternarIdioma, alternarModuloHH, alternarTreinoHH, excluirIdioma, moverAulaHH, moverIdioma, moverModuloHH,
-  novaAulaIdioma, novoModuloIdioma, restaurarIdioma,
+  novaAulaIdioma, novoModuloIdioma, restaurarIdioma, excluirCurso,
 } from "@/app/cursos-actions";
 import { Titulo, btnSecundario } from "@/components/admin-ui";
 import { ModuloForm } from "@/components/admin-forms";
-import { CursoInfoForm, ModuloIdiomaForm } from "@/components/AdminCursosForms";
+import { CursoInfoForm, ModuloIdiomaForm, VendaCursoForm } from "@/components/AdminCursosForms";
 import NovaAulaBotao from "@/components/NovaAulaBotao";
 import { TIPO_AULA, duracao, numeroModulo, type Aula, type Modulo } from "@/lib/crew";
-import { CURSOS, ehCurso } from "@/lib/cursos";
 import { CURSOS_IDIOMA } from "@/lib/cursos-idioma";
 import { cursoIdioma, infoCurso } from "@/lib/cursos-dados";
 import { ehProdutoIdioma } from "@/lib/idioma-conteudo";
@@ -92,26 +91,29 @@ function LinhaAula({ titulo, sub, selos, acoes, apagada }: { titulo: string; sub
 
 /* ------------------------------------------------------------------ página */
 
-export default async function CursoAdmin({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams: Promise<{ editar?: string; erro?: string }> }) {
+export default async function CursoAdmin({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams: Promise<{ editar?: string; erro?: string; criado?: string }> }) {
   const { slug } = await params;
   const sp = await searchParams;
-  if (!ehCurso(slug)) notFound();
   const info = await infoCurso(slug);
-  const base = CURSOS.find((c) => c.slug === slug)!;
+  if (!info) notFound();
+  const { supabase } = await getUser();
+  const { data: prod } = await supabase.from("produtos").select("slug, preco, desconto_pix, dias_apos_conclusao, ativo, topicos").eq("slug", slug).maybeSingle();
+  const comModulos = info.tipo !== "idioma";
 
   return (
     <>
       <Link href="/admin/cursos" className="text-sm font-semibold text-muted hover:text-navy">← Todos os cursos</Link>
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <Titulo sub="Mudanças valem na hora para os alunos.">{info.titulo}</Titulo>
+        <Titulo sub={info.tipo === "padrao" && !info.publicado ? "Rascunho: os alunos ainda não veem este curso. Monte os módulos e aulas e depois publique em Informações do curso." : "Mudanças valem na hora para os alunos."}>{info.titulo}</Titulo>
         <div className="flex flex-wrap gap-2">
           {ehProdutoIdioma(slug) && <Link href={`/admin/cursos/${slug}/audios`} className={btnSecundario}>🎧 Áudios e andamento</Link>}
-          {slug === "head-hunter" && <Link href="/admin/head-hunter/simulados" className={btnSecundario}>Simulados das aulas</Link>}
+          {comModulos && <Link href="/admin/head-hunter/simulados" className={btnSecundario}>Simulados das aulas</Link>}
           {slug === "head-hunter" && <Link href="/admin/head-hunter/dinamicas" className={btnSecundario}>Dinâmicas</Link>}
-          <Link href={base.endereco} target="_blank" className={btnSecundario}>Ver como aluno ↗</Link>
+          <Link href={info.endereco} target="_blank" className={btnSecundario}>Ver como aluno ↗</Link>
         </div>
       </div>
       {sp.erro === "sql" && <p role="alert" className="rounded-2xl bg-brand-soft p-5 text-brand-deep">Rode o SQL <strong>0058_cursos_admin.sql</strong> no Supabase para editar os cursos.</p>}
+      {sp.criado && <p role="status" className="rounded-2xl bg-[#e5f6ec] px-5 py-4 font-semibold text-[#0f6b3a]">Curso criado ✓ Agora adicione os módulos e as aulas. Ele começa como rascunho: quando estiver pronto, marque “Curso publicado” em Informações do curso.</p>}
 
       <details open className="group rounded-[22px] border border-line bg-white">
         <summary className="flex min-h-16 cursor-pointer list-none items-center justify-between gap-3 px-5 py-3 md:px-6">
@@ -122,27 +124,55 @@ export default async function CursoAdmin({ params, searchParams }: { params: Pro
           <span aria-hidden="true" className="text-muted transition-transform group-open:rotate-90">›</span>
         </summary>
         <div className="border-t border-line px-5 pt-5 pb-6 md:px-6">
-          <CursoInfoForm slug={slug} titulo={info.titulo} descricao={info.descricao} imagem={info.imagem} />
+          <CursoInfoForm slug={slug} titulo={info.titulo} descricao={info.descricao} imagem={info.imagem} publicado={info.tipo === "padrao" ? info.publicado : undefined} />
         </div>
       </details>
 
-      {slug === "head-hunter" ? <ConteudoHH editar={sp.editar} /> : <ConteudoIdioma curso={slug} editar={sp.editar} />}
+      <details className="group rounded-[22px] border border-line bg-white">
+        <summary className="flex min-h-16 cursor-pointer list-none items-center justify-between gap-3 px-5 py-3 md:px-6">
+          <span className="flex flex-col">
+            <strong className="font-display text-xl font-extrabold">Preço e venda</strong>
+            <span className="text-[14px] text-muted">{prod ? `${Number(prod.preco).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })} · ${prod.ativo ? "à venda" : "fora de venda"}` : "Sem preço cadastrado"}</span>
+          </span>
+          <span aria-hidden="true" className="text-muted transition-transform group-open:rotate-90">›</span>
+        </summary>
+        <div className="border-t border-line px-5 pt-5 pb-6 md:px-6">
+          <VendaCursoForm slug={slug} p={prod ? { preco: Number(prod.preco), desconto_pix: Number(prod.desconto_pix), dias: prod.dias_apos_conclusao ?? 30, ativo: !!prod.ativo, topicos: (prod.topicos ?? []) as string[] } : null} />
+          <p className="pt-3 text-[13px] text-muted">Combos com este curso ficam em <Link href="/admin/produtos" className="font-semibold underline underline-offset-4">Planos e preços</Link>.</p>
+        </div>
+      </details>
+
+      {comModulos ? <ConteudoModulos curso={slug} hh={slug === "head-hunter"} editar={sp.editar} /> : <ConteudoIdioma curso={slug as "english" | "spanish"} editar={sp.editar} />}
+
+      {info.tipo === "padrao" && (
+        <details className="rounded-[20px] border border-line bg-white px-5 py-3">
+          <summary className="min-h-11 cursor-pointer py-2 font-semibold text-brand-deep">Excluir este curso</summary>
+          <form action={excluirCurso} className="flex flex-col gap-3 pb-3">
+            <input type="hidden" name="slug" value={slug} />
+            <p className="text-[15px] text-ink-2">Apaga o curso, todos os módulos e aulas dele e o progresso dos alunos. Ele sai da venda; compras e certificados já emitidos continuam registrados. Não dá para desfazer. Para só tirar do ar, desmarque “Curso publicado”.</p>
+            <label className="flex flex-col gap-1.5 text-sm font-semibold">Digite EXCLUIR para confirmar
+              <input name="confirmacao" required autoComplete="off" className="min-h-11 max-w-[240px] rounded-xl border border-[#c9cedb] px-3 text-[15px] font-normal" />
+            </label>
+            <button className="min-h-11 cursor-pointer self-start rounded-full bg-brand-deep px-5 font-semibold text-white">Excluir curso</button>
+          </form>
+        </details>
+      )}
     </>
   );
 }
 
 /* ------------------------------------------------------------------ Head Hunter */
 
-async function ConteudoHH({ editar }: { editar?: string }) {
+async function ConteudoModulos({ curso, hh, editar }: { curso: string; hh: boolean; editar?: string }) {
   const { supabase } = await getUser();
   const [{ data: mods }, { data: auls }] = await Promise.all([
-    supabase.from("modulos").select("*").order("ordem").order("id"),
-    supabase.from("aulas").select("*").order("ordem").order("titulo"),
+    supabase.from("modulos").select("*").eq("curso", curso).order("ordem").order("id"),
+    supabase.from("aulas").select("*").eq("curso", curso).order("ordem").order("titulo"),
   ]);
   const modulos = (mods ?? []) as Modulo[];
   const aulas = (auls ?? []) as Aula[];
-  const temTreino = modulos.some((m) => "treino_pos_curso" in m);
-  const proximaOrdem = modulos.length ? Math.max(...modulos.map((m) => m.ordem)) + 1 : 0;
+  const temTreino = hh && modulos.some((m) => "treino_pos_curso" in m);
+  const proximaOrdem = modulos.length ? Math.max(...modulos.map((m) => m.ordem)) + 1 : hh ? 0 : 1;
 
   return (
     <section aria-labelledby="conteudo" className="flex flex-col gap-3">
@@ -159,7 +189,7 @@ async function ConteudoHH({ editar }: { editar?: string }) {
             selos={<>
               {!m.publicado && <Selo cor="cinza">Oculto</Selo>}
               {m.treino_pos_curso && <Selo cor="azul">Treino pós-curso</Selo>}
-              {m.recurso === "anac" && <Selo cor="rosa">Simulados ANAC</Selo>}
+              {hh && m.recurso === "anac" && <Selo cor="rosa">Simulados ANAC</Selo>}
             </>}
             barra={<>
               <Acao action={moverModuloHH} campos={{ id: m.id, dir: "cima" }} rotulo="Subir módulo" desativado={i === 0}>↑</Acao>
@@ -168,7 +198,7 @@ async function ConteudoHH({ editar }: { editar?: string }) {
               {temTreino && <Acao action={alternarTreinoHH} campos={{ id: m.id }} rotulo={m.treino_pos_curso ? "Tirar de treino pós-curso" : "Marcar como treino pós-curso"}>{m.treino_pos_curso ? "🏋️ Tirar de treino" : "🏋️ Marcar como treino"}</Acao>}
               <details className="w-full sm:w-auto [&[open]]:w-full">
                 <summary className={`${mini} list-none`}>✏️ Editar módulo</summary>
-                <div className="mt-3 rounded-2xl bg-soft p-4"><ModuloForm m={m} /></div>
+                <div className="mt-3 rounded-2xl bg-soft p-4"><ModuloForm m={m} curso={curso} treino={hh} /></div>
               </details>
               <Excluir action={excluirModulo} campos={{ id: m.id }} texto={`Excluir o módulo “${m.titulo}”, as ${daqui.length} aulas dele e o progresso dos alunos nessas aulas? Não dá para desfazer. Se quiser só tirar do ar, use Ocultar.`} />
             </>}>
@@ -182,13 +212,13 @@ async function ConteudoHH({ editar }: { editar?: string }) {
                       <Acao action={moverAulaHH} campos={{ id: a.id, dir: "cima" }} rotulo="Subir aula" desativado={k === 0}>↑</Acao>
                       <Acao action={moverAulaHH} campos={{ id: a.id, dir: "baixo" }} rotulo="Descer aula" desativado={k === daqui.length - 1}>↓</Acao>
                       <Acao action={alternarAulaHH} campos={{ id: a.id }} rotulo={a.publicado ? "Ocultar aula dos alunos" : "Mostrar aula para os alunos"}>{a.publicado ? "🙈 Ocultar" : "👁 Mostrar"}</Acao>
-                      <Link href={`/admin/cursos/head-hunter/aula/${a.id}`} className={miniLink}>✏️ Editar</Link>
+                      <Link href={`/admin/cursos/${curso}/aula/${a.id}`} className={miniLink}>✏️ Editar</Link>
                       <Excluir action={excluirAula} campos={{ id: a.id, modulo_id: m.id }} texto={`Excluir a aula “${a.titulo}” e o progresso dos alunos nela? Não dá para desfazer.`} />
                     </>} />
                 ))}
               </ol>
             ) : <p className="text-[15px] text-ink-2">Nenhuma aula ainda. Os alunos veem este módulo como “Em breve”.</p>}
-            <NovaAulaBotao href={`/admin/cursos/head-hunter/aula/nova?modulo=${m.id}&ordem=${proxima}`} />
+            <NovaAulaBotao href={`/admin/cursos/${curso}/aula/nova?modulo=${m.id}&ordem=${proxima}`} />
           </ModuloCaixa>
         );
       })}
@@ -197,7 +227,7 @@ async function ConteudoHH({ editar }: { editar?: string }) {
           <span aria-hidden="true" className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-navy text-white transition-transform group-open:rotate-45">+</span>
           Adicionar módulo
         </summary>
-        <div className="px-5 pb-5"><ModuloForm proximaOrdem={proximaOrdem} /></div>
+        <div className="px-5 pb-5"><ModuloForm proximaOrdem={proximaOrdem} curso={curso} treino={hh} /></div>
       </details>
     </section>
   );

@@ -15,7 +15,7 @@ export const GRUPOS: Grupo[] = [
   {
     id: "cursos", label: "Cursos", secao: "Treinamentos",
     itens: [
-      { href: "/admin/cursos", label: "Todos os cursos", exato: true },
+      { href: "/admin/cursos", label: "Todos os cursos" },
       { href: "/admin/cursos/head-hunter", label: "Head Hunter" },
       { href: "/admin/cursos/english", label: "Flight Attendant English" },
       { href: "/admin/cursos/spanish", label: "Flight Attendant Spanish" },

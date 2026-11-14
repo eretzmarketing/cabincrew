@@ -1,3 +1,4 @@
+import { nomesCursos } from "@/lib/cursos-dados";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -28,7 +29,7 @@ async function carregar(codigo: string) {
 
 export async function generateMetadata({ params }: { params: Promise<{ codigo: string }> }): Promise<Metadata> {
   const r = await carregar((await params).codigo);
-  return r ? { title: `Certificado · ${r.c.nome}`, description: `${r.c.nome} concluiu ${CURSOS_CERT[r.c.curso]} na Cabin Crew.`, robots: { index: false } } : { title: "Certificado" };
+  return r ? { title: `Certificado · ${r.c.nome}`, description: `${r.c.nome} concluiu ${(await nomesCursos())[r.c.curso] ?? CURSOS_CERT[r.c.curso]} na Cabin Crew.`, robots: { index: false } } : { title: "Certificado" };
 }
 
 function Linha({ rotulo, children }: { rotulo: string; children: React.ReactNode }) {
@@ -44,11 +45,12 @@ export default async function CertificadoPage({ params }: { params: Promise<{ co
   const r = await carregar((await params).codigo);
   if (!r) notFound();
   const { c, modelo } = r;
+  const nomeCurso = (await nomesCursos())[c.curso] ?? CURSOS_CERT[c.curso] ?? c.curso;
   const carga = c.carga_horaria ?? modelo.carga_horaria ?? cargaIdioma(c.curso);
-  const dados = { nome: c.nome, curso: NOMES_CURSO_CERT[c.curso] ?? c.curso, concluido_em: c.concluido_em, nota: c.nota, codigo: c.codigo, carga };
+  const dados = { nome: c.nome, curso: NOMES_CURSO_CERT[c.curso] ?? nomeCurso, concluido_em: c.concluido_em, nota: c.nota, codigo: c.codigo, carga };
   const d = new Date(c.concluido_em);
   const linkedin = `https://www.linkedin.com/profile/add?${new URLSearchParams({
-    startTask: "CERTIFICATION_NAME", name: CURSOS_CERT[c.curso], organizationName: "Cabin Crew",
+    startTask: "CERTIFICATION_NAME", name: nomeCurso, organizationName: "Cabin Crew",
     issueYear: String(d.getFullYear()), issueMonth: String(d.getMonth() + 1), certUrl: `${SITE}/certificado/${c.codigo}`, certId: c.codigo,
   })}`;
   const foto = c.user_id ? avatarUrl(c.user_id, c.avatar_em) : null;
@@ -80,7 +82,7 @@ export default async function CertificadoPage({ params }: { params: Promise<{ co
               <h1 className="font-display text-[26px] leading-tight font-extrabold md:text-[30px]">{c.nome}</h1>
             </div>
             <dl className="flex flex-col">
-              <Linha rotulo="Curso">{NOMES_CURSO_CERT[c.curso] ?? CURSOS_CERT[c.curso]}</Linha>
+              <Linha rotulo="Curso">{NOMES_CURSO_CERT[c.curso] ?? nomeCurso}</Linha>
               {carga && <Linha rotulo="Carga horária">{carga}</Linha>}
               <Linha rotulo="Concluído em">{dataExtenso(c.concluido_em)}</Linha>
               {c.nota != null && <Linha rotulo="Aproveitamento">{Number(c.nota).toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%</Linha>}

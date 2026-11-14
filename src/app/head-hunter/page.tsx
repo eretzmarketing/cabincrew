@@ -18,13 +18,13 @@ export default async function CrewSelectPage({ searchParams }: { searchParams: P
 
   if (!liberado) {
     if (encerrado) return <Concluido nome={profile.nome ?? profile.apelido} em={acesso?.expira_em ?? acesso?.encerrado_em ?? null} />;
-    const [{ data: prod }, info] = await Promise.all([supabase.from("produtos").select("*").eq("slug", "head-hunter").maybeSingle(), infoCurso("head-hunter")]);
+    const [{ data: prod }, info] = await Promise.all([supabase.from("produtos").select("*").eq("slug", "head-hunter").maybeSingle(), infoCurso("head-hunter").then((i) => i!)]);
     return <Venda nome={profile.nome ?? profile.apelido} prod={prod} revogado={acesso?.status === "revogado"} info={info} />;
   }
 
   const [{ data: modulos }, { data: aulas }, { data: feitas }, anac, { dados, dataMeta, jornada }] = await Promise.all([
-    supabase.from("modulos").select("*").eq("publicado", true).order("ordem"),
-    supabase.from("aulas").select("id, modulo_id, ordem, titulo").eq("publicado", true).order("ordem"),
+    supabase.from("modulos").select("*").eq("publicado", true).eq("curso", "head-hunter").order("ordem"),
+    supabase.from("aulas").select("id, modulo_id, ordem, titulo").eq("publicado", true).eq("curso", "head-hunter").order("ordem"),
     supabase.from("progresso").select("aula_id").eq("user_id", user.id),
     supabase.rpc("anac_liberado"),
     carregarJornada(supabase, user.id),

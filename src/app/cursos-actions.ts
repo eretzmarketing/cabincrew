@@ -3,9 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { FormState } from "@/app/actions";
-import { ehCurso } from "@/lib/cursos";
+import { CURSOS } from "@/lib/cursos";
 import { CURSOS_IDIOMA, type ProdutoIdioma } from "@/lib/cursos-idioma";
-import { cursoIdioma } from "@/lib/cursos-dados";
+import { cursoIdioma, infoCurso } from "@/lib/cursos-dados";
 import { aulaEmBranco, ehProdutoIdioma } from "@/lib/idioma-conteudo";
 import { textoParaAtividades, textoParaExpressoes, textoParaFalas, textoParaQuiz, textoParaVocab } from "@/lib/idioma-editor";
 import { getUser } from "@/lib/supabase/server";
@@ -35,14 +35,15 @@ function atualizar(slug: string) {
 
 export async function salvarInfoCurso(_: FormState, form: FormData): Promise<FormState> {
   const { supabase } = await admin();
-  const slug = txt(form, "slug", 40);
-  if (!ehCurso(slug)) return { erro: "Curso inválido." };
+  const slug = txt(form, "slug", 60);
+  if (!(await infoCurso(slug))) return { erro: "Curso inválido." };
   const titulo = txt(form, "titulo", 120);
   const descricao = txt(form, "descricao", 4000);
   const imagem = txt(form, "imagem", 300);
   if (titulo.length < 2) return { erro: "Informe o título do curso." };
   if (imagem && !imagemValida(imagem)) return { erro: "Escolha a imagem pelo botão “Enviar imagem” (ou use um endereço do próprio site, começando com /)." };
-  const { error } = await supabase.from("cursos").upsert({ slug, titulo, descricao, imagem: imagem || null, atualizado_em: new Date().toISOString() }, { onConflict: "slug" });
+  const publicado = form.has("publicado_campo") ? { publicado: form.get("publicado") === "on" } : {};
+  const { error } = await supabase.from("cursos").upsert({ slug, titulo, descricao, imagem: imagem || null, ...publicado, atualizado_em: new Date().toISOString() }, { onConflict: "slug" });
   if (error) return { erro: semSql(error.message) ? ERRO_SQL : "Não foi possível salvar." };
   atualizar(slug);
   return { ok: true, msg: "Informações salvas. Já aparecem no site." };
@@ -54,7 +55,9 @@ export async function moverModuloHH(form: FormData) {
   const { supabase } = await admin();
   const id = int(form, "id");
   const dir = form.get("dir") === "cima" ? -1 : 1;
-  const { data } = await supabase.from("modulos").select("id, ordem").order("ordem").order("id");
+  const { data: este } = await supabase.from("modulos").select("curso").eq("id", id).maybeSingle();
+  const curso = (este as { curso?: string } | null)?.curso ?? "head-hunter";
+  const { data } = await supabase.from("modulos").select("id, ordem").eq("curso", curso).order("ordem").order("id");
   const lista = (data ?? []) as { id: number; ordem: number }[];
   const i = lista.findIndex((m) => m.id === id);
   const j = i + dir;
@@ -285,4 +288,86 @@ export async function listarMidias(tipo: string): Promise<MidiaEscolha[]> {
   if (!["imagem", "video", "audio", "documento"].includes(tipo)) return [];
   const { data } = await supabase.from("midias").select("id, tipo, arquivo, miniatura, nome, titulo, pasta, tamanho, created_at").eq("tipo", tipo).order("created_at", { ascending: false }).limit(1000);
   return (data ?? []) as MidiaEscolha[];
+}
+
+
+/* ------------------------------------------------------------------ cursos criados no admin */
+
+const paraSlug = (t: string) => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 34);
+const RESERVADOS = ["head-hunter", "english", "spanish", "combo", "combo-completo", "novo", "loja", "planos", "admin"];
+
+function lerVenda(form: FormData) {
+  const preco = Number(String(form.get("preco") ?? "").replace(/\./g, "").replace(",", "."));
+  const desconto = Number(String(form.get("desconto_pix") ?? "0").replace(",", ".") || 0);
+  const dias = Number(form.get("dias") ?? 30);
+  const topicos = String(form.get("topicos") ?? "").split("\n").map((t) => t.trim()).filter(Boolean).slice(0, 12).map((t) => t.slice(0, 140));
+  if (!Number.isFinite(preco) || preco < 1 || preco > 100000) return { erro: "Informe o preço (ex.: 197,00)." } as const;
+  if (!Number.isFinite(desconto) || desconto < 0 || desconto > 50) return { erro: "O desconto no Pix vai de 0 a 50%." } as const;
+  if (!Number.isInteger(dias) || dias < 0 || dias > 3650) return { erro: "Os dias de acesso depois de concluir vão de 0 a 3650." } as const;
+  return { dados: { preco: Math.round(preco * 100) / 100, desconto_pix: desconto, dias_apos_conclusao: dias, topicos, ativo: form.get("ativo") === "on" } } as const;
+}
+
+/** Cria um curso novo (começa como rascunho, fora de venda) e abre a página dele para montar os módulos. */
+export async function criarCurso(_: FormState, form: FormData): Promise<FormState> {
+  const { supabase } = await admin();
+  const titulo = txt(form, "titulo", 120);
+  const descricao = txt(form, "descricao", 4000);
+  const imagem = txt(form, "imagem", 300);
+  if (titulo.length < 3) return { erro: "Dê um nome ao curso." };
+  if (imagem && !imagemValida(imagem)) return { erro: "Escolha a imagem pelo botão “Enviar imagem”." };
+  const v = lerVenda(form);
+  if ("erro" in v) return { erro: v.erro };
+  const base = paraSlug(titulo).replace(/-+$/, "") || "curso";
+  let slug = base.length < 3 ? `curso-${base}` : base;
+  for (let n = 2; n < 60; n++) {
+    const [{ data: c }, { data: p }] = await Promise.all([
+      supabase.from("cursos").select("slug").eq("slug", slug).maybeSingle(),
+      supabase.from("produtos").select("slug").eq("slug", slug).maybeSingle(),
+    ]);
+    if (!c && !p && !RESERVADOS.includes(slug)) break;
+    slug = `${base}-${n}`;
+  }
+  const { data: ult } = await supabase.from("cursos").select("ordem").order("ordem", { ascending: false }).limit(1).maybeSingle();
+  const { error } = await supabase.from("cursos").insert({ slug, titulo, descricao, imagem: imagem || null, tipo: "padrao", publicado: false, ordem: (Number(ult?.ordem) || 3) + 1 });
+  if (error) return { erro: semSql(error.message) || /tipo|publicado|slug_check/.test(error.message) ? "Rode o SQL 0060_cursos_novos.sql no Supabase para criar cursos." : "Não foi possível criar o curso." };
+  const { error: e2 } = await supabase.from("produtos").insert({
+    slug, nome: titulo, descricao: descricao.split(/\n/)[0].slice(0, 500) || null, ...v.dados, ativo: false,
+    inclui: [slug], endereco: `/curso/${slug}`, ordem: 20,
+  });
+  if (e2) {
+    await supabase.from("cursos").delete().eq("slug", slug);
+    return { erro: "Não foi possível cadastrar o preço do curso. Rode o SQL 0060_cursos_novos.sql no Supabase." };
+  }
+  revalidatePath("/", "layout");
+  redirect(`/admin/cursos/${slug}?criado=1`);
+}
+
+/** Preço, desconto no Pix, dias de acesso depois de concluir, tópicos e se está à venda. */
+export async function salvarVendaCurso(_: FormState, form: FormData): Promise<FormState> {
+  const { supabase } = await admin();
+  const slug = txt(form, "slug", 60);
+  const info = await infoCurso(slug);
+  if (!info) return { erro: "Curso inválido." };
+  const v = lerVenda(form);
+  if ("erro" in v) return { erro: v.erro };
+  const { data: existe } = await supabase.from("produtos").select("slug").eq("slug", slug).maybeSingle();
+  const { error } = existe
+    ? await supabase.from("produtos").update({ ...v.dados, updated_at: new Date().toISOString() }).eq("slug", slug)
+    : await supabase.from("produtos").insert({ slug, nome: info.titulo, ...v.dados, inclui: [slug], endereco: info.endereco, ordem: 20 });
+  if (error) return { erro: "Não foi possível salvar o preço." };
+  revalidatePath("/", "layout");
+  return { ok: true, msg: v.dados.ativo ? "Salvo ✓ O curso está à venda na página Planos." : "Salvo ✓ O curso está fora de venda." };
+}
+
+/** Exclui um curso criado no admin (os 3 cursos originais não podem ser excluídos). */
+export async function excluirCurso(form: FormData) {
+  const { supabase } = await admin();
+  const slug = txt(form, "slug", 60);
+  const info = await infoCurso(slug);
+  if (!info || info.tipo !== "padrao" || CURSOS.some((c) => c.slug === slug)) return;
+  if (txt(form, "confirmacao", 20).toUpperCase() !== "EXCLUIR") redirect(`/admin/cursos/${slug}?erro=confirmar`);
+  await supabase.from("produtos").update({ excluido: true, ativo: false, updated_at: new Date().toISOString() }).eq("slug", slug);
+  await supabase.from("cursos").delete().eq("slug", slug);
+  revalidatePath("/", "layout");
+  redirect("/admin/cursos?excluido=1");
 }

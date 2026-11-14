@@ -3,7 +3,7 @@
 import { useActionState, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 import type { FormState } from "@/app/actions";
-import { salvarAulaIdioma, salvarInfoCurso, salvarModuloIdioma } from "@/app/cursos-actions";
+import { criarCurso, salvarAulaIdioma, salvarInfoCurso, salvarModuloIdioma, salvarVendaCurso } from "@/app/cursos-actions";
 
 const input = "min-h-12 w-full rounded-xl border border-[#c9cedb] bg-white px-3.5 text-[15px] font-normal text-navy placeholder:text-muted";
 const area = "w-full rounded-xl border border-[#c9cedb] bg-white p-3.5 text-[15px] leading-relaxed font-normal text-navy placeholder:text-muted";
@@ -79,7 +79,7 @@ export function CampoImagem({ name, inicial, rotulo = "Imagem de destaque", prop
 }
 
 /* ---------- informações do curso ---------- */
-export function CursoInfoForm({ slug, titulo, descricao, imagem }: { slug: string; titulo: string; descricao: string; imagem: string }) {
+export function CursoInfoForm({ slug, titulo, descricao, imagem, publicado }: { slug: string; titulo: string; descricao: string; imagem: string; publicado?: boolean }) {
   const [state, action] = useActionState(salvarInfoCurso, undefined);
   return (
     <form action={action} className="flex flex-col gap-5">
@@ -92,6 +92,15 @@ export function CursoInfoForm({ slug, titulo, descricao, imagem }: { slug: strin
         <textarea name="descricao" rows={6} maxLength={4000} defaultValue={descricao} className={area} />
       </label>
       <CampoImagem name="imagem" inicial={imagem} />
+      {publicado !== undefined && (
+        <>
+          <input type="hidden" name="publicado_campo" value="1" />
+          <label className="flex min-h-11 cursor-pointer items-start gap-3 text-[15px]">
+            <input type="checkbox" name="publicado" defaultChecked={publicado} className="mt-0.5 h-5 w-5 shrink-0 accent-brand-strong" />
+            <span><strong>Curso publicado</strong><span className="block text-[13px] text-muted">Desmarcado, o curso fica em rascunho: só você vê. Para vender, ligue também “À venda” em Preço e venda.</span></span>
+          </label>
+        </>
+      )}
       <Aviso state={state} />
       <div><Salvar>Salvar informações</Salvar></div>
     </form>
@@ -200,6 +209,70 @@ export function AulaIdiomaForm({ a, idioma }: { a: AulaEditavel; idioma: string 
         <Aviso state={state} />
         <div><Salvar>Salvar aula</Salvar></div>
       </div>
+    </form>
+  );
+}
+
+/* ---------- preço e venda ---------- */
+type Venda = { preco: number; desconto_pix: number; dias: number; ativo: boolean; topicos: string[] };
+
+function CamposVenda({ p, mostrarAtivo = true }: { p: Venda | null; mostrarAtivo?: boolean }) {
+  const [preco, setPreco] = useState(p ? String(p.preco).replace(".", ",") : "");
+  const [desc, setDesc] = useState(p ? String(p.desconto_pix).replace(".", ",") : "5");
+  const n = Number(preco.replace(/\./g, "").replace(",", ".")) || 0;
+  const d = Number(desc.replace(",", ".")) || 0;
+  const reais = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  return (
+    <>
+      <div className="grid gap-4 sm:grid-cols-3">
+        <label className={label}>Preço (R$)<input name="preco" inputMode="decimal" required value={preco} onChange={(e) => setPreco(e.target.value)} placeholder="197,00" className={input} /></label>
+        <label className={label}>Desconto no Pix (%)<input name="desconto_pix" inputMode="decimal" value={desc} onChange={(e) => setDesc(e.target.value)} className={input} /></label>
+        <label className={label}>Dias de acesso depois de concluir<input name="dias" type="number" min={0} max={3650} defaultValue={p?.dias ?? 30} className={input} /></label>
+      </div>
+      <p className="rounded-xl bg-soft px-4 py-3 text-[15px]">No checkout: <strong>{reais(n)}</strong> no cartão (até 12x) · <strong className="text-[#0f6b3a]">{reais(Math.round(n * (100 - d)) / 100)}</strong> no Pix</p>
+      <label className={label}>O que o aluno recebe <span className={dica}>Um item por linha. Aparece na página Planos e na página do curso.</span>
+        <textarea name="topicos" rows={4} defaultValue={(p?.topicos ?? []).join("\n")} placeholder={"12 aulas em vídeo\nApostila em PDF\nCertificado de conclusão"} className={area} />
+      </label>
+      {mostrarAtivo && (
+        <label className="flex min-h-11 cursor-pointer items-start gap-3 text-[15px]">
+          <input type="checkbox" name="ativo" defaultChecked={p?.ativo ?? false} className="mt-0.5 h-5 w-5 shrink-0 accent-brand-strong" />
+          <span><strong>À venda</strong><span className="block text-[13px] text-muted">Aparece na página Planos e pode ser comprado pelo Mercado Pago.</span></span>
+        </label>
+      )}
+    </>
+  );
+}
+
+export function VendaCursoForm({ slug, p }: { slug: string; p: Venda | null }) {
+  const [state, action] = useActionState(salvarVendaCurso, undefined);
+  return (
+    <form action={action} className="flex flex-col gap-4">
+      <input type="hidden" name="slug" value={slug} />
+      <CamposVenda p={p} />
+      <Aviso state={state} />
+      <div><Salvar>Salvar preço</Salvar></div>
+    </form>
+  );
+}
+
+/* ---------- criar curso ---------- */
+export function CriarCursoForm() {
+  const [state, action] = useActionState(criarCurso, undefined);
+  return (
+    <form action={action} className="flex flex-col gap-5">
+      <label className={label}>Nome do curso
+        <input name="titulo" required minLength={3} maxLength={120} placeholder="Ex.: Primeiros Socorros para Comissários" className={input} />
+      </label>
+      <label className={label}>Descrição
+        <span className={dica}>Aparece no topo do curso e na página de venda. Deixe uma linha em branco para separar parágrafos.</span>
+        <textarea name="descricao" rows={5} maxLength={4000} className={area} />
+      </label>
+      <CampoImagem name="imagem" inicial="" />
+      <h2 className="pt-2 font-display text-xl font-extrabold">Preço</h2>
+      <CamposVenda p={null} mostrarAtivo={false} />
+      <p className="rounded-xl bg-[#e7efff] px-4 py-3 text-[14px] text-[#1d3f8f]">O curso começa como <strong>rascunho e fora de venda</strong>. Depois de criar, monte os módulos e as aulas; quando estiver pronto, publique e coloque à venda.</p>
+      <Aviso state={state} />
+      <div><Salvar>Criar curso</Salvar></div>
     </form>
   );
 }

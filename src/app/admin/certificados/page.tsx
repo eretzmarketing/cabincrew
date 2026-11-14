@@ -7,7 +7,7 @@ import { cargaDoCurso } from "@/lib/carga-curso";
 import { CAMPOS_PADRAO, CURSOS_CERT, dataExtenso, type Modelo } from "@/lib/certificados";
 import { SITE } from "@/lib/mercadopago";
 import { getUser } from "@/lib/supabase/server";
-import { ehCurso } from "@/lib/cursos";
+import { nomesCursos } from "@/lib/cursos-dados";
 
 export const metadata: Metadata = { title: "Certificados" };
 export const dynamic = "force-dynamic";
@@ -16,7 +16,8 @@ type Cert = { codigo: string; user_id: string | null; curso: string; nome: strin
 
 export default async function CertificadosPage({ searchParams }: { searchParams: Promise<{ curso?: string }> }) {
   const { curso: c = "head-hunter" } = await searchParams;
-  const curso = ehCurso(c) ? c : "head-hunter";
+  const NOMES = await nomesCursos();
+  const curso = NOMES[c] ? c : "head-hunter";
   const { supabase } = await getUser();
   const [{ data: mods, error }, { data: certs }] = await Promise.all([
     supabase.from("certificado_modelos").select("*"),
@@ -25,7 +26,7 @@ export default async function CertificadosPage({ searchParams }: { searchParams:
   const todos = (mods ?? []) as Modelo[];
   const mod = todos.find((x) => x.curso === curso) ?? null;
   // outros cursos que já têm modelo com imagem ou campos: dá para copiar o visual
-  const outros = todos.filter((x) => x.curso !== curso && (x.imagem || x.campos?.length)).map((x) => ({ curso: x.curso, nome: CURSOS_CERT[x.curso] ?? x.curso, imagem: x.imagem, largura: x.largura, altura: x.altura, campos: x.campos }));
+  const outros = todos.filter((x) => x.curso !== curso && (x.imagem || x.campos?.length)).map((x) => ({ curso: x.curso, nome: NOMES[x.curso] ?? CURSOS_CERT[x.curso] ?? x.curso, imagem: x.imagem, largura: x.largura, altura: x.altura, campos: x.campos }));
   const modelo: Modelo = mod ?? { curso, imagem: null, largura: 3508, altura: 2480, campos: CAMPOS_PADRAO, ativo: true };
   const lista = (certs ?? []) as Cert[];
   const cargaAuto = await cargaDoCurso(supabase, curso);
@@ -35,8 +36,8 @@ export default async function CertificadosPage({ searchParams }: { searchParams:
       <Titulo sub="Um modelo para cada curso: envie a imagem de fundo e arraste os textos. O aluno emite o certificado quando conclui o curso, e qualquer pessoa pode conferir pelo código.">Certificados</Titulo>
       {error ? <p className="rounded-2xl bg-brand-soft p-5 text-brand-deep">Rode o SQL <strong>0049_certificados.sql</strong> no Supabase para ativar esta página.</p> : (
         <>
-          <nav aria-label="Curso" className="flex gap-1 self-start rounded-full bg-white p-1 shadow-[inset_0_0_0_1px_var(--color-line)]">
-            {Object.entries(CURSOS_CERT).map(([k, r]) => (
+          <nav aria-label="Curso" className="flex flex-wrap gap-1 self-start rounded-[24px] bg-white p-1 shadow-[inset_0_0_0_1px_var(--color-line)]">
+            {Object.entries(NOMES).map(([k, r]) => (
               <Link key={k} href={`/admin/certificados?curso=${k}`} aria-current={curso === k ? "page" : undefined}
                 className={`inline-flex min-h-11 items-center rounded-full px-5 font-semibold ${curso === k ? "bg-navy text-white" : "text-navy"}`}>{r}</Link>
             ))}
@@ -53,7 +54,7 @@ export default async function CertificadosPage({ searchParams }: { searchParams:
                     {lista.map((x) => (
                       <tr key={x.codigo} className={`border-b border-[#eceef3] last:border-0 ${x.revogado ? "opacity-50" : ""}`}>
                         <td className="p-3 font-semibold">{x.user_id ? <Link href={`/admin/usuarios/${x.user_id}`} className="text-navy underline-offset-4 hover:underline">{x.nome}</Link> : x.nome}{x.emitido_por === "admin" && <span className="ml-2 text-[12px] font-normal text-muted">(emitido por você)</span>}</td>
-                        <td className="p-3">{CURSOS_CERT[x.curso]}</td>
+                        <td className="p-3">{NOMES[x.curso] ?? x.curso}</td>
                         <td className="p-3 whitespace-nowrap">{dataExtenso(x.concluido_em)}</td>
                         <td className="p-3">{x.nota ?? "—"}</td>
                         <td className="p-3"><Link href={`/certificado/${x.codigo}`} target="_blank" className="font-mono font-semibold text-navy underline underline-offset-4">{x.codigo}</Link>{x.revogado && <span className="ml-2 rounded-full bg-brand-soft px-2 py-0.5 text-[11px] font-bold text-brand-deep">REVOGADO</span>}</td>

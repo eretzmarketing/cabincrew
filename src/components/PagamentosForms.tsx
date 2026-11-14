@@ -2,7 +2,6 @@
 
 import { useActionState, useState } from "react";
 import { adicionarAoCurso, criarProduto, salvarConexaoMP, salvarProduto } from "@/app/pagamentos-actions";
-import { CURSOS as CURSOS_BASE } from "@/lib/cursos";
 
 const campo = "w-full rounded-xl border border-[#c9cedb] bg-white px-4 py-3 text-[15px] outline-none focus:border-navy";
 const btn = "inline-flex min-h-11 cursor-pointer items-center justify-center rounded-full bg-navy px-5 font-semibold text-white hover:bg-navy-deep disabled:opacity-50";
@@ -45,10 +44,10 @@ export type Plano = {
   destaque?: string | null; topicos?: string[] | null; ordem?: number; inclui?: string[] | null;
 };
 
-const CURSOS = CURSOS_BASE.map((c) => [c.slug, c.nome] as const);
+export type ListaCursos = [string, string][];
 
 /** Campos de um plano (usados para editar e para criar). */
-function CamposPlano({ p, id, base }: { p?: Plano; id: string; base: boolean }) {
+function CamposPlano({ p, id, base, cursos }: { p?: Plano; id: string; base: boolean; cursos: ListaCursos }) {
   const [preco, setPreco] = useState(p ? String(p.preco).replace(".", ",") : "");
   const [desc, setDesc] = useState(p ? String(p.desconto_pix).replace(".", ",") : "5");
   const n = Number(preco.replace(/\./g, "").replace(",", ".")) || 0;
@@ -70,7 +69,7 @@ function CamposPlano({ p, id, base }: { p?: Plano; id: string; base: boolean }) 
       <fieldset className="flex flex-col gap-2">
         <legend className={`${rot} mb-1`}>Cursos que este plano libera</legend>
         <div className="flex flex-wrap gap-2">
-          {CURSOS.map(([k, r]) => (
+          {cursos.map(([k, r]) => (
             <label key={k} className={`flex min-h-11 items-center gap-2 rounded-xl border-2 border-line px-4 text-[15px] font-semibold ${base ? "opacity-70" : "cursor-pointer"}`}>
               <input type="checkbox" name="inclui" value={k} defaultChecked={(p?.inclui ?? []).includes(k)} disabled={base} className="h-5 w-5 accent-[#1f2a44]" />{r}
             </label>
@@ -114,23 +113,23 @@ function CamposPlano({ p, id, base }: { p?: Plano; id: string; base: boolean }) 
   );
 }
 
-export function ProdutoForm({ p, base }: { p: Plano; base: boolean }) {
+export function ProdutoForm({ p, base, cursos }: { p: Plano; base: boolean; cursos: ListaCursos }) {
   const [s, acao, pend] = useActionState(salvarProduto, {});
   return (
     <form action={acao} className="flex flex-col gap-4">
       <input type="hidden" name="slug" value={p.slug} />
-      <CamposPlano p={p} id={p.slug} base={base} />
+      <CamposPlano p={p} id={p.slug} base={base} cursos={cursos} />
       <div className="flex justify-end"><button className={btn} disabled={pend}>{pend ? "Salvando…" : "Salvar"}</button></div>
       <Aviso s={s} />
     </form>
   );
 }
 
-export function NovoPlanoForm() {
+export function NovoPlanoForm({ cursos }: { cursos: ListaCursos }) {
   const [s, acao, pend] = useActionState(criarProduto, {});
   return (
     <form action={acao} className="flex flex-col gap-4">
-      <CamposPlano id="novo" base={false} />
+      <CamposPlano id="novo" base={false} cursos={cursos} />
       <div className="flex justify-end"><button className={btn} disabled={pend}>{pend ? "Criando…" : "Criar plano"}</button></div>
       <Aviso s={s} />
     </form>

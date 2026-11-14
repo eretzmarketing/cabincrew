@@ -33,10 +33,10 @@ function extras(m: Modulo): ItemCurso[] {
   return x;
 }
 
-export async function navegacaoHeadHunter(supabase: SupabaseClient, userId: string, atual: { aulaId?: string; moduloId?: number }): Promise<Navegacao> {
+export async function navegacaoHeadHunter(supabase: SupabaseClient, userId: string, atual: { aulaId?: string; moduloId?: number }, curso = "head-hunter", base = "/head-hunter"): Promise<Navegacao> {
   const [{ data: mods }, { data: aulas }, { data: feitas }] = await Promise.all([
-    supabase.from("modulos").select("*").eq("publicado", true).order("ordem"),
-    supabase.from("aulas").select("id, modulo_id, ordem, titulo, tipo, duracao_min").eq("publicado", true).order("ordem"),
+    supabase.from("modulos").select("*").eq("publicado", true).eq("curso", curso).order("ordem"),
+    supabase.from("aulas").select("id, modulo_id, ordem, titulo, tipo, duracao_min").eq("publicado", true).eq("curso", curso).order("ordem"),
     supabase.from("progresso").select("aula_id").eq("user_id", userId),
   ]);
   const ok = new Set((feitas ?? []).map((f) => f.aula_id as string));
@@ -49,13 +49,13 @@ export async function navegacaoHeadHunter(supabase: SupabaseClient, userId: stri
     const itens: ItemCurso[] = (porModulo.get(m.id) ?? [])
       .filter((a) => !(m.recurso === "anac" && a.tipo === "simulado"))
       .map((a) => ({
-        href: `/head-hunter/aula/${a.id}`, titulo: a.titulo, tipo: a.tipo, minutos: a.duracao_min,
+        href: `${base}/aula/${a.id}`, titulo: a.titulo, tipo: a.tipo, minutos: a.duracao_min,
         feita: ok.has(a.id), atual: a.id === atual.aulaId,
       }));
-    const todos = [...itens, ...extras(m)];
+    const todos = [...itens, ...(curso === "head-hunter" ? extras(m) : [])];
     if (!todos.length) continue;
     secoes.push({
-      id: `m${m.id}`, rotulo: `Módulo ${numeroModulo(m.ordem)}`, titulo: m.titulo, href: `/head-hunter/modulo/${m.id}`,
+      id: `m${m.id}`, rotulo: `Módulo ${numeroModulo(m.ordem)}`, titulo: m.titulo, href: `${base}/modulo/${m.id}`,
       atual: m.id === atual.moduloId || itens.some((i) => i.atual), itens: todos,
     });
   }

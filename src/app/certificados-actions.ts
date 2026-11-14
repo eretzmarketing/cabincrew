@@ -4,11 +4,11 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { Campo } from "@/lib/certificados";
 import { getUser } from "@/lib/supabase/server";
-import { SLUGS_CURSOS } from "@/lib/cursos";
+import { infoCursos } from "@/lib/cursos-dados";
 import { cargaDoCurso } from "@/lib/carga-curso";
 
 type Estado = { ok?: boolean; msg?: string; erro?: string };
-const CURSOS = SLUGS_CURSOS;
+const cursoExiste = async (slug: string) => (await infoCursos()).some((c) => c.slug === slug);
 
 async function admin() {
   const ctx = await getUser();
@@ -21,7 +21,7 @@ const num = (v: unknown, min: number, max: number, padrao: number) => { const n 
 /** Admin: salva o modelo de certificado de um curso (imagem, tamanho e campos). */
 export async function salvarModeloCertificado(curso: string, m: { imagem: string | null; largura: number; altura: number; campos: Campo[]; ativo: boolean; carga_horaria?: string | null; descricao?: string | null }): Promise<Estado> {
   const { supabase } = await admin();
-  if (!CURSOS.includes(curso)) return { erro: "Curso inválido." };
+  if (!(await cursoExiste(curso))) return { erro: "Curso inválido." };
   if (m.imagem && !/^imagens\/certificados\/[a-f0-9]{16}\.jpg$/.test(m.imagem)) return { erro: "Imagem inválida. Envie de novo." };
   const campos = (Array.isArray(m.campos) ? m.campos : []).slice(0, 20).map((c) => ({
     id: String(c.id).slice(0, 30), tipo: ["nome", "curso", "data", "nota", "codigo", "livre"].includes(c.tipo) ? c.tipo : "livre",
@@ -55,7 +55,7 @@ export async function emitirCertificadoAdmin(form: FormData) {
   const { supabase } = await admin();
   const userId = String(form.get("user_id") ?? "");
   const curso = String(form.get("curso") ?? "");
-  if (!/^[0-9a-f-]{36}$/i.test(userId) || !CURSOS.includes(curso)) return;
+  if (!/^[0-9a-f-]{36}$/i.test(userId) || !(await cursoExiste(curso))) return;
   const dia = String(form.get("data") ?? "");
   const concluido = /^\d{4}-\d{2}-\d{2}$/.test(dia) ? new Date(`${dia}T12:00:00-03:00`).toISOString() : new Date().toISOString();
   const { data } = await supabase.rpc("certificado_emitir_admin", { p_user: userId, p_curso: curso, p_concluido: concluido });

@@ -7,7 +7,7 @@ import { Card, Titulo, btnSecundario } from "@/components/admin-ui";
 import { AulaForm } from "@/components/admin-forms";
 import { AulaIdiomaForm } from "@/components/AdminCursosForms";
 import type { Aula, Modulo } from "@/lib/crew";
-import { cursoIdioma } from "@/lib/cursos-dados";
+import { cursoIdioma, infoCurso } from "@/lib/cursos-dados";
 import { ehProdutoIdioma } from "@/lib/idioma-conteudo";
 import { atividadesParaTexto, expressoesParaTexto, falasParaTexto, quizParaTexto, vocabParaTexto } from "@/lib/idioma-editor";
 import { getUser } from "@/lib/supabase/server";
@@ -22,20 +22,21 @@ type Props = { params: Promise<{ slug: string; id: string }>; searchParams: Prom
 export default async function AdminAula({ params, searchParams }: Props) {
   const { slug, id } = await params;
   const sp = await searchParams;
-  if (slug === "head-hunter") return <AulaHH id={id} sp={sp} />;
   if (ehProdutoIdioma(slug)) return <AulaDeIdioma curso={slug} id={id} sp={sp} />;
-  notFound();
+  const info = await infoCurso(slug);
+  if (!info) notFound();
+  return <AulaHH id={id} sp={sp} curso={slug} nome={info.titulo} endereco={info.endereco} />;
 }
 
 /* ------------------------------------------------------------------ Head Hunter */
 
-async function AulaHH({ id, sp }: { id: string; sp: Awaited<Props["searchParams"]> }) {
+async function AulaHH({ id, sp, curso, nome, endereco }: { id: string; sp: Awaited<Props["searchParams"]>; curso: string; nome: string; endereco: string }) {
   const nova = id === "nova";
   if (!nova && !UUID.test(id)) notFound();
   const { supabase } = await getUser();
   const [{ data: modulos }, aulaRes, { data: sims }] = await Promise.all([
-    supabase.from("modulos").select("*").order("ordem"),
-    nova ? Promise.resolve({ data: null }) : supabase.from("aulas").select("*").eq("id", id).maybeSingle(),
+    supabase.from("modulos").select("*").eq("curso", curso).order("ordem"),
+    nova ? Promise.resolve({ data: null }) : supabase.from("aulas").select("*").eq("id", id).eq("curso", curso).maybeSingle(),
     supabase.from("simulados").select("id, titulo").order("titulo"),
   ]);
   const a = aulaRes.data as Aula | null;
@@ -45,10 +46,10 @@ async function AulaHH({ id, sp }: { id: string; sp: Awaited<Props["searchParams"
 
   return (
     <>
-      <Link href={`/admin/cursos/head-hunter${moduloId ? `?editar=${moduloId}#m-${moduloId}` : ""}`} className="text-sm font-semibold text-muted hover:text-navy">← Voltar ao Head Hunter</Link>
+      <Link href={`/admin/cursos/${curso}${moduloId ? `?editar=${moduloId}#m-${moduloId}` : ""}`} className="text-sm font-semibold text-muted hover:text-navy">← Voltar a {nome}</Link>
       <div className="flex flex-wrap items-end justify-between gap-4">
         <Titulo>{nova ? "Nova aula" : a!.titulo}</Titulo>
-        {a && <Link href={`/head-hunter/aula/${a.id}`} target="_blank" className={btnSecundario}>Ver como aluno ↗</Link>}
+        {a && <Link href={`${endereco}/aula/${a.id}`} target="_blank" className={btnSecundario}>Ver como aluno ↗</Link>}
       </div>
       {sp.criada && <p role="status" className="rounded-xl bg-[#e5f6ec] px-4 py-3 text-[15px] text-[#0f6b3a]">Aula criada.</p>}
       <Card>

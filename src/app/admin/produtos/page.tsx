@@ -3,16 +3,18 @@ import { excluirProduto } from "@/app/pagamentos-actions";
 import { Card, Titulo } from "@/components/admin-ui";
 import { NovoPlanoForm, ProdutoForm, type Plano } from "@/components/PagamentosForms";
 import { getUser } from "@/lib/supabase/server";
-import { SLUGS_CURSOS } from "@/lib/cursos";
+import { infoCursos } from "@/lib/cursos-dados";
 
 export const metadata: Metadata = { title: "Planos e preços" };
 export const dynamic = "force-dynamic";
 
-const BASE = SLUGS_CURSOS;
 
 export default async function ProdutosPage({ searchParams }: { searchParams: Promise<{ criado?: string }> }) {
   const { criado } = await searchParams;
   const { supabase } = await getUser();
+  const todosCursos = await infoCursos();
+  const BASE = todosCursos.map((c) => c.slug);
+  const lista = todosCursos.map((c) => [c.slug, c.titulo] as [string, string]);
   const { data, error } = await supabase.from("produtos").select("*").order("ordem").order("created_at");
   const planos = ((data ?? []) as (Plano & { excluido?: boolean })[]).filter((p) => !p.excluido);
   const semColunas = !error && planos.length > 0 && !("excluido" in (data![0] as object));
@@ -31,7 +33,7 @@ export default async function ProdutosPage({ searchParams }: { searchParams: Pro
             </summary>
             <div className="flex flex-col gap-3 px-5 pb-5">
               <p className="text-[15px] text-ink-2">Ex.: uma promoção (Head Hunter · Black Friday) ou outro combo. Escolha quais cursos ele libera.</p>
-              <NovoPlanoForm />
+              <NovoPlanoForm cursos={lista} />
             </div>
           </details>
           {planos.map((p) => {
@@ -55,7 +57,7 @@ export default async function ProdutosPage({ searchParams }: { searchParams: Pro
                     </details>
                   )}
                 </div>
-                <ProdutoForm p={{ ...p, preco: Number(p.preco), desconto_pix: Number(p.desconto_pix) }} base={base} />
+                <ProdutoForm p={{ ...p, preco: Number(p.preco), desconto_pix: Number(p.desconto_pix) }} base={base} cursos={lista} />
               </Card>
             );
           })}
