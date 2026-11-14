@@ -7,7 +7,7 @@ import { getUser } from "@/lib/supabase/server";
 import { enviarWhatsapp, preencher } from "@/lib/whatsapp";
 import {
   ARQUIVO_SUPERFRETE, cancelarEtiqueta, configSuperfrete, criarEtiqueta, etiquetaPaga, imprimirEtiqueta, infoEtiqueta, pagarEtiqueta,
-  testarTokenSuperfrete, type ConfigSuperfrete, type Remetente,
+  servicoValido, testarTokenSuperfrete, type ConfigSuperfrete, type Remetente,
 } from "@/lib/superfrete";
 
 type Estado = { ok?: boolean; msg?: string; erro?: string };
@@ -150,6 +150,7 @@ export async function salvarSuperfrete(_: Estado, form: FormData): Promise<Estad
     numero: t("numero").slice(0, 10), complemento: t("complemento").slice(0, 20), bairro: t("bairro").slice(0, 50), cidade: t("cidade").slice(0, 50), uf: t("uf").toUpperCase(),
   };
   const servico = Number(form.get("servico")) || 1;
+  if (!servicoValido(servico)) return { erro: "Escolha o serviço padrão." };
   if (!token) return { erro: "Cole o token do SuperFrete." };
   if (remetente.nome.split(/\s+/).length < 2) return { erro: "Informe o nome completo do remetente." };
   if (![11, 14].includes(remetente.documento.length)) return { erro: "CPF (11 dígitos) ou CNPJ (14 dígitos) do remetente." };
@@ -198,6 +199,7 @@ export async function gerarEtiqueta(_: Estado, form: FormData): Promise<Estado> 
   if (!cfg) return { erro: "Conecte o SuperFrete em Configurações › Envios." };
   const id = Number(form.get("id"));
   const servico = Number(form.get("servico")) || cfg.servico || 1;
+  if (!servicoValido(servico)) return { erro: "Escolha PAC, SEDEX, Mini Envios ou Loggi." };
   const { data } = await supabase.from("loja_pedidos").select("*, loja_produtos(peso_g, altura_cm, largura_cm, comprimento_cm)").eq("id", id).maybeSingle();
   const p = data as PedidoEtiqueta | null;
   if (!p || !["pago", "enviado"].includes(p.status)) return { erro: "Só pedidos pagos recebem etiqueta." };

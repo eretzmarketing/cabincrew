@@ -88,7 +88,7 @@ export function NovoProdutoLojaForm() {
   );
 }
 
-const SERVICOS_ETIQUETA = [{ id: 1, nome: "PAC" }, { id: 2, nome: "SEDEX" }, { id: 17, nome: "Mini Envios" }];
+const SERVICOS_ETIQUETA = [{ id: 1, nome: "PAC" }, { id: 2, nome: "SEDEX" }, { id: 17, nome: "Mini Envios" }, { id: 31, nome: "Loggi" }];
 
 /** Etiqueta do SuperFrete de um pedido: gerar (um clique), imprimir, atualizar e cancelar. */
 export function EtiquetaPedido({ id, etiquetaId, status, url, servico, preco, servicoPadrao, conectado }: {

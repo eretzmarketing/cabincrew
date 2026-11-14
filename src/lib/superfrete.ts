@@ -20,7 +20,9 @@ export const SERVICOS: { id: number; nome: string; dica: string }[] = [
   { id: 1, nome: "PAC", dica: "mais barato" },
   { id: 2, nome: "SEDEX", dica: "mais rápido" },
   { id: 17, nome: "Mini Envios", dica: "até 300 g e 4 cm de altura" },
+  { id: 31, nome: "Loggi", dica: "Loggi Econômico, entrega num ponto Loggi" },
 ];
+export const servicoValido = (id: number) => SERVICOS.some((s) => s.id === id);
 export const nomeServico = (id: number | null | undefined) => SERVICOS.find((s) => s.id === id)?.nome ?? "—";
 
 export function configSuperfrete(): ConfigSuperfrete | null {
