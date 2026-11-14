@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { salvarVideoTreino } from "@/app/crew-actions";
 import VideoIA from "@/components/VideoIA";
+import ChecklistGravacao from "@/components/ChecklistGravacao";
 import { BLOCOS_VIDEO, CHECKLIST_VIDEO, METAS_VIDEO, NOTA_VIDEO, dentroDoTempo, marcosVideo, mmss } from "@/lib/video";
 
 const btnPrim = "inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-full bg-brand-strong px-6 font-display font-bold text-white hover:bg-brand-deep disabled:cursor-not-allowed disabled:opacity-50";
@@ -30,6 +31,7 @@ export default function VideoTreino({ companhia, ia = false }: { companhia?: str
   const [topicos, setTopicos] = useState<Record<string, string>>({});
   const [erroCam, setErroCam] = useState("");
   const [camPronta, setCamPronta] = useState(false);
+  const [fluxo, setFluxo] = useState<MediaStream | null>(null);
   const [contagem, setContagem] = useState(0);
   const [gravando, setGravando] = useState(false);
   const [tempo, setTempo] = useState(0);
@@ -59,6 +61,7 @@ export default function VideoTreino({ companhia, ia = false }: { companhia?: str
   const desligarCamera = useCallback(() => {
     stream.current?.getTracks().forEach((t) => t.stop());
     stream.current = null;
+    setFluxo(null);
     setCamPronta(false);
   }, []);
 
@@ -78,6 +81,7 @@ export default function VideoTreino({ companhia, ia = false }: { companhia?: str
     try {
       const s = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: "user" }, audio: { echoCancellation: true, noiseSuppression: true } });
       stream.current = s;
+      setFluxo(s);
       if (preview.current) { preview.current.srcObject = s; await preview.current.play().catch(() => {}); }
       setCamPronta(true);
     } catch (e) {
@@ -242,6 +246,8 @@ export default function VideoTreino({ companhia, ia = false }: { companhia?: str
             ))}
           </div>
         )}
+
+        {camPronta && !gravando && contagem === 0 && <ChecklistGravacao stream={fluxo} />}
 
         {erroCam && (
           <div role="alert" className="flex flex-col gap-3 rounded-2xl bg-brand-soft p-5 text-brand-deep">

@@ -41,6 +41,20 @@ export function FeedbackVisual({ f, transcricao }: { f: FeedbackIA; transcricao?
         </span>
         <p className="min-w-0 flex-1 text-[16px] leading-relaxed">{f.resumo}</p>
       </div>
+      <div className="flex flex-col gap-2 rounded-2xl border border-line p-4">
+        {grupos.map((g) => {
+          const ns = CRITERIOS_IA.filter((c) => c.grupo === g).map((c) => f.criterios.find((x) => x.id === c.id)?.nota).filter((x): x is number => x !== undefined);
+          if (!ns.length) return null;
+          const media = Math.round((ns.reduce((a, b) => a + b, 0) / ns.length) * 10);
+          return (
+            <div key={g} className="grid grid-cols-[110px_1fr_40px] items-center gap-3 text-[15px]">
+              <span className="font-semibold">{g}</span>
+              <span className="h-2.5 rounded-full bg-[#eceef3]" aria-hidden="true"><span className={`block h-2.5 rounded-full ${media >= 80 ? "bg-[#1f9d55]" : media >= 50 ? "bg-[#e0a100]" : "bg-brand-strong"}`} style={{ width: `${media}%` }} /></span>
+              <strong className="text-right">{media}</strong>
+            </div>
+          );
+        })}
+      </div>
       <div className="grid gap-4 md:grid-cols-3">
         {grupos.filter((g) => CRITERIOS_IA.some((c) => c.grupo === g && f.criterios.some((x) => x.id === c.id))).map((g) => (
           <div key={g} className="flex flex-col gap-3 rounded-2xl bg-soft p-4">
