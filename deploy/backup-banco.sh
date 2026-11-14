@@ -42,9 +42,9 @@ echo "pg_dump: $("$PGBIN/pg_dump" --version)"
 
 # ---------- 2. connection string ----------
 echo
-echo "No Supabase: botão Connect (topo do projeto) › aba 'Connection string' › 'Session pooler' (porta 5432)."
+echo "No Supabase: botão Connect (topo do projeto) › Direct (Connection string) › Method: 'Session pooler' (porta 5432)."
 echo "Copie o endereço e troque [YOUR-PASSWORD] pela senha do banco."
-echo "(Esqueceu a senha? Project Settings › Database › Reset database password.)"
+echo "(Esqueceu a senha? Ícone Database (menu da esquerda) › Settings › Reset database password.)"
 read -rsp "Cole a connection string (não aparece na tela): " URL
 echo
 case "$URL" in postgres://*|postgresql://*) ;; *) echo "Isso não parece uma connection string (começa com postgresql://)."; exit 1;; esac
