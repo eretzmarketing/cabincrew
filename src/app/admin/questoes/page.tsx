@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { alternarQuestao } from "@/app/crew-actions";
+import { alternarQuestao, ativarQuestoesFiltro } from "@/app/crew-actions";
 import { Titulo, btnPrimario, btnSecundario } from "@/components/admin-ui";
 import { BANCOS, type Alternativa } from "@/lib/crew";
 import { getUser } from "@/lib/supabase/server";
@@ -102,6 +102,16 @@ export default async function AdminQuestoes({ searchParams }: { searchParams: Pr
         </select>
         <button className="min-h-12 cursor-pointer rounded-xl bg-navy px-6 font-semibold text-white">Filtrar</button>
       </form>
+
+      {status === "fora" && total > 0 && (
+        <form action={ativarQuestoesFiltro} className="flex flex-wrap items-center gap-3 rounded-2xl border border-[#f3d9a8] bg-[#fff8e6] px-4 py-3">
+          <input type="hidden" name="banco" value={banco} />
+          <input type="hidden" name="cat" value={sp.cat ?? ""} />
+          <input type="hidden" name="q" value={busca} />
+          <span className="flex-1 text-[15px] text-[#7a5a00]">Revisou? Coloque nos simulados as {total.toLocaleString("pt-BR")} questões desta lista de uma vez.</span>
+          <button className="min-h-11 cursor-pointer rounded-full bg-navy px-5 font-semibold text-white hover:bg-navy-deep">Colocar todas desta lista nos simulados</button>
+        </form>
+      )}
 
       <p className="text-[15px] text-ink-2">
         {total.toLocaleString("pt-BR")} {total === 1 ? "questão encontrada" : "questões encontradas"}

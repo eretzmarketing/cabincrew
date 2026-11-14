@@ -291,6 +291,20 @@ export async function alternarQuestao(form: FormData) {
   revalidatePath("/admin/questoes", "layout");
 }
 
+/** Admin: coloca nos simulados todas as questões "fora dos simulados" do filtro atual (banco, tema e busca). */
+export async function ativarQuestoesFiltro(form: FormData) {
+  const { supabase } = await admin();
+  const banco = String(form.get("banco") ?? "");
+  const cat = String(form.get("cat") ?? "");
+  const busca = String(form.get("q") ?? "").trim().slice(0, 100);
+  if (!banco) return;
+  let q = supabase.from("questoes").update({ ativo: true }).eq("banco", banco).eq("ativo", false);
+  if (cat) q = q.eq("categoria", cat);
+  if (busca) q = q.ilike("enunciado", `%${busca.replace(/[%_\\]/g, (c) => `\\${c}`)}%`);
+  await q;
+  revalidatePath("/admin/questoes", "layout");
+}
+
 export async function excluirQuestao(form: FormData) {
   const { supabase } = await admin();
   const id = String(form.get("id"));
