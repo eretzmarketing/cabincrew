@@ -57,9 +57,9 @@ function Campos({ p }: { p?: ProdutoLoja }) {
       </div>
       <fieldset className="grid gap-3 rounded-xl bg-soft p-3 md:grid-cols-4">
         <legend className="px-1 text-[13px] font-semibold">Pacote para a etiqueta (1 unidade) <span className="font-normal text-muted">· várias unidades: a altura e o peso somam</span></legend>
-        <label className={rot}>Peso (g)<input name="peso_g" inputMode="numeric" defaultValue={v(p?.peso_g ?? 500)} className={campo} /></label>
-        <label className={rot}>Altura (cm)<input name="altura_cm" inputMode="decimal" defaultValue={v(p?.altura_cm ?? 2)} className={campo} /></label>
-        <label className={rot}>Largura (cm)<input name="largura_cm" inputMode="decimal" defaultValue={v(p?.largura_cm ?? 21)} className={campo} /></label>
+        <label className={rot}>Peso (g)<input name="peso_g" inputMode="numeric" defaultValue={v(p?.peso_g ?? 1000)} className={campo} /></label>
+        <label className={rot}>Altura (cm)<input name="altura_cm" inputMode="decimal" defaultValue={v(p?.altura_cm ?? 5)} className={campo} /></label>
+        <label className={rot}>Largura (cm)<input name="largura_cm" inputMode="decimal" defaultValue={v(p?.largura_cm ?? 25)} className={campo} /></label>
         <label className={rot}>Comprimento (cm)<input name="comprimento_cm" inputMode="decimal" defaultValue={v(p?.comprimento_cm ?? 30)} className={campo} /></label>
       </fieldset>
       <label className="inline-flex items-center gap-2 text-[15px] font-semibold"><input type="checkbox" name="ativo" defaultChecked={p ? p.ativo : true} className="h-5 w-5 accent-[#1f2a44]" /> À venda na loja</label>

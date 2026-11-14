@@ -95,7 +95,7 @@ function lerProduto(form: FormData) {
       descricao: String(form.get("descricao") ?? "").trim().slice(0, 5000) || null,
       prazo: String(form.get("prazo") ?? "").trim().slice(0, 200) || "Postagem em até 3 dias úteis após o pagamento. Entrega pelos Correios em todo o Brasil.",
       ordem: Math.round(n("ordem")) || 0, ativo: form.get("ativo") === "on", updated_at: new Date().toISOString(),
-      peso_g: Math.round(dim("peso_g", 1, 30000, 500)), altura_cm: dim("altura_cm", 0.4, 100, 2), largura_cm: dim("largura_cm", 8, 100, 21), comprimento_cm: dim("comprimento_cm", 13, 100, 30),
+      peso_g: Math.round(dim("peso_g", 1, 30000, 1000)), altura_cm: dim("altura_cm", 0.4, 100, 5), largura_cm: dim("largura_cm", 8, 100, 25), comprimento_cm: dim("comprimento_cm", 13, 100, 30),
     },
   } as const;
 }
@@ -211,15 +211,15 @@ export async function gerarEtiqueta(_: Estado, form: FormData): Promise<Estado> 
   if (erroReserva) return { erro: erroReserva.message.includes("loja_reservar_etiqueta") ? "Rode o SQL 0057_superfrete.sql no Supabase." : "Não foi possível reservar a etiqueta." };
   if (!reserva) return { erro: "A etiqueta deste pedido já está sendo gerada. Aguarde alguns segundos e atualize a página." };
 
-  const dims = p.loja_produtos ?? { peso_g: 500, altura_cm: 2, largura_cm: 21, comprimento_cm: 30 };
+  const dims = p.loja_produtos ?? { peso_g: 1000, altura_cm: 5, largura_cm: 25, comprimento_cm: 30 };
   let etiquetaId: string;
   try {
     etiquetaId = await criarEtiqueta(cfg, {
       pedido: p.id, nome: p.nome, cpf: p.cpf, email: p.email, telefone: p.telefone, endereco: p.endereco,
       produto: p.produto_nome, quantidade: p.quantidade, valorUnitario: Number(p.valor_itens) / p.quantidade,
       pacote: {
-        altura: Number(dims.altura_cm ?? 2) * p.quantidade, largura: Number(dims.largura_cm ?? 21),
-        comprimento: Number(dims.comprimento_cm ?? 30), pesoG: Number(dims.peso_g ?? 500) * p.quantidade,
+        altura: Number(dims.altura_cm ?? 5) * p.quantidade, largura: Number(dims.largura_cm ?? 25),
+        comprimento: Number(dims.comprimento_cm ?? 30), pesoG: Number(dims.peso_g ?? 1000) * p.quantidade,
       },
     }, servico);
   } catch (e) {
