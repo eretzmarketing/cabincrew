@@ -8,7 +8,8 @@ export const metadata: Metadata = {
   description: "Apostilas impressas para a sua preparação na aviação, enviadas pelos Correios para todo o Brasil.",
 };
 
-export default async function LojaPage() {
+export default async function LojaPage({ searchParams }: { searchParams: Promise<{ cupom?: string }> }) {
+  const cupom = ((await searchParams).cupom ?? "").toUpperCase().replace(/[^A-Z0-9_-]/g, "").slice(0, 30);
   const { supabase } = await getUser();
   const { data } = await supabase.from("loja_produtos").select("*").eq("ativo", true).eq("excluido", false).order("ordem");
   const produtos = (data ?? []) as ProdutoLoja[];
@@ -24,7 +25,7 @@ export default async function LojaPage() {
       </section>
       <div className="mx-auto -mt-14 grid max-w-[1100px] gap-5 px-4 pb-20 sm:grid-cols-2 lg:grid-cols-4 md:px-6">
         {produtos.map((p) => (
-          <Link key={p.slug} href={`/loja/${p.slug}`} className="group flex flex-col overflow-hidden rounded-[22px] border border-line bg-white text-navy shadow-[0_18px_40px_-30px_rgba(35,42,61,.5)] hover:border-navy">
+          <Link key={p.slug} href={`/loja/${p.slug}${cupom ? `?cupom=${cupom}` : ""}`} className="group flex flex-col overflow-hidden rounded-[22px] border border-line bg-white text-navy shadow-[0_18px_40px_-30px_rgba(35,42,61,.5)] hover:border-navy">
             <span className="relative block aspect-[3/4] overflow-hidden bg-[#f1f3f8]">
               {p.imagens[0] && (
                 // eslint-disable-next-line @next/next/no-img-element -- imagem da galeria de mídia

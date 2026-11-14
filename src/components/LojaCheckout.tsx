@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { PagarCartao, PagarPix } from "@/components/Checkout";
+import { CampoCupom, PagarCartao, PagarPix } from "@/components/Checkout";
+import { comCupom, type Cupom } from "@/lib/cupons";
 import { reais, type Endereco } from "@/lib/loja";
 
 type Produto = { slug: string; nome: string; preco: number; descontoPix: number; frete: number; prazo: string; imagem: string | null; estoque: number | null };
@@ -12,9 +13,10 @@ const campo = "min-h-12 w-full rounded-xl border border-[#c9cedb] bg-white px-4 
 const rot = "flex flex-col gap-1 text-[14px] font-semibold";
 const formatarCep = (v: string) => v.replace(/\D/g, "").slice(0, 8).replace(/(\d{5})(\d)/, "$1-$2");
 
-export default function LojaCheckout({ publicKey, produto, quantidadeInicial, email, nome, telefone }: {
-  publicKey: string; produto: Produto; quantidadeInicial: number; email: string; nome: string; telefone: string;
+export default function LojaCheckout({ publicKey, produto, quantidadeInicial, email, nome, telefone, cupomInicial, erroCupomInicial }: {
+  publicKey: string; produto: Produto; quantidadeInicial: number; email: string; nome: string; telefone: string; cupomInicial?: Cupom | null; erroCupomInicial?: string;
 }) {
+  const [cupom, setCupom] = useState<Cupom | null>(cupomInicial ?? null);
   const [qtd, setQtd] = useState(quantidadeInicial);
   const [d, setD] = useState({ nome, telefone, cep: "", rua: "", numero: "", complemento: "", bairro: "", cidade: "", uf: "" });
   const [buscando, setBuscando] = useState(false);
@@ -26,8 +28,9 @@ export default function LojaCheckout({ publicKey, produto, quantidadeInicial, em
   const [fim, setFim] = useState<"aprovado" | "analise" | null>(null);
 
   const itens = produto.preco * qtd;
-  const total = itens + produto.frete;
-  const totalPix = Math.round(itens * (100 - produto.descontoPix)) / 100 + produto.frete;
+  const comDesconto = comCupom(itens, cupom);
+  const total = comDesconto.preco + produto.frete;
+  const totalPix = Math.max(1, Math.round(comDesconto.preco * (100 - produto.descontoPix)) / 100) + produto.frete;
   const max = Math.min(10, produto.estoque ?? 10);
   const mudar = (k: keyof typeof d, v: string) => setD((x) => ({ ...x, [k]: v }));
 
@@ -63,7 +66,7 @@ export default function LojaCheckout({ publicKey, produto, quantidadeInicial, em
     url: "/api/loja/pagar", extra: { quantidade: qtd, entrega },
     textoAceite: "Marque que você leu e aceita os Termos de Uso e a Política de Reembolso.",
   }), [qtd, entrega]);
-  const pagamento = { slug: produto.slug, preco: total, pix: totalPix, cupom: null };
+  const pagamento = { slug: produto.slug, preco: total, pix: totalPix, cupom: cupom?.codigo ?? null };
 
   if (fim) {
     return (
@@ -144,8 +147,8 @@ export default function LojaCheckout({ publicKey, produto, quantidadeInicial, em
             ))}
           </div>
           {metodo === "pix"
-            ? <PagarPix key={`pix-${qtd}`} aceite={aceite} produto={pagamento} cobranca={cobranca} aoAprovar={() => setFim("aprovado")} />
-            : <PagarCartao key={`cartao-${qtd}`} aceite={aceite} publicKey={publicKey} produto={pagamento} email={email} cobranca={cobranca} aoAprovar={() => setFim("aprovado")} aoAnalisar={() => setFim("analise")} />}
+            ? <PagarPix key={`pix-${qtd}-${cupom?.codigo ?? ""}`} aceite={aceite} produto={pagamento} cobranca={cobranca} aoAprovar={() => setFim("aprovado")} />
+            : <PagarCartao key={`cartao-${qtd}-${cupom?.codigo ?? ""}`} aceite={aceite} publicKey={publicKey} produto={pagamento} email={email} cobranca={cobranca} aoAprovar={() => setFim("aprovado")} aoAnalisar={() => setFim("analise")} />}
         </section>
       )}
 
@@ -167,10 +170,13 @@ export default function LojaCheckout({ publicKey, produto, quantidadeInicial, em
         </div>
         <dl className="flex flex-col gap-1.5 border-t border-white/15 pt-4 text-[15px]">
           <div className="flex justify-between"><dt className="text-[#d7dbe6]">Produtos</dt><dd>{reais(itens)}</dd></div>
+          {comDesconto.desconto > 0 && <div className="flex justify-between text-[#bfe9cf]"><dt>Cupom {cupom?.codigo}</dt><dd>− {reais(comDesconto.desconto)}</dd></div>}
           <div className="flex justify-between"><dt className="text-[#d7dbe6]">Frete</dt><dd>{produto.frete ? reais(produto.frete) : "Grátis"}</dd></div>
           <div className="flex justify-between border-t border-white/15 pt-2 font-display text-lg font-extrabold"><dt>Total</dt><dd>{reais(metodo === "pix" && etapa === "pagamento" ? totalPix : total)}</dd></div>
         </dl>
         {produto.descontoPix > 0 && <p className="text-[14px] text-[#bfe9cf]">No Pix: {reais(totalPix)}</p>}
+        {etapa === "entrega" ? <CampoCupom produto={`loja:${produto.slug}`} cupom={cupom} setCupom={setCupom} erroInicial={erroCupomInicial} />
+          : cupom && <p className="text-[14px] text-[#bfe9cf]">🏷️ Cupom {cupom.codigo} aplicado</p>}
         <p className="text-[14px] text-[#d7dbe6]">📦 {produto.prazo}</p>
         <span className="text-[12px] text-[#aab3c8]">Pagamento processado pelo Mercado Pago. Os dados do cartão não passam pelo site da Cabin Crew.</span>
       </aside>

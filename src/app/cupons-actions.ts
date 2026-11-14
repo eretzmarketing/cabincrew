@@ -30,7 +30,7 @@ export async function salvarCupom(_: Estado, form: FormData): Promise<Estado> {
   const tipo = String(form.get("tipo")) === "valor" ? "valor" : "percentual";
   const valor = Number(String(form.get("valor") ?? "").replace(/\./g, "").replace(",", "."));
   const limite = String(form.get("limite_usos") ?? "").trim();
-  const produtos = form.getAll("produtos").map(String).filter((x) => /^[a-z0-9-]{2,40}$/.test(x));
+  const produtos = form.getAll("produtos").map(String).filter((x) => /^[a-z0-9-]{2,40}$/.test(x) || /^loja:([a-z0-9-]{2,60}|\*)$/.test(x));
   const inicio = String(form.get("inicio") ?? "");
   const fim = String(form.get("fim") ?? "");
   if (codigo.length < 3) return { erro: "O código precisa ter pelo menos 3 letras ou números (ex.: ESCOLA10)." };

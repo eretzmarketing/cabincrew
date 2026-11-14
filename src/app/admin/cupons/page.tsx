@@ -32,7 +32,11 @@ export default async function CuponsPage({ searchParams }: { searchParams: Promi
     supabase.from("compras").select("cupom, valor, status").not("cupom", "is", null).limit(20000),
   ]);
   const cupons = (data ?? []) as CupomAdmin[];
-  const planos = ((prods ?? []) as { slug: string; nome: string; excluido?: boolean }[]).filter((p) => !p.excluido).map((p) => ({ slug: p.slug, nome: p.nome }));
+  const cursos = ((prods ?? []) as { slug: string; nome: string; excluido?: boolean }[]).filter((p) => !p.excluido).map((p) => ({ slug: p.slug, nome: p.nome }));
+  const { data: lojaProds } = await supabase.from("loja_produtos").select("slug, nome").eq("excluido", false).order("ordem");
+  const apostilas = ((lojaProds ?? []) as { slug: string; nome: string }[]).map((p) => ({ slug: `loja:${p.slug}`, nome: `Apostila: ${p.nome}`, destino: `/loja/${p.slug}` }));
+  const planos = [...cursos, ...(apostilas.length ? [{ slug: "loja:*", nome: "Todas as apostilas", destino: "/loja" }, ...apostilas] : [])];
+  const validosDe = (lista: string[] | null) => (lista?.length ? planos.filter((p) => lista.includes(p.slug) || (lista.includes("loja:*") && p.slug.startsWith("loja:"))) : cursos);
   const nomePlano = new Map(planos.map((p) => [p.slug, p.nome]));
   const uso = new Map<string, { n: number; total: number }>();
   for (const v of (vendas ?? []) as { cupom: string; valor: number; status: string }[]) {
@@ -60,7 +64,7 @@ export default async function CuponsPage({ searchParams }: { searchParams: Promi
                 <Link href={`/admin/cupons#${paraEnviar.codigo}`} className="text-[14px] font-semibold underline underline-offset-4">Fechar</Link>
               </div>
               <EnviarCupomWhatsapp codigo={paraEnviar.codigo} desconto={rotuloCupom(paraEnviar)} site={SITE} alunos={alunos} conectado={whatsappConfigurado()}
-                planos={paraEnviar.produtos?.length ? planos.filter((p) => paraEnviar.produtos!.includes(p.slug)) : planos} />
+                planos={validosDe(paraEnviar.produtos)} />
             </Card>
           )}
           {emEdicao ? (
@@ -84,7 +88,7 @@ export default async function CuponsPage({ searchParams }: { searchParams: Promi
           {!cupons.length ? <p className="text-ink-2">Nenhum cupom ainda.</p> : cupons.map((c) => {
             const u = uso.get(c.codigo) ?? { n: 0, total: 0 };
             const st = situacao(c, u.n);
-            const validos = c.produtos?.length ? planos.filter((p) => c.produtos!.includes(p.slug)) : planos;
+            const validos = validosDe(c.produtos);
             return (
               <Card key={c.codigo}>
                 <div id={c.codigo} className="flex scroll-mt-24 flex-wrap items-start justify-between gap-3">
@@ -92,7 +96,7 @@ export default async function CuponsPage({ searchParams }: { searchParams: Promi
                     <h2 className="font-display text-2xl font-extrabold tracking-wide">
                       🏷️ {c.codigo} <span className={`ml-1 rounded-full px-2.5 py-0.5 align-middle font-sans text-[12px] font-semibold tracking-normal ${st.cor}`}>{st.t}</span>
                     </h2>
-                    <p className="text-[15px] text-ink-2">{c.parceiro ? <strong className="text-navy">{c.parceiro} · </strong> : null}{rotuloCupom(c)} · {c.produtos?.length ? c.produtos.map((s) => nomePlano.get(s) ?? s).join(", ") : "todos os planos"}</p>
+                    <p className="text-[15px] text-ink-2">{c.parceiro ? <strong className="text-navy">{c.parceiro} · </strong> : null}{rotuloCupom(c)} · {c.produtos?.length ? c.produtos.map((s) => nomePlano.get(s) ?? s).join(", ") : "todos os cursos"}</p>
                     <p className="text-[14px] text-muted">
                       {c.inicio || c.fim ? `Validade: ${c.inicio ? `de ${dataBR(c.inicio)} ` : ""}${c.fim ? `até ${dataBR(c.fim)}` : "sem data final"}` : "Sem validade"} ·{" "}
                       Usos: <strong className="text-navy">{u.n}{c.limite_usos ? ` de ${c.limite_usos}` : ""}</strong> · Vendido: <strong className="text-navy">{reais(u.total)}</strong>

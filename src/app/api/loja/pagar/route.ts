@@ -23,7 +23,7 @@ export async function POST(req: Request) {
   if (!user) return NextResponse.json({ erro: "Entre na sua conta para comprar." }, { status: 401 });
 
   const corpo = (await req.json().catch(() => ({}))) as {
-    produto?: string; quantidade?: number; entrega?: Record<string, unknown>; metodo?: string; cpf?: string; aceite?: string; cartao?: Record<string, unknown>;
+    produto?: string; quantidade?: number; entrega?: Record<string, unknown>; metodo?: string; cpf?: string; aceite?: string; cartao?: Record<string, unknown>; cupom?: string | null;
   };
   if (corpo.aceite !== VERSAO_LEGAL) return NextResponse.json({ erro: "Aceite os Termos de Uso e a Política de Reembolso para continuar." }, { status: 400 });
   const entrega = corpo.entrega ?? {};
@@ -34,8 +34,9 @@ export async function POST(req: Request) {
   const { data, error } = await supabase.rpc("loja_criar_pedido", {
     p_produto: String(corpo.produto ?? ""), p_quantidade: Number(corpo.quantidade) || 1,
     p_dados: { ...entrega, cpf, telefone: normalizarTelefone(String(entrega.telefone ?? "")) },
+    p_cupom: corpo.cupom ? String(corpo.cupom).slice(0, 30) : null,
   });
-  if (error || !data) return NextResponse.json({ erro: error?.message || "Não foi possível criar o pedido." }, { status: 400 });
+  if (error || !data) return NextResponse.json({ erro: error?.message?.includes("loja_criar_pedido") ? "Rode o SQL 0056_cupom_loja.sql no Supabase." : error?.message || "Não foi possível criar o pedido." }, { status: 400 });
   const pedido = data as PedidoLoja;
 
   const h = req.headers;

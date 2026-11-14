@@ -13,7 +13,29 @@ export type CupomAdmin = {
   codigo: string; parceiro: string | null; tipo: "percentual" | "valor"; valor: number; produtos: string[] | null;
   limite_usos: number | null; inicio: string | null; fim: string | null; ativo: boolean; observacao: string | null;
 };
-type Plano = { slug: string; nome: string };
+type Plano = { slug: string; nome: string; destino?: string };
+
+/** Para onde o link do cupom leva: checkout do curso ou página da apostila. */
+const destinoDe = (p: Plano) => p.destino ?? `/comprar/${p.slug}`;
+const ehLoja = (p: Plano) => p.slug.startsWith("loja:");
+function destinoInicial(planos: Plano[]) {
+  if (planos.length === 1) return destinoDe(planos[0]);
+  return planos.length && planos.every(ehLoja) ? "/loja" : "/planos";
+}
+function nomeDoDestino(d: string, planos: Plano[]) {
+  if (d === "/planos") return planos.filter((p) => !ehLoja(p)).map((p) => p.nome).join(" ou ") || "os cursos da Cabin Crew";
+  if (d === "/loja") return "as apostilas da loja Cabin Crew";
+  return planos.find((p) => destinoDe(p) === d)?.nome ?? "";
+}
+function OpcoesDestino({ planos }: { planos: Plano[] }) {
+  return (
+    <>
+      {planos.some((p) => !ehLoja(p)) && <option value="/planos">Página Planos (mostra todos os preços com desconto)</option>}
+      {planos.some(ehLoja) && <option value="/loja">Página da Loja (todas as apostilas)</option>}
+      {planos.filter((p) => p.slug !== "loja:*").map((p) => <option key={p.slug} value={destinoDe(p)}>{ehLoja(p) ? "Página da apostila" : "Checkout direto"}: {p.nome.replace(/^Apostila: /, "")}</option>)}
+    </>
+  );
+}
 
 const diaBR = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" }) : "");
 
@@ -67,7 +89,7 @@ export function CupomForm({ c, planos }: { c?: CupomAdmin; planos: Plano[] }) {
         </div>
       </div>
       <fieldset className="flex flex-col gap-2">
-        <legend className={`${rot} mb-1`}>Vale para <span className="font-normal text-muted">(nenhum marcado = todos os planos)</span></legend>
+        <legend className={`${rot} mb-1`}>Vale para <span className="font-normal text-muted">(nenhum marcado = todos os cursos; apostilas só se marcadas)</span></legend>
         <div className="flex flex-wrap gap-2">
           {planos.map((p) => (
             <label key={p.slug} className="flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border-2 border-line px-4 text-[15px] font-semibold">
@@ -93,10 +115,10 @@ export function CupomForm({ c, planos }: { c?: CupomAdmin; planos: Plano[] }) {
 
 /** Link com o cupom já aplicado: copiar ou mandar pelo WhatsApp. */
 export function CompartilharCupom({ codigo, rotulo, planos, site }: { codigo: string; rotulo: string; planos: Plano[]; site: string }) {
-  const [destino, setDestino] = useState(planos.length === 1 ? `/comprar/${planos[0].slug}` : "/planos");
+  const [destino, setDestino] = useState(destinoInicial(planos));
   const [copiado, setCopiado] = useState("");
   const link = `${site}${destino}?cupom=${codigo}`;
-  const nomeDestino = destino === "/planos" ? "os planos da Cabin Crew" : planos.find((p) => destino.endsWith(p.slug))?.nome ?? "a Cabin Crew";
+  const nomeDestino = destino === "/planos" ? "os planos da Cabin Crew" : nomeDoDestino(destino, planos) || "a Cabin Crew";
   const mensagem = `✈️ Você ganhou ${rotulo} em ${nomeDestino} com o cupom ${codigo}!\n\nO desconto já entra aplicado por este link:\n👉 ${link}`;
   const copiar = async (t: string, qual: string) => { await navigator.clipboard.writeText(t).catch(() => {}); setCopiado(qual); setTimeout(() => setCopiado(""), 2500); };
   return (
@@ -104,8 +126,7 @@ export function CompartilharCupom({ codigo, rotulo, planos, site }: { codigo: st
       <div className="flex flex-col gap-1">
         <label htmlFor={`dest-${codigo}`} className={rot}>Link leva para</label>
         <select id={`dest-${codigo}`} value={destino} onChange={(e) => setDestino(e.target.value)} className={`${campo} py-2.5`}>
-          <option value="/planos">Página Planos (mostra todos os preços com desconto)</option>
-          {planos.map((p) => <option key={p.slug} value={`/comprar/${p.slug}`}>Checkout direto: {p.nome}</option>)}
+          <OpcoesDestino planos={planos} />
         </select>
       </div>
       <code className="rounded-xl bg-white px-3 py-2.5 text-[13px] break-all select-all">{link}</code>
@@ -125,9 +146,9 @@ export function EnviarCupomWhatsapp({ codigo, desconto, planos, site, alunos, co
   codigo: string; desconto: string; planos: Plano[]; site: string; alunos: Aluno[]; conectado: boolean;
 }) {
   const [s, acao, pend] = useActionState(enviarCupomWhatsapp, {});
-  const [destino, setDestino] = useState(planos.length === 1 ? `/comprar/${planos[0].slug}` : "/planos");
-  const curso = destino === "/planos" ? planos.map((p) => p.nome).join(" ou ") : planos.find((p) => destino.endsWith(`/${p.slug}`))?.nome ?? "";
-  const padrao = (d: string, c: string) => `Olá, {nome}! 🎁 Você está recebendo um cupom exclusivo de ${desconto} para o curso ${c}.\n\nAproveite! O desconto já entra aplicado por este link:\n👉 ${site}${d}?cupom=${codigo}\n\nCupom: ${codigo}`;
+  const [destino, setDestino] = useState(destinoInicial(planos));
+  const curso = nomeDoDestino(destino, planos);
+  const padrao = (d: string, c: string) => `Olá, {nome}! 🎁 Você está recebendo um cupom exclusivo de ${desconto} para ${c}.\n\nAproveite! O desconto já entra aplicado por este link:\n👉 ${site}${d}?cupom=${codigo}\n\nCupom: ${codigo}`;
   const [mensagem, setMensagem] = useState(padrao(destino, curso));
   const [editada, setEditada] = useState(false);
   const [busca, setBusca] = useState("");
@@ -153,9 +174,8 @@ export function EnviarCupomWhatsapp({ codigo, desconto, planos, site, alunos, co
         <div className="flex flex-col gap-2">
           <label htmlFor={`env-dest-${codigo}`} className={rot}>Link leva para</label>
           <select id={`env-dest-${codigo}`} value={destino} className={`${campo} py-2.5`}
-            onChange={(e) => { const d = e.target.value; setDestino(d); if (!editada) setMensagem(padrao(d, d === "/planos" ? planos.map((p) => p.nome).join(" ou ") : planos.find((p) => d.endsWith(`/${p.slug}`))?.nome ?? "")); }}>
-            <option value="/planos">Página Planos</option>
-            {planos.map((p) => <option key={p.slug} value={`/comprar/${p.slug}`}>Checkout direto: {p.nome}</option>)}
+            onChange={(e) => { const d = e.target.value; setDestino(d); if (!editada) setMensagem(padrao(d, nomeDoDestino(d, planos))); }}>
+            <OpcoesDestino planos={planos} />
           </select>
           <label htmlFor={`env-msg-${codigo}`} className={rot}>Mensagem <span className="font-normal text-muted">({"{nome}"} vira o primeiro nome do aluno)</span></label>
           <textarea id={`env-msg-${codigo}`} name="mensagem" rows={9} value={mensagem} onChange={(e) => { setMensagem(e.target.value); setEditada(true); }} className={campo} />

@@ -16,8 +16,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   return { title: p ? `${p.nome} · Loja` : "Loja", description: p?.resumo ?? undefined };
 }
 
-export default async function ProdutoPage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function ProdutoPage({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams: Promise<{ cupom?: string }> }) {
   const p = await carregar((await params).slug);
+  const cupom = ((await searchParams).cupom ?? "").toUpperCase().replace(/[^A-Z0-9_-]/g, "").slice(0, 30);
   if (!p || !p.ativo) notFound();
   const esgotado = p.estoque !== null && p.estoque <= 0;
 
@@ -40,6 +41,7 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
               <li>🚚 {Number(p.frete) === 0 ? <strong>Frete grátis para todo o Brasil</strong> : <>Frete: <strong>{reais(p.frete)}</strong></>}</li>
               <li>📦 {p.prazo}</li>
               <li>🔎 Você recebe o código de rastreio no WhatsApp</li>
+              {cupom && <li>🏷️ Cupom <strong>{cupom}</strong>: o desconto aparece na finalização da compra</li>}
             </ul>
             {esgotado ? (
               <p className="rounded-xl bg-brand-soft px-4 py-3 font-semibold text-brand-deep">Esgotado no momento.</p>
@@ -50,6 +52,7 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
                     {Array.from({ length: Math.min(10, p.estoque ?? 10) }, (_, i) => i + 1).map((n) => <option key={n} value={n}>{n}</option>)}
                   </select>
                 </label>
+                {cupom && <input type="hidden" name="cupom" value={cupom} />}
                 <button className="inline-flex min-h-14 flex-1 cursor-pointer items-center justify-center rounded-xl bg-brand-strong px-8 font-display text-[17px] font-bold text-white hover:bg-brand-deep">Comprar</button>
               </form>
             )}

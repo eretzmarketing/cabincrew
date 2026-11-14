@@ -3,20 +3,23 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import LojaCheckout from "@/components/LojaCheckout";
 import { configMP } from "@/lib/mercadopago";
+import { validarCupom } from "@/lib/cupons-servidor";
 import type { ProdutoLoja } from "@/lib/loja";
 import { exigirLogin } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Finalizar compra · Loja", robots: { index: false } };
 export const dynamic = "force-dynamic";
 
-export default async function ComprarApostila({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams: Promise<{ qtd?: string }> }) {
+export default async function ComprarApostila({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams: Promise<{ qtd?: string; cupom?: string }> }) {
   const { slug } = await params;
-  const qtd = Math.max(1, Math.min(10, Number((await searchParams).qtd) || 1));
-  const { supabase, user, profile } = await exigirLogin(`/loja/${slug}/comprar?qtd=${qtd}`);
+  const sp = await searchParams;
+  const qtd = Math.max(1, Math.min(10, Number(sp.qtd) || 1));
+  const { supabase, user, profile } = await exigirLogin(`/loja/${slug}/comprar?qtd=${qtd}${sp.cupom ? `&cupom=${encodeURIComponent(sp.cupom)}` : ""}`);
   const { data } = await supabase.from("loja_produtos").select("*").eq("slug", slug).maybeSingle();
   const p = data as ProdutoLoja | null;
   if (!p || !p.ativo) notFound();
   const cfg = configMP();
+  const { cupom, erro: erroCupom } = await validarCupom(supabase, sp.cupom, `loja:${slug}`);
 
   return (
     <main className="bg-soft">
@@ -36,6 +39,8 @@ export default async function ComprarApostila({ params, searchParams }: { params
             email={user.email ?? ""}
             nome={String(profile.nome || "").trim()}
             telefone={profile.whatsapp ?? ""}
+            cupomInicial={cupom}
+            erroCupomInicial={sp.cupom && !cupom ? erroCupom : undefined}
           />
         )}
       </div>

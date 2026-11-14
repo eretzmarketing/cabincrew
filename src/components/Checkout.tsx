@@ -225,7 +225,7 @@ export function PagarCartao({ publicKey, produto, email, aceite, aoAprovar, aoAn
   );
 }
 
-function CampoCupom({ produto, cupom, setCupom, erroInicial }: { produto: string; cupom: Cupom | null; setCupom: (c: Cupom | null) => void; erroInicial?: string }) {
+export function CampoCupom({ produto, cupom, setCupom, erroInicial }: { produto: string; cupom: Cupom | null; setCupom: (c: Cupom | null) => void; erroInicial?: string }) {
   const [aberto, setAberto] = useState(!!erroInicial);
   const [codigo, setCodigo] = useState("");
   const [erro, setErro] = useState(erroInicial ?? "");
