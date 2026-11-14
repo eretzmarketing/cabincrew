@@ -2,15 +2,40 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Fragment } from "react";
 
 type Item = { href: string; label: string; exato?: boolean };
-type Grupo = { id: string; label: string; itens: Item[] };
+type Grupo = { id: string; label: string; itens: Item[]; secao?: string };
 
-/** Menu do admin em grupos. Cada grupo com mais de uma página ganha abas no topo do conteúdo. */
+/** Menu do admin em grupos, separados por seção. Cada grupo com mais de uma página ganha abas no topo do conteúdo. */
 export const GRUPOS: Grupo[] = [
   { id: "geral", label: "Visão geral", itens: [{ href: "/admin", label: "Visão geral", exato: true }] },
+
+  // ---------- Treinamentos ----------
   {
-    id: "pessoas", label: "Usuários",
+    id: "head-hunter", label: "Head Hunter", secao: "Treinamentos",
+    itens: [
+      { href: "/admin/head-hunter/alunos", label: "Alunos" },
+      { href: "/admin/head-hunter", label: "Módulos e aulas" },
+      { href: "/admin/head-hunter/ranking", label: "Ranking" },
+      { href: "/admin/opq", label: "Perfil comportamental" },
+      { href: "/admin/entrevista", label: "Entrevista em inglês" },
+    ],
+  },
+  {
+    id: "anac", label: "Simulados ANAC",
+    itens: [
+      { href: "/admin/anac", label: "Simulados" },
+      { href: "/admin/questoes", label: "Banco de questões" },
+    ],
+  },
+  { id: "english", label: "Flight Attendant English", itens: [{ href: "/admin/ingles", label: "Flight Attendant English" }] },
+  { id: "spanish", label: "Flight Attendant Spanish", itens: [{ href: "/admin/espanhol", label: "Flight Attendant Spanish" }] },
+  { id: "certificados", label: "Certificados", itens: [{ href: "/admin/certificados", label: "Certificados" }] },
+
+  // ---------- Alunos e vendas ----------
+  {
+    id: "pessoas", label: "Usuários", secao: "Alunos e vendas",
     itens: [
       { href: "/admin/usuarios", label: "Usuários" },
       { href: "/admin/interessados", label: "Lista de interesse" },
@@ -18,27 +43,14 @@ export const GRUPOS: Grupo[] = [
     ],
   },
   {
-    id: "head-hunter", label: "Head Hunter",
-    itens: [
-      { href: "/admin/head-hunter/alunos", label: "Alunos" },
-      { href: "/admin/head-hunter/ranking", label: "Ranking" },
-      { href: "/admin/head-hunter", label: "Módulos e aulas" },
-      { href: "/admin/anac", label: "Simulado ANAC" },
-      { href: "/admin/questoes", label: "Banco de questões" },
-      { href: "/admin/opq", label: "Perfil comportamental" },
-      { href: "/admin/entrevista", label: "Entrevista em inglês" },
-      { href: "/admin/ingles", label: "Flight Attendant English" },
-      { href: "/admin/espanhol", label: "Flight Attendant Spanish" },
-    ],
-  },
-  { id: "campanhas", label: "Campanhas", itens: [{ href: "/admin/campanhas", label: "Campanhas" }] },
-  { id: "certificados", label: "Certificados", itens: [{ href: "/admin/certificados", label: "Certificados" }] },
-  {
     id: "financeiro", label: "Financeiro",
     itens: [{ href: "/admin/compras", label: "Compras" }, { href: "/admin/produtos", label: "Planos e preços" }, { href: "/admin/cupons", label: "Cupons" }],
   },
+  { id: "campanhas", label: "Campanhas", itens: [{ href: "/admin/campanhas", label: "Campanhas" }] },
+
+  // ---------- Site ----------
   {
-    id: "site", label: "Site e comunidade",
+    id: "site", label: "Site e comunidade", secao: "Site",
     itens: [
       { href: "/admin/midia", label: "Mídia" },
       { href: "/admin/forum", label: "Fórum de Seleções" },
@@ -80,12 +92,14 @@ export default function AdminNav() {
     <nav aria-label="Painel administrador" className="flex gap-1 overflow-x-auto md:flex-col">
       {GRUPOS.map((g) => {
         const aberto = g === grupo;
+        const titulo = g.secao && <span className="hidden px-4 pt-5 pb-1 font-display text-[11px] font-bold tracking-[.12em] text-muted uppercase md:block">{g.secao}</span>;
         if (g.itens.length === 1) {
           const i = g.itens[0];
-          return <Link key={g.id} href={i.href} aria-current={i === atual ? "page" : undefined} className={cls(i === atual)}>{g.label}</Link>;
+          return <Fragment key={g.id}>{titulo}<Link href={i.href} aria-current={i === atual ? "page" : undefined} className={cls(i === atual)}>{g.label}</Link></Fragment>;
         }
         return (
-          <div key={g.id} className="flex shrink-0 flex-col gap-1">
+          <Fragment key={g.id}>{titulo}
+          <div className="flex shrink-0 flex-col gap-1">
             <Link href={g.itens[0].href} aria-expanded={aberto}
               className={`${cls(false)} justify-between gap-2 ${aberto ? "bg-[#e3e6ee]" : ""}`}>
               {g.label}
@@ -101,6 +115,7 @@ export default function AdminNav() {
               </ul>
             )}
           </div>
+          </Fragment>
         );
       })}
     </nav>
