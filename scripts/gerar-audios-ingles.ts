@@ -12,12 +12,14 @@
  * A "versão" no nome do arquivo muda quando o texto ou as vozes mudam. Rodar de novo só gera o que mudou.
  */
 import { createHash } from "node:crypto";
+import { existsSync, readFileSync } from "node:fs";
 import { mkdir, readFile, readdir, rename, unlink, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import readline from "node:readline";
 import { chaveAula, type AulaIngles } from "@/lib/ingles-a-bordo";
 import { CURSOS_IDIOMA, type ProdutoIdioma } from "@/lib/cursos-idioma";
+import { aplicarAjustes, type AjusteIdioma } from "@/lib/idioma-conteudo";
 
 const API = process.env.ELEVEN_API_BASE || "https://api.elevenlabs.io";
 const MODELO = process.env.ELEVEN_MODEL || "eleven_v4";
@@ -29,7 +31,6 @@ const CURSO = CURSOS_IDIOMA[(opc("--curso") ?? "english") as ProdutoIdioma];
 if (!CURSO) { console.error("Curso inválido. Use --curso english ou --curso spanish."); process.exit(1); }
 const ESPANHOL = CURSO.lang === "es";
 const ELENCO = CURSO.elenco;
-const TODAS_AULAS = CURSO.todas;
 const PASTA = path.join(process.env.MIDIA_DIR || path.join(os.homedir(), "midia"), CURSO.pastaAudios);
 const ARQ_VOZES = path.join(os.homedir(), ESPANHOL ? ".cabincrew-vozes-espanhol.json" : ".cabincrew-vozes-ingles.json");
 
@@ -159,7 +160,43 @@ async function gerar(a: AulaIngles, vozes: Record<string, string>, destino: stri
   return buf.length;
 }
 
+/* ------------------------------------------------------------------ mudanças feitas no Admin › Cursos */
+
+function lerEnv() {
+  const env: Record<string, string> = {};
+  for (const arq of [".env.local", ".env.production", ".env"]) {
+    if (!existsSync(arq)) continue;
+    for (const l of readFileSync(arq, "utf8").split("\n")) {
+      const m = /^\s*([A-Z0-9_]+)\s*=\s*"?([^"\n]*)"?\s*$/.exec(l);
+      if (m && !env[m[1]]) env[m[1]] = m[2];
+    }
+  }
+  return env;
+}
+
+/** Aulas do curso com as edições do admin (se não der para ler, usa o texto original do código). */
+async function aulasDoCurso(): Promise<AulaIngles[]> {
+  const env = lerEnv();
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  let chave = "";
+  try { chave = (JSON.parse(readFileSync(process.env.MP_CONFIG_FILE || path.join(os.homedir(), ".cabincrew-mercadopago.json"), "utf8")) as { chave?: string }).chave ?? ""; } catch { /* sem chave */ }
+  if (!url || !key || !chave) { console.log("(usando o texto original das aulas: não achei a configuração do site para ler as edições do admin)"); return CURSO.todas; }
+  try {
+    const r = await fetch(`${url}/rest/v1/rpc/idioma_conteudo_servidor`, {
+      method: "POST", headers: { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ p_chave: chave, p_curso: CURSO.produto }),
+    });
+    if (!r.ok) throw new Error(String(r.status));
+    return aplicarAjustes(CURSO, (await r.json()) as AjusteIdioma[]).todas;
+  } catch {
+    console.log("(usando o texto original das aulas: rode o SQL 0058_cursos_admin.sql para valerem as edições do admin)");
+    return CURSO.todas;
+  }
+}
+
 async function main() {
+  const TODAS_AULAS = await aulasDoCurso();
   const aulas = TODAS_AULAS.filter((a) => (!SO_MODULO || String(a.modulo) === SO_MODULO) && (!SO_AULA || chaveAula(a) === SO_AULA));
   if (!aulas.length) { console.log("Nenhuma aula encontrada com esse filtro."); return; }
   const caracteres = aulas.reduce((s, a) => s + a.dialogo.falas.reduce((x, f) => x + paraFala(f.en).length, 0), 0);

@@ -33,7 +33,7 @@ export default async function AdminSimulados({ searchParams }: { searchParams: P
 
   return (
     <>
-      <Link href="/admin/head-hunter" className="text-sm font-semibold text-muted hover:text-navy">← Head Hunter</Link>
+      <Link href="/admin/cursos/head-hunter" className="text-sm font-semibold text-muted hover:text-navy">← Head Hunter</Link>
       <Titulo sub="Cada simulado sorteia questões dos bancos escolhidos. Ele aparece para o aluno pela aula do tipo Simulado.">Simulados</Titulo>
 
       <Card>

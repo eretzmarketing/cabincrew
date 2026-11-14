@@ -5,7 +5,8 @@ import Conteudo from "@/components/Conteudo";
 import { alternarAulaConcluida, iniciarSimulado } from "@/app/crew-actions";
 import CursoPlayer from "@/components/CursoPlayer";
 import { Arrow, Check } from "@/components/icons";
-import { exigirCrewSelect } from "@/lib/crew-gate";
+import AvisoTreino from "@/components/AvisoTreino";
+import { exigirCrewSelect, revisaoAte } from "@/lib/crew-gate";
 import { audioDaAula } from "@/lib/audio-aulas";
 import { navegacaoHeadHunter } from "@/lib/curso-navegacao";
 import { TIPO_AULA, duracao, numeroModulo, videoEmbed, type Aula, type Modulo, type Simulado, type Tentativa } from "@/lib/crew";
@@ -17,7 +18,7 @@ const UUID = /^[0-9a-f-]{36}$/i;
 export default async function AulaPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ erro?: string }> }) {
   const { id } = await params;
   const { erro } = await searchParams;
-  const { supabase, user, profile, liberado } = await exigirCrewSelect(`/head-hunter/aula/${id}`);
+  const { supabase, user, profile, liberado, acesso, pago } = await exigirCrewSelect(`/head-hunter/aula/${id}`);
   if (!liberado) redirect("/head-hunter");
   if (!UUID.test(id)) notFound();
 
@@ -76,6 +77,7 @@ export default async function AulaPage({ params, searchParams }: { params: Promi
   return (
     <CursoPlayer curso="Head Hunter" voltar={{ href: "/head-hunter", rotulo: "Painel do Head Hunter" }} secoes={nav.secoes} feitas={nav.feitas} total={nav.total} rodape={rodape}>
       <article className="flex flex-col gap-6">
+        {m.treino_pos_curso && revisaoAte(acesso, pago) && <AvisoTreino ate={revisaoAte(acesso, pago)!} />}
         {!aula.publicado && (
           <p className="rounded-xl border border-[#ffe0b2] bg-[#fff3e0] px-4 py-3 text-sm text-[#8a4b00]">Rascunho: só administradores veem esta aula.</p>
         )}

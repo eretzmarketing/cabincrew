@@ -108,6 +108,7 @@ export type DadosJornada = {
   companhias: Companhia[];
   anacLiberado: boolean;
   temEnglish?: boolean;                               // Flight Attendant English é vendido à parte
+  aulasIngles?: string[];                             // chaves das aulas do English (com os ajustes do admin)
   modulos: { id: number; ordem: number; titulo: string }[];
   aulas: { id: string; modulo_id: number; ordem: number; titulo: string }[];
   concluidas: Map<string, string>;                    // aula_id -> concluida_em
@@ -183,8 +184,9 @@ export function avaliar(t: Tarefa, d: DadosJornada): StatusTarefa {
     }
     case "ingles": {
       if (!d.temEnglish) return { titulo: t.titulo, href: "/planos#english", feito: false, progresso: 0, detalhe: "Curso à parte · conheça o curso completo de inglês para aviação" };
-      const total = TODAS_AULAS.length;
-      const f = TODAS_AULAS.filter((a) => d.ingles.get(chaveAula(a))?.concluida).length;
+      const chaves = d.aulasIngles ?? TODAS_AULAS.map(chaveAula);
+      const total = chaves.length;
+      const f = chaves.filter((k) => d.ingles.get(k)?.concluida).length;
       return { titulo: t.titulo, href: "/english", feito: total > 0 && f === total, progresso: total ? f / total : 0, detalhe: `${f} de ${total} aulas` };
     }
   }

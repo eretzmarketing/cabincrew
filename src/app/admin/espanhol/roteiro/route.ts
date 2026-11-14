@@ -1,4 +1,4 @@
-import { ESPANHOL } from "@/lib/cursos-idioma";
+import { cursoIdioma } from "@/lib/cursos-dados";
 import { roteiroCompleto } from "@/lib/roteiro-idioma";
 
-export const GET = () => roteiroCompleto(ESPANHOL, "flight-attendant-spanish-roteiro.txt");
+export const GET = async () => roteiroCompleto(await cursoIdioma("spanish"), "flight-attendant-spanish-roteiro.txt");

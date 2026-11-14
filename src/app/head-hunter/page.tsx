@@ -4,10 +4,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { Arrow, Check } from "@/components/icons";
 import JornadaPainel from "@/components/JornadaPainel";
-import { exigirCrewSelect } from "@/lib/crew-gate";
+import { dataBR, exigirCrewSelect, revisaoAte as revisaoAteDe } from "@/lib/crew-gate";
 import { carregarJornada } from "@/lib/jornada-dados";
 import { calcularMedalhas } from "@/lib/medalhas";
 import { numeroModulo, type Modulo } from "@/lib/crew";
+import { infoCurso, type InfoCurso } from "@/lib/cursos-dados";
 
 export const metadata: Metadata = { title: "Head Hunter", robots: { index: false } };
 
@@ -17,8 +18,8 @@ export default async function CrewSelectPage({ searchParams }: { searchParams: P
 
   if (!liberado) {
     if (encerrado) return <Concluido nome={profile.nome ?? profile.apelido} em={acesso?.expira_em ?? acesso?.encerrado_em ?? null} />;
-    const { data: prod } = await supabase.from("produtos").select("*").eq("slug", "head-hunter").maybeSingle();
-    return <Venda nome={profile.nome ?? profile.apelido} prod={prod} revogado={acesso?.status === "revogado"} />;
+    const [{ data: prod }, info] = await Promise.all([supabase.from("produtos").select("*").eq("slug", "head-hunter").maybeSingle(), infoCurso("head-hunter")]);
+    return <Venda nome={profile.nome ?? profile.apelido} prod={prod} revogado={acesso?.status === "revogado"} info={info} />;
   }
 
   const [{ data: modulos }, { data: aulas }, { data: feitas }, anac, { dados, dataMeta, jornada }] = await Promise.all([
@@ -60,7 +61,7 @@ export default async function CrewSelectPage({ searchParams }: { searchParams: P
       if (acesso && fim) { acesso.concluido_em = new Date().toISOString(); acesso.expira_em = fim as string; }
     }
   }
-  const revisaoAte = pago && acesso?.concluido_em && acesso.expira_em ? acesso.expira_em : null;
+  const revisaoAte = revisaoAteDe(acesso, pago);
 
   return (
     <main className="bg-soft">
@@ -152,6 +153,8 @@ export default async function CrewSelectPage({ searchParams }: { searchParams: P
                       <span className="font-display text-[28px] leading-none font-extrabold text-brand">{numeroModulo(m.ordem)}</span>
                       {completo ? (
                         <span className="inline-flex items-center gap-1 rounded-full bg-[#e5f6ec] px-2.5 py-1 text-xs font-semibold text-[#0f6b3a]"><Check size={14} />Concluído</span>
+                      ) : m.treino_pos_curso && revisaoAte ? (
+                        <span className="rounded-full bg-[#e7efff] px-2.5 py-1 text-xs font-semibold text-[#1d3f8f]">🏋️ Treino até {dataBR(revisaoAte)}</span>
                       ) : p.total === 0 && !m.recurso ? (
                         <span className="rounded-full bg-[#eef0f4] px-2.5 py-1 text-xs font-semibold text-ink-2">Em breve</span>
                       ) : null}
@@ -183,19 +186,21 @@ export default async function CrewSelectPage({ searchParams }: { searchParams: P
 type Prod = { nome: string; descricao: string | null; preco: number; desconto_pix: number; ativo: boolean; dias_apos_conclusao?: number; topicos?: string[] | null } | null;
 const reais = (v: number) => Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
-function Venda({ nome, prod, revogado }: { nome: string; prod: Prod; revogado: boolean }) {
+function Venda({ nome, prod, revogado, info }: { nome: string; prod: Prod; revogado: boolean; info: InfoCurso }) {
   const pix = prod ? Math.round(Number(prod.preco) * (100 - Number(prod.desconto_pix))) / 100 : 0;
   return (
     <main className="bg-soft">
       <div className="mx-auto flex max-w-[1200px] flex-wrap items-center gap-10 px-6 py-16">
         <div className="relative hidden h-[460px] flex-[1_1_320px] overflow-hidden rounded-3xl md:block">
-          <Image src="/img/head-hunter.jpg" alt="Comissária com mala de bordo no aeroporto" fill sizes="40vw" className="object-cover object-[center_20%]" />
+          <Image src={info.imagem} alt="" fill sizes="40vw" className="object-cover object-[center_20%]" />
         </div>
         <div className="flex flex-[999_1_420px] flex-col gap-4">
-          <span className="self-start rounded-full bg-brand px-3 py-1.5 font-display text-xs font-bold tracking-[.08em] text-white uppercase">Head Hunter</span>
+          <span className="self-start rounded-full bg-brand px-3 py-1.5 font-display text-xs font-bold tracking-[.08em] text-white uppercase">{info.titulo}</span>
           <h1 className="font-display text-[34px] leading-tight font-extrabold">{nome.split(" ")[0]}, seu plano de voo até a aprovação.</h1>
           {revogado && <p className="rounded-xl bg-[#fff8e6] px-4 py-3 text-[15px] text-[#7a5a00]">Seu acesso anterior foi encerrado. Para voltar a estudar, faça uma nova compra.</p>}
-          <p className="text-[17px] leading-relaxed text-ink-2">{prod?.descricao ?? "Preparatório completo para a seleção de comissário(a) de voo."}</p>
+          {(info.descricao || prod?.descricao || "Preparatório completo para a seleção de comissário(a) de voo.").split(/\n\s*\n/).map((par, i) => (
+            <p key={i} className="text-[17px] leading-relaxed whitespace-pre-line text-ink-2">{par.trim()}</p>
+          ))}
           <ul className="flex flex-col gap-2 text-[16px]">
             {[...(prod?.topicos?.length ? prod.topicos : ["Jornada personalizada para a companhia que você quer", "Aulas, simulados no estilo das seleções e dinâmicas de grupo", "Treino de entrevista em inglês e vídeo de apresentação"]), (prod?.dias_apos_conclusao ?? 30) > 0 ? `Acesso até você concluir toda a jornada, mais ${prod?.dias_apos_conclusao ?? 30} dias para revisar` : "Acesso até você concluir toda a jornada"].map((t) => (
               <li key={t} className="flex gap-2"><span className="text-brand-strong"><Check /></span>{t}</li>

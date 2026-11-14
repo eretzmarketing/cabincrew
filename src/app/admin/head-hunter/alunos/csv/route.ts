@@ -1,5 +1,6 @@
+import { cursoIdioma } from "@/lib/cursos-dados";
 import { NextResponse } from "next/server";
-import { SITUACOES, TOTAL_INGLES, diasParaMeta, nomeAluno, nomeCompanhia, riscos, situacao, type LinhaAluno } from "@/lib/painel-alunos";
+import { SITUACOES, diasParaMeta, nomeAluno, nomeCompanhia, riscos, situacao, type LinhaAluno } from "@/lib/painel-alunos";
 import { getUser } from "@/lib/supabase/server";
 
 const data = (v: string | null) => (v ? new Date(v).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" }) : "");
@@ -15,7 +16,7 @@ export async function GET() {
   const linhas: string[][] = [[
     "Nome", "E-mail", "WhatsApp", "Situação", "Em risco", "Última atividade", "Dias ativos (14 dias)", "Companhia-alvo", "Data da seleção", "Dias até a seleção",
     "Aulas concluídas", "Treinos", "Média treinos 30 dias (%)", "Simulados prova real", "Melhor prova (%)", "Média provas (%)",
-    `Inglês (de ${TOTAL_INGLES})`, "Sessões perfil comportamental", "Melhor vídeo (%)", "Pontos da semana", "Cadastro",
+    `Inglês (de ${(await cursoIdioma("english")).todas.length})`, "Sessões perfil comportamental", "Melhor vídeo (%)", "Pontos da semana", "Cadastro",
   ]];
   for (const l of (dados ?? []) as LinhaAluno[]) {
     linhas.push([

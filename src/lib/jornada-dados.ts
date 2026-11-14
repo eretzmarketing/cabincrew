@@ -1,6 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { diaSP, montarJornada, type Companhia, type DadosJornada } from "@/lib/jornada";
 import type { PerfilOpq } from "@/lib/opq";
+import { cursoIdioma } from "@/lib/cursos-dados";
+import { chaveAula } from "@/lib/ingles-a-bordo";
 
 /** Lê tudo o que a jornada precisa. Tabelas que ainda não existem (SQL não rodado) entram vazias. */
 export async function lerCheckin(supabase: SupabaseClient, userId: string) {
@@ -33,6 +35,7 @@ export async function carregarJornada(supabase: SupabaseClient, userId: string) 
     companhias: checkin.companhias,
     anacLiberado: anac.error ? true : anac.data === true,
     temEnglish: !eng.error && eng.data === true,
+    aulasIngles: (await cursoIdioma("english")).todas.map(chaveAula),
     modulos: (mod.data ?? []) as DadosJornada["modulos"],
     aulas: (aul.data ?? []) as DadosJornada["aulas"],
     concluidas: new Map(((prog.data ?? []) as { aula_id: string; concluida_em: string }[]).map((p) => [p.aula_id, p.concluida_em])),

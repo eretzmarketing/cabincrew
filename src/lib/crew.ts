@@ -6,6 +6,7 @@ export type Modulo = {
   fase: string | null;
   publicado: boolean;
   recurso: string | null;
+  treino_pos_curso?: boolean;
 };
 
 export type Aula = {

@@ -17,7 +17,7 @@ export default async function AdminDinamicas() {
 
   return (
     <>
-      <Link href="/admin/head-hunter" className="text-sm font-semibold text-muted hover:text-navy">← Head Hunter</Link>
+      <Link href="/admin/cursos/head-hunter" className="text-sm font-semibold text-muted hover:text-navy">← Head Hunter</Link>
       <div className="flex flex-wrap items-end justify-between gap-4">
         <Titulo sub={`${todas.filter((d) => d.ativo).length} de ${todas.length} visíveis para os alunos na biblioteca do módulo 07.`}>Dinâmicas de grupo</Titulo>
         <Link href="/head-hunter/dinamicas" target="_blank" className="text-sm font-semibold">Ver como aluno ↗</Link>

@@ -8,7 +8,7 @@ import { META, maiorSequencia } from "@/lib/jornada";
 import { carregarJornada } from "@/lib/jornada-dados";
 import { calcularMedalhas } from "@/lib/medalhas";
 import {
-  SITUACOES, TOTAL_INGLES, dataCurta, diasParaMeta, mensagemSugerida, nomeAluno, nomeCompanhia, quando, riscos, situacao,
+  SITUACOES, dataCurta, diasParaMeta, mensagemSugerida, nomeAluno, nomeCompanhia, quando, riscos, situacao,
   type LinhaAluno,
 } from "@/lib/painel-alunos";
 import { getUser } from "@/lib/supabase/server";
@@ -17,7 +17,7 @@ import { alterarAcesso } from "@/app/pagamentos-actions";
 import { CURSOS_CERT } from "@/lib/certificados";
 import { STATUS_COMPRA, dataHoraBR, dinheiro, fimArrependimento, type Compra } from "@/lib/compras";
 import { CURSOS } from "@/lib/cursos";
-import { TODAS_AULAS_ESPANHOL } from "@/lib/espanhol-a-bordo";
+import { cursoIdioma } from "@/lib/cursos-dados";
 
 export const metadata: Metadata = { title: "Aluno · Head Hunter" };
 export const dynamic = "force-dynamic";
@@ -26,6 +26,7 @@ export default async function AlunoPage({ params }: { params: Promise<{ id: stri
   const { id } = await params;
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
   const { supabase } = await getUser();
+  const [{ todas: aulasEn }, { todas: aulasEs }] = await Promise.all([cursoIdioma("english"), cursoIdioma("spanish")]);
   const [{ data: linha }, { dados, dataMeta, jornada }, { data: recentes }, { data: comprasAluno }, { data: acessosAluno }, { data: certsAluno }, { data: aceitesAluno }, { count: espanholFeitas }] = await Promise.all([
     supabase.rpc("admin_hh_alunos", { p_busca: "", p_id: id }),
     carregarJornada(supabase, id),
@@ -131,8 +132,8 @@ export default async function AlunoPage({ params }: { params: Promise<{ id: stri
             <h2 className="font-display text-xl font-extrabold">Outros treinos</h2>
             <ul className="flex flex-col gap-1.5 text-[15px]">
               <li>Aulas concluídas: <strong>{l.aulas}</strong></li>
-              <li>Flight Attendant English: <strong>{l.ingles}/{TOTAL_INGLES}</strong> aulas</li>
-              <li>Flight Attendant Spanish: <strong>{espanholFeitas ?? 0}/{TODAS_AULAS_ESPANHOL.length}</strong> aulas</li>
+              <li>Flight Attendant English: <strong>{l.ingles}/{aulasEn.length}</strong> aulas</li>
+              <li>Flight Attendant Spanish: <strong>{espanholFeitas ?? 0}/{aulasEs.length}</strong> aulas</li>
               <li>Perfil comportamental: <strong>{l.opq}</strong> sessões{dados.opq[0] && <> · última {dados.opq[0].perfil.incoerentes.length ? `com ${dados.opq[0].perfil.incoerentes.length} incoerência(s)` : "coerente"}</>}</li>
               <li>Vídeo de apresentação: <strong>{dados.videos.length}</strong> gravações{l.melhor_video !== null && <> · melhor {l.melhor_video}%</>}</li>
             </ul>

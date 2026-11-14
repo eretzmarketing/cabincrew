@@ -5,6 +5,7 @@ import { avisarAluno } from "@/lib/whatsapp";
 import { COMPANHIAS } from "@/lib/jornada";
 import { chaveAula } from "@/lib/ingles-a-bordo";
 import { CURSOS_IDIOMA, type ProdutoIdioma } from "@/lib/cursos-idioma";
+import { cursoIdioma } from "@/lib/cursos-dados";
 import { redirect } from "next/navigation";
 import { getUser } from "@/lib/supabase/server";
 import type { FormState } from "@/app/actions";
@@ -80,14 +81,15 @@ export async function salvarModulo(_: FormState, form: FormData): Promise<FormSt
     fase: txt(form, "fase", 60),
     ordem: num(form, "ordem") ?? 0,
     publicado: form.get("publicado") === "on",
+    ...(form.has("treino_campo") ? { treino_pos_curso: form.get("treino_pos_curso") === "on" } : {}),
   };
   if (!dados.titulo || dados.titulo.length < 2) return { erro: "Informe o título do módulo." };
   const { error } = id
     ? await supabase.from("modulos").update(dados).eq("id", id)
     : await supabase.from("modulos").insert(dados);
-  if (error) return { erro: "Não foi possível salvar o módulo." };
+  if (error) return { erro: error.message.includes("treino_pos_curso") ? "Rode o SQL 0058_cursos_admin.sql no Supabase." : "Não foi possível salvar o módulo." };
   revalidatePath("/", "layout");
-  if (!id) redirect("/admin/head-hunter");
+  if (!id) redirect("/admin/cursos/head-hunter");
   return { ok: true, msg: "Módulo salvo." };
 }
 
@@ -95,7 +97,7 @@ export async function excluirModulo(form: FormData) {
   const { supabase } = await admin();
   await supabase.from("modulos").delete().eq("id", Number(form.get("id")));
   revalidatePath("/", "layout");
-  redirect("/admin/head-hunter");
+  redirect("/admin/cursos/head-hunter");
 }
 
 export async function salvarAula(_: FormState, form: FormData): Promise<FormState> {
@@ -134,7 +136,7 @@ export async function salvarAula(_: FormState, form: FormData): Promise<FormStat
   const { data, error } = await supabase.from("aulas").insert(dados).select("id").single();
   if (error || !data) return { erro: "Não foi possível criar a aula." };
   revalidatePath("/", "layout");
-  redirect(`/admin/head-hunter/aula/${data.id}?criada=1`);
+  redirect(`/admin/cursos/head-hunter/aula/${data.id}?criada=1`);
 }
 
 export async function excluirAula(form: FormData) {
@@ -143,7 +145,7 @@ export async function excluirAula(form: FormData) {
   const modulo = String(form.get("modulo_id"));
   await supabase.from("aulas").delete().eq("id", id);
   revalidatePath("/", "layout");
-  redirect(`/admin/head-hunter/modulo/${modulo}`);
+  redirect(`/admin/cursos/head-hunter#m-${modulo}`);
 }
 
 /* ---------- Configurações e usuários ---------- */
@@ -606,7 +608,8 @@ export async function renomearMidia(id: string, titulo: string) {
 
 /* ---------- Flight Attendant English e Spanish ---------- */
 export async function salvarQuizIdioma(produto: ProdutoIdioma, aula: string, nota: number): Promise<{ ok: boolean; concluida: boolean; melhor: number }> {
-  const c = CURSOS_IDIOMA[produto];
+  if (!CURSOS_IDIOMA[produto]) return { ok: false, concluida: false, melhor: 0 };
+  const c = await cursoIdioma(produto);
   const { supabase, user } = await getUser();
   const n = Math.max(0, Math.min(100, Math.round(Number(nota) || 0)));
   if (!c || !user || !/^\d{1,2}\.\d{1,2}$/.test(aula) || !c.todas.some((x) => chaveAula(x) === aula)) return { ok: false, concluida: false, melhor: n };

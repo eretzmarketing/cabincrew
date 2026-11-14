@@ -1,8 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { MODULOS_INGLES, chaveAula } from "@/lib/ingles-a-bordo";
-import { MODULOS_ESPANHOL } from "@/lib/espanhol-a-bordo";
+import { chaveAula } from "@/lib/ingles-a-bordo";
+import { cursoIdioma } from "@/lib/cursos-dados";
 import { SLUGS_CURSOS } from "@/lib/cursos";
 import { getUser } from "@/lib/supabase/server";
 
@@ -50,6 +50,7 @@ export async function dadosGestaoAluno(id: string): Promise<DadosGestao | null> 
   }
   const espOk = new Set(((esp ?? []) as { aula: string; concluida: boolean }[]).filter((x) => x.concluida).map((x) => x.aula));
   const ingOk = new Set(((ing ?? []) as { aula: string; concluida: boolean }[]).filter((x) => x.concluida).map((x) => x.aula));
+  const [{ modulos: MODULOS_INGLES }, { modulos: MODULOS_ESPANHOL }] = await Promise.all([cursoIdioma("english"), cursoIdioma("spanish")]);
   return {
     acessos: (acs ?? []) as DadosGestao["acessos"],
     hh: ((mods ?? []) as { id: number; titulo: string }[]).map((m) => ({ id: m.id, titulo: m.titulo, ...(porModulo.get(m.id) ?? { total: 0, feitas: 0 }) })),

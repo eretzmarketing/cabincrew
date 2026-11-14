@@ -25,6 +25,12 @@ const nextConfig: NextConfig = {
       { source: "/head-hunter/ingles-a-bordo/:path*", destination: "/english/:path*", permanent: true },
       { source: "/head-hunter/anac", destination: "/simulados-anac", permanent: true },
       { source: "/head-hunter/comprar", destination: "/comprar/head-hunter", permanent: true },
+      // módulos e aulas agora ficam em Admin › Cursos
+      { source: "/admin/head-hunter", destination: "/admin/cursos/head-hunter", permanent: false },
+      { source: "/admin/head-hunter/modulo/:id(\\d+)", destination: "/admin/cursos/head-hunter?editar=:id", permanent: false },
+      { source: "/admin/head-hunter/aula/:id", destination: "/admin/cursos/head-hunter/aula/:id", permanent: false },
+      { source: "/admin/ingles", destination: "/admin/cursos/english/audios", permanent: false },
+      { source: "/admin/espanhol", destination: "/admin/cursos/spanish/audios", permanent: false },
       // ficha do aluno agora fica em Usuários
       { source: "/admin/head-hunter/alunos/:id([0-9a-fA-F-]{36})", destination: "/admin/usuarios/:id", permanent: true },
     ];

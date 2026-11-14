@@ -13,13 +13,23 @@ export const GRUPOS: Grupo[] = [
 
   // ---------- Treinamentos ----------
   {
-    id: "head-hunter", label: "Head Hunter", secao: "Treinamentos",
+    id: "cursos", label: "Cursos", secao: "Treinamentos",
+    itens: [
+      { href: "/admin/cursos", label: "Todos os cursos", exato: true },
+      { href: "/admin/cursos/head-hunter", label: "Head Hunter" },
+      { href: "/admin/cursos/english", label: "Flight Attendant English" },
+      { href: "/admin/cursos/spanish", label: "Flight Attendant Spanish" },
+    ],
+  },
+  {
+    id: "head-hunter", label: "Head Hunter: alunos e treinos",
     itens: [
       { href: "/admin/head-hunter/alunos", label: "Alunos" },
-      { href: "/admin/head-hunter", label: "Módulos e aulas" },
       { href: "/admin/head-hunter/ranking", label: "Ranking" },
       { href: "/admin/opq", label: "Perfil comportamental" },
       { href: "/admin/entrevista", label: "Entrevista em inglês" },
+      { href: "/admin/head-hunter/simulados", label: "Simulados das aulas" },
+      { href: "/admin/head-hunter/dinamicas", label: "Dinâmicas" },
     ],
   },
   {
@@ -29,8 +39,6 @@ export const GRUPOS: Grupo[] = [
       { href: "/admin/questoes", label: "Banco de questões" },
     ],
   },
-  { id: "english", label: "Flight Attendant English", itens: [{ href: "/admin/ingles", label: "Flight Attendant English" }] },
-  { id: "spanish", label: "Flight Attendant Spanish", itens: [{ href: "/admin/espanhol", label: "Flight Attendant Spanish" }] },
   { id: "certificados", label: "Certificados", itens: [{ href: "/admin/certificados", label: "Certificados" }] },
 
   // ---------- Alunos e vendas ----------

@@ -30,6 +30,13 @@ export async function exigirCurso(curso: Curso, destino: string) {
   return { ...ctx, liberado, acesso, pago, encerrado: acesso?.status === "concluido" || (acesso?.status === "ativo" && expirou) };
 }
 
+/** Depois de concluir o curso comprado: até quando o aluno continua com acesso (para revisar e treinar). */
+export function revisaoAte(acesso: Acesso, pago: boolean) {
+  return pago && acesso?.concluido_em && acesso.expira_em ? acesso.expira_em : null;
+}
+
+export const dataBR = (d: string) => new Date(d).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
+
 /** Head Hunter */
 export const exigirCrewSelect = (destino: string) => exigirCurso("head-hunter", destino);
 

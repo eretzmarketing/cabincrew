@@ -3,7 +3,8 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import CursoPlayer from "@/components/CursoPlayer";
 import { Arrow, Check } from "@/components/icons";
-import { exigirCrewSelect } from "@/lib/crew-gate";
+import AvisoTreino from "@/components/AvisoTreino";
+import { exigirCrewSelect, revisaoAte } from "@/lib/crew-gate";
 import { navegacaoHeadHunter } from "@/lib/curso-navegacao";
 import { TIPO_AULA, duracao, numeroModulo, type Aula, type Modulo } from "@/lib/crew";
 
@@ -11,7 +12,7 @@ export const metadata: Metadata = { title: "Módulo · Head Hunter", robots: { i
 
 export default async function ModuloPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const { supabase, user, liberado } = await exigirCrewSelect(`/head-hunter/modulo/${id}`);
+  const { supabase, user, liberado, acesso, pago } = await exigirCrewSelect(`/head-hunter/modulo/${id}`);
   if (!liberado) redirect("/head-hunter");
   if (!/^\d+$/.test(id)) notFound();
 
@@ -39,6 +40,7 @@ export default async function ModuloPage({ params }: { params: Promise<{ id: str
         </>
       ) : undefined}>
       <div className="flex flex-col gap-6">
+        {m.treino_pos_curso && revisaoAte(acesso, pago) && <AvisoTreino ate={revisaoAte(acesso, pago)!} />}
         <div className="flex flex-col gap-2">
           <span className="font-display text-sm font-bold tracking-[.08em] text-[#b0002a] uppercase">Módulo {numeroModulo(m.ordem)}{m.fase ? ` · ${m.fase}` : ""}</span>
           <h1 className="font-display text-[30px] leading-tight font-extrabold md:text-[36px]">{m.titulo}</h1>

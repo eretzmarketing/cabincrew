@@ -50,8 +50,8 @@ export async function InicioIdioma({ c }: { c: CursoIdioma }) {
         <div className="relative mx-auto flex max-w-[1100px] flex-wrap items-end justify-between gap-8 px-6 pt-8 pb-14">
           <div className="flex max-w-[640px] flex-col gap-4">
             <span className="self-start rounded-full border border-white/25 bg-white/10 px-4 py-1.5 text-sm font-semibold">{c.textos.selo}</span>
-            <h1 className="font-display text-[34px] leading-tight font-extrabold md:text-[48px]">Flight Attendant <span className="text-[#ff5a7a]">{c.textos.destaque}</span></h1>
-            <p className="text-[17px] leading-relaxed text-[#e3e6ee]">{c.textos.sub}</p>
+            <h1 className="font-display text-[34px] leading-tight font-extrabold md:text-[48px]">{c.nome.split(" ").slice(0, -1).join(" ")} <span className="text-[#ff5a7a]">{c.nome.split(" ").slice(-1)[0]}</span></h1>
+            <p className="text-[17px] leading-relaxed whitespace-pre-line text-[#e3e6ee]">{c.textos.sub}</p>
           </div>
           <div className="flex w-full max-w-[320px] flex-col gap-3 rounded-[20px] bg-white/10 p-6 backdrop-blur">
             <div className="flex items-end justify-between">
