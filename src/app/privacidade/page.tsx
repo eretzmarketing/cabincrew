@@ -43,7 +43,7 @@ export default function PrivacidadePage() {
         <li><strong>Wawp / WhatsApp</strong> — envio das mensagens (seu número e o texto da mensagem).</li>
         <li><strong>Supabase</strong> — banco de dados e autenticação; <strong>Hostinger</strong> — hospedagem do site.</li>
         <li><strong>ElevenLabs</strong> — geração dos áudios das aulas (não recebe dados de alunos).</li>
-        <li><strong>OpenAI</strong> — só quando você pede o feedback da IA: recebe a gravação do vídeo de apresentação para transcrever e avaliar. Pela política da OpenAI para a API, esses dados não são usados para treinar modelos.</li>
+        <li><strong>OpenAI</strong> — só quando você pede o feedback da IA: recebe a gravação do vídeo de apresentação para transcrever e avaliar, ou o texto do currículo enviado para a análise de currículo (o arquivo é lido e descartado; guardamos só o resultado). Pela política da OpenAI para a API, esses dados não são usados para treinar modelos.</li>
         <li>Autoridades, quando exigido por lei ou ordem judicial.</li>
       </ul>
       <p>Alguns desses fornecedores podem armazenar dados fora do Brasil, com as garantias exigidas pela LGPD.</p>

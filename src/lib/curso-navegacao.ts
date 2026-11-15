@@ -25,6 +25,7 @@ function extras(m: Modulo): ItemCurso[] {
   const x: ItemCurso[] = [];
   if (m.recurso === "anac") x.push({ href: "/simulados-anac", titulo: "Simulados ANAC", tipo: "treino", extra: true });
   if (m.recurso === "dinamicas") x.push({ href: "/head-hunter/dinamicas", titulo: "Biblioteca de dinâmicas", tipo: "treino", extra: true });
+  if (m.ordem === 4) x.push({ href: "/head-hunter/curriculo", titulo: "Análise de currículo com IA", tipo: "treino", extra: true });
   if (m.ordem === 6) x.push({ href: "/head-hunter/perfil-comportamental", titulo: "Treino do perfil comportamental", tipo: "treino", extra: true });
   if (m.ordem === 8) {
     x.push({ href: "/head-hunter/video-apresentacao", titulo: "Treino de vídeo de apresentação", tipo: "treino", extra: true });

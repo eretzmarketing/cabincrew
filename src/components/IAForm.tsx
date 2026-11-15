@@ -6,7 +6,7 @@ import { liberarAnalisesIA, salvarIA } from "@/app/ia-actions";
 const campo = "min-h-12 w-full rounded-xl border border-[#c9cedb] bg-white px-3.5 text-[15px] font-normal text-navy";
 const rot = "flex flex-col gap-1.5 text-sm font-semibold";
 
-export function IAForm({ conectada, modelo, porAluno, ativo }: { conectada: boolean; modelo: string; porAluno: number; ativo: boolean }) {
+export function IAForm({ conectada, modelo, porAluno, porAlunoCv, ativo }: { conectada: boolean; modelo: string; porAluno: number; porAlunoCv: number; ativo: boolean }) {
   const [s, acao, pend] = useActionState(salvarIA, {});
   return (
     <form action={acao} className="flex flex-col gap-4">
@@ -17,8 +17,13 @@ export function IAForm({ conectada, modelo, porAluno, ativo }: { conectada: bool
         <label className={rot}>Modelo <span className="font-normal text-muted">(padrão: gpt-5-mini, bom e barato)</span>
           <input name="modelo" defaultValue={modelo} className={campo} />
         </label>
-        <label className={rot}>Análises por aluno <span className="font-normal text-muted">(por compra do Head Hunter)</span>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <label className={rot}>Análises de vídeo por aluno <span className="font-normal text-muted">(por compra do Head Hunter)</span>
           <input name="porAluno" type="number" min={1} max={50} defaultValue={porAluno} className={campo} />
+        </label>
+        <label className={rot}>Análises de currículo por aluno <span className="font-normal text-muted">(por compra do Head Hunter)</span>
+          <input name="porAlunoCv" type="number" min={1} max={50} defaultValue={porAlunoCv} className={campo} />
         </label>
       </div>
       <label className="flex min-h-11 cursor-pointer items-center gap-3 text-[15px]">
@@ -33,11 +38,12 @@ export function IAForm({ conectada, modelo, porAluno, ativo }: { conectada: bool
 }
 
 /** Ficha do aluno: liberar análises extras da IA no vídeo de apresentação. */
-export function LiberarIAForm({ aluno }: { aluno: string }) {
+export function LiberarIAForm({ aluno, recurso = "video" }: { aluno: string; recurso?: "video" | "curriculo" }) {
   const [s, acao, pend] = useActionState(liberarAnalisesIA, {});
   return (
     <form action={acao} className="flex flex-wrap items-end gap-3">
       <input type="hidden" name="aluno" value={aluno} />
+      <input type="hidden" name="recurso" value={recurso} />
       <label className="flex flex-col gap-1 text-sm font-semibold text-navy">Liberar mais
         <select name="qtd" defaultValue="1" className="min-h-11 cursor-pointer rounded-xl border border-[#c9cedb] bg-white px-3 text-[16px] font-normal">
           {[1, 2, 3, 5].map((n) => <option key={n} value={n}>{n} {n === 1 ? "análise" : "análises"}</option>)}

@@ -137,6 +137,14 @@ export default async function CrewSelectPage({ searchParams }: { searchParams: P
             </span>
             <span className="inline-flex min-h-12 items-center gap-2 rounded-full bg-brand-strong px-6 font-display font-bold text-white">Treinar <Arrow /></span>
           </Link>
+          <Link href="/head-hunter/curriculo" className="flex flex-wrap items-center justify-between gap-4 rounded-[22px] border-2 border-brand-line bg-white p-6 text-navy hover:border-brand">
+            <span className="flex flex-col gap-1">
+              <span className="self-start rounded-full bg-brand-soft px-3 py-1 font-display text-xs font-bold tracking-[.08em] text-brand-strong uppercase">Novo · Com IA</span>
+              <strong className="font-display text-xl font-extrabold">Análise de currículo</strong>
+              <span className="text-[15px] text-ink-2">Veja o seu currículo como o robô de triagem (ATS) das companhias e receba nota, palavras-chave que faltam e sugestões prontas.</span>
+            </span>
+            <span className="inline-flex min-h-12 items-center gap-2 rounded-full bg-brand-strong px-6 font-display font-bold text-white">Analisar <Arrow /></span>
+          </Link>
           <h2 id="modulos" className="scroll-mt-6 pt-4 font-display text-2xl font-extrabold">Todos os módulos</h2>
           <ol className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
             {lista.map((m) => {

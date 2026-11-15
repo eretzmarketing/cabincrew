@@ -14,7 +14,7 @@ export { CRITERIOS_IA, type FeedbackIA };
 export const ARQUIVO_OPENAI = process.env.OPENAI_CONFIG_FILE || path.join(os.homedir(), ".cabincrew-openai.json");
 const API = () => process.env.OPENAI_API_BASE || "https://api.openai.com";
 
-export type ConfigIA = { chave: string; modelo: string; transcricao: string; porAluno: number; ativo: boolean };
+export type ConfigIA = { chave: string; modelo: string; transcricao: string; porAluno: number; porAlunoCv: number; ativo: boolean };
 /** Análises da IA que cada aluno tem por compra do Head Hunter (o admin pode liberar mais na ficha do aluno). */
 export const POR_ALUNO_PADRAO = 2;
 export const MODELO_PADRAO = "gpt-5-mini";
@@ -24,7 +24,7 @@ export function configIA(): ConfigIA | null {
   try {
     const j = JSON.parse(readFileSync(ARQUIVO_OPENAI, "utf8")) as Partial<ConfigIA>;
     if (!j.chave) return null;
-    return { chave: j.chave, modelo: j.modelo || MODELO_PADRAO, transcricao: j.transcricao || TRANSCRICAO_PADRAO, porAluno: j.porAluno ?? POR_ALUNO_PADRAO, ativo: j.ativo !== false };
+    return { chave: j.chave, modelo: j.modelo || MODELO_PADRAO, transcricao: j.transcricao || TRANSCRICAO_PADRAO, porAluno: j.porAluno ?? POR_ALUNO_PADRAO, porAlunoCv: j.porAlunoCv ?? POR_ALUNO_PADRAO, ativo: j.ativo !== false };
   } catch {
     return null;
   }
@@ -36,9 +36,10 @@ type ClienteRpc = { rpc: (fn: string, args: Record<string, unknown>) => PromiseL
 
 /** Saldo de análises do aluno: limite da compra + extras liberados pelo admin − já usadas. */
 export type SaldoIA = { erro: string } | { usadas: number; extras: number; limite: number; restantes: number };
-export async function saldoVideoIA(supabase: ClienteRpc, userId: string, porAluno: number): Promise<SaldoIA> {
-  const { data, error } = await supabase.rpc("video_ia_uso", { p_user: userId });
-  if (error) return { erro: error.message.includes("video_ia_uso") ? "Falta rodar o SQL 0063_video_ia_limite.sql no Supabase." : "Não foi possível conferir o limite agora." };
+export async function saldoVideoIA(supabase: ClienteRpc, userId: string, porAluno: number, recurso: "video" | "curriculo" = "video"): Promise<SaldoIA> {
+  const fn = recurso === "video" ? "video_ia_uso" : "curriculo_ia_uso";
+  const { data, error } = await supabase.rpc(fn, { p_user: userId });
+  if (error) return { erro: error.message.includes(fn) ? `Falta rodar o SQL ${recurso === "video" ? "0063_video_ia_limite" : "0064_curriculo_ia"}.sql no Supabase.` : "Não foi possível conferir o limite agora." };
   const r = ((data ?? []) as { usadas: number; extras: number }[])[0] ?? { usadas: 0, extras: 0 };
   const limite = porAluno + Number(r.extras);
   return { usadas: Number(r.usadas), extras: Number(r.extras), limite, restantes: Math.max(0, limite - Number(r.usadas)) };

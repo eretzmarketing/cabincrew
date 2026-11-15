@@ -21,6 +21,8 @@ import { FeedbackVisual } from "@/components/VideoIA";
 import type { FeedbackIA } from "@/lib/ia-video-tipos";
 import { POR_ALUNO_PADRAO, configIA, saldoVideoIA } from "@/lib/ia-video";
 import { LiberarIAForm } from "@/components/IAForm";
+import { FeedbackCurriculo } from "@/components/CurriculoIA";
+import type { FeedbackCV } from "@/lib/ia-curriculo-tipos";
 
 export const metadata: Metadata = { title: "Aluno · Head Hunter" };
 export const dynamic = "force-dynamic";
@@ -44,7 +46,11 @@ export default async function AlunoPage({ params }: { params: Promise<{ id: stri
   const l = ((linha ?? []) as LinhaAluno[])[0];
   if (!l) notFound();
   const cfgIA = configIA();
-  const saldoIA = await saldoVideoIA(supabase, id, cfgIA?.porAluno ?? POR_ALUNO_PADRAO);
+  const [saldoIA, saldoCV, { data: cvs }] = await Promise.all([
+    saldoVideoIA(supabase, id, cfgIA?.porAluno ?? POR_ALUNO_PADRAO),
+    saldoVideoIA(supabase, id, cfgIA?.porAlunoCv ?? POR_ALUNO_PADRAO, "curriculo"),
+    supabase.from("curriculo_analises").select("id, nota, ia, arquivo, created_at").eq("user_id", id).order("created_at", { ascending: false }).limit(10),
+  ]);
   const temHH = ((acessosAluno ?? []) as { produto: string }[]).some((a) => a.produto === "head-hunter");
   const { data: videosIA } = await supabase.from("video_treinos").select("created_at, duracao_seg, meta_seg, nota_ia, ia, transcricao").eq("user_id", id).not("ia", "is", null).order("created_at", { ascending: false }).limit(6);
 
@@ -176,6 +182,29 @@ export default async function AlunoPage({ params }: { params: Promise<{ id: stri
                 Usou <strong>{saldoIA.usadas}</strong> de <strong>{saldoIA.limite}</strong> ({cfgIA?.porAluno ?? POR_ALUNO_PADRAO} do Head Hunter{saldoIA.extras ? ` + ${saldoIA.extras} liberada(s) por você` : ""}).
               </p>
               <LiberarIAForm aluno={id} />
+            </Card>
+          )}
+
+          {(temHH || !!(cvs ?? []).length) && !("erro" in saldoCV) && (
+            <Card>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h2 className="font-display text-xl font-extrabold">📄 Análises de currículo</h2>
+                <span className={`rounded-full px-3 py-1 text-[13px] font-semibold ${saldoCV.restantes > 0 ? "bg-[#e5f6ec] text-[#0f6b3a]" : "bg-brand-soft text-brand-deep"}`}>
+                  {saldoCV.restantes > 0 ? `${saldoCV.restantes} disponível(is)` : "Esgotadas"}
+                </span>
+              </div>
+              <p className="text-[15px] text-ink-2">
+                Usou <strong>{saldoCV.usadas}</strong> de <strong>{saldoCV.limite}</strong> ({cfgIA?.porAlunoCv ?? POR_ALUNO_PADRAO} do Head Hunter{saldoCV.extras ? ` + ${saldoCV.extras} liberada(s) por você` : ""}).
+              </p>
+              <LiberarIAForm aluno={id} recurso="curriculo" />
+              {((cvs ?? []) as { id: number; nota: number; ia: FeedbackCV; arquivo: string | null; created_at: string }[]).map((c) => (
+                <details key={c.id} className="rounded-xl border border-line px-4">
+                  <summary className="flex min-h-12 cursor-pointer flex-wrap items-center gap-3 text-[15px]">
+                    <strong>{c.nota}/100</strong><span className="text-muted">{new Date(c.created_at).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Sao_Paulo" })}</span><span className="truncate text-muted">{c.arquivo}</span>
+                  </summary>
+                  <div className="pb-4"><FeedbackCurriculo f={c.ia} /></div>
+                </details>
+              ))}
             </Card>
           )}
 
