@@ -57,7 +57,7 @@ const SERVICOS: Servico[] = [
   {
     num: "01", selo: "Grátis", titulo: "Simulados para a banca ANAC",
     texto: "Treine para a prova teórica de comissário como se fosse o dia da prova. É só criar a conta: sem pagar nada e sem limite de tentativas.",
-    itens: ["Milhares de questões no estilo da banca ANAC", "4 blocos: Segurança, Legislação, Primeiros Socorros e Conhecimentos Técnicos", "Prova completa com 80 questões, cronômetro e nota mínima de 70%", "Gabarito comentado e desempenho por bloco"],
+    itens: ["Questões no estilo da banca ANAC, com explicação", "4 blocos: Segurança, Legislação, Primeiros Socorros e Conhecimentos Técnicos", "Prova completa com 80 questões, cronômetro e nota mínima de 70%", "Gabarito comentado e desempenho por bloco"],
     img: "/img/lp/anac.webp", alt: "Tela dos Simulados ANAC com estudo por bloco e prova completa", img2: "/img/lp/anac-prova.webp", alt2: "Prova da ANAC em andamento com cronômetro",
   },
   {
@@ -81,7 +81,7 @@ const SERVICOS: Servico[] = [
   {
     num: "05", selo: "Com inteligência artificial", titulo: "Análise de entrevista e do vídeo de apresentação",
     texto: "Grave a sua apresentação com o roteiro na tela e receba, em cerca de 1 minuto, a avaliação de uma IA treinada com os critérios dos recrutadores.",
-    itens: ["Nota de 0 a 100 em 11 critérios: conteúdo, comunicação e imagem", "Olhar para a câmera, ritmo da fala e vícios como “né” e “tipo”", "167 perguntas reais de entrevista em inglês, com áudio e respostas-modelo", "Simulação de entrevista com perguntas sorteadas e cronômetro"],
+    itens: ["Nota de 0 a 100 em 11 critérios: conteúdo, comunicação e imagem", "Olhar para a câmera, ritmo da fala e vícios como “né” e “tipo”", "Perguntas reais de entrevista em inglês, com áudio e respostas-modelo", "Simulação de entrevista com perguntas sorteadas e cronômetro"],
     img: "/img/lp/video-ia.webp", alt: "Feedback da inteligência artificial sobre o vídeo de apresentação", img2: "/img/lp/entrevista.webp", alt2: "Treino de entrevista em inglês",
   },
 ];
@@ -135,7 +135,7 @@ export default async function Home() {
       {/* NÚMEROS */}
       <section className="border-b border-line bg-white">
         <dl className="mx-auto grid max-w-[1200px] grid-cols-2 gap-y-8 px-6 py-10 md:grid-cols-4">
-          {[["+5.000", "questões com correção"], ["83", "aulas no preparatório"], ["11", "critérios na análise de IA"], ["167", "perguntas reais de entrevista"]].map(([n, t]) => (
+          {[["3", "companhias: LATAM, GOL e Azul"], ["7", "etapas da seleção cobertas"], ["11", "critérios na análise de IA"], ["7 dias", "de garantia"]].map(([n, t]) => (
             <div key={t} className="flex flex-col items-center gap-1 text-center">
               <dt className="order-2 text-[15px] text-ink-2">{t}</dt>
               <dd className="order-1 font-display text-[34px] leading-none font-extrabold text-brand-strong md:text-[40px]">{n}</dd>

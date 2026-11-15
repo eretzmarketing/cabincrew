@@ -132,7 +132,7 @@ export function ListaPerguntas({ parte }: { parte: Parte }) {
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-line bg-white px-5 py-4">
         <div className="flex min-w-[220px] flex-1 flex-col gap-1.5">
-          <span className="text-[15px] font-semibold">{feitas} de {ids.length} perguntas praticadas</span>
+          <span className="text-[15px] font-semibold">{feitas ? `${Math.round((feitas / Math.max(1, ids.length)) * 100)}% desta parte praticada` : "Nenhuma pergunta praticada ainda"}</span>
           <span className="h-2.5 rounded-full bg-[#eceef3]" aria-hidden="true"><span className="block h-2.5 rounded-full bg-[#2e9d5b] transition-all" style={{ width: `${(feitas / Math.max(1, ids.length)) * 100}%` }} /></span>
         </div>
         <Link href={`/head-hunter/entrevista-ingles/treino?parte=${parte.slug}`} className="inline-flex min-h-12 items-center gap-2 rounded-full bg-brand-strong px-6 font-display font-bold text-white hover:bg-brand-deep">
@@ -156,7 +156,7 @@ export function ProgressoParte({ ids }: { ids: string[] }) {
   return (
     <span className="flex items-center gap-2 text-[13px] text-muted">
       <span className="h-1.5 flex-1 rounded-full bg-[#eceef3]" aria-hidden="true"><span className="block h-1.5 rounded-full bg-[#2e9d5b]" style={{ width: `${(feitas / total) * 100}%` }} /></span>
-      {feitas}/{ids.length}
+      {Math.round((feitas / total) * 100)}%
     </span>
   );
 }

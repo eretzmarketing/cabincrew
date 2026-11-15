@@ -13,7 +13,6 @@ export default async function EntrevistaInglesPage() {
   const { supabase, liberado } = await exigirCrewSelect("/head-hunter/entrevista-ingles");
   if (!liberado) redirect("/head-hunter");
   const { partes: PARTES } = await carregarEntrevista(supabase);
-  const TOTAL_PERGUNTAS = PARTES.reduce((s, p) => s + p.perguntas.length, 0);
 
   return (
     <main className="bg-soft pb-20">
@@ -25,7 +24,7 @@ export default async function EntrevistaInglesPage() {
           <h1 className="font-display text-[34px] leading-tight font-extrabold md:text-[48px]">Entrevista em <span className="text-[#ff5a7a]">inglês</span></h1>
           <p className="max-w-[680px] text-[17px] leading-relaxed text-[#e3e6ee]">
             A entrevista em inglês costuma acontecer logo no começo da seleção, e falar não basta: é preciso falar bem.
-            Aqui você treina {TOTAL_PERGUNTAS} perguntas reais, em {PARTES.length} partes, com áudio, tradução e respostas-modelo revisadas.
+            Aqui você treina com perguntas reais das entrevistas, organizadas por partes, com áudio, tradução e respostas-modelo revisadas.
           </p>
           <div className="flex flex-wrap gap-2 pt-2">
             <Link href="/head-hunter/entrevista-ingles/treino" className="inline-flex min-h-12 items-center gap-2 rounded-full bg-brand-strong px-6 font-display font-bold text-white hover:bg-brand-deep">🎙 Simular uma entrevista</Link>
