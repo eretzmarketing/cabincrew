@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { ErroIA, configIA, saldoVideoIA } from "@/lib/ia-video";
-import { MAX_CV, avaliarCurriculo, conferir, lerCurriculo } from "@/lib/ia-curriculo";
+import { MAX_CV, avaliarCurriculo, buscarRequisitos, carregarRequisitos, conferir, lerCurriculo } from "@/lib/ia-curriculo";
 import { getConfig } from "@/lib/config";
 import { COMPANHIAS } from "@/lib/jornada";
 import { lerCheckin } from "@/lib/jornada-dados";
@@ -48,7 +48,9 @@ export async function POST(req: NextRequest) {
     }
     const checkin = await lerCheckin(supabase, user.id);
     const companhia = COMPANHIAS.find((c) => c.slug === checkin.companhias[0])?.nome;
-    const feedback = await avaliarCurriculo(cfg, { leitura, conferencias, companhia });
+    const requisitos = await carregarRequisitos(supabase);
+    const achados = buscarRequisitos(leitura.texto, requisitos);
+    const feedback = await avaliarCurriculo(cfg, { leitura, conferencias, companhia, requisitos, achados });
     const { data: id, error } = await anonimo().rpc("curriculo_ia_registrar", {
       p_chave: mp.chave, p_user: user.id, p_nota: feedback.nota, p_ia: feedback, p_arquivo: arquivo.name, p_companhia: companhia ?? null,
     });

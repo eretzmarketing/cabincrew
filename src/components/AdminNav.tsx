@@ -30,6 +30,7 @@ export const GRUPOS: Grupo[] = [
       { href: "/admin/entrevista", label: "Entrevista em inglês" },
       { href: "/admin/head-hunter/simulados", label: "Simulados das aulas" },
       { href: "/admin/head-hunter/dinamicas", label: "Dinâmicas" },
+      { href: "/admin/head-hunter/curriculo", label: "Currículo: requisitos" },
     ],
   },
   {

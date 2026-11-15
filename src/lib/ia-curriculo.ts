@@ -6,7 +6,7 @@
  * O arquivo fica só na memória: não é gravado no servidor.
  */
 import { ErroIA, type ConfigIA } from "@/lib/ia-video";
-import { CRITERIOS_CV, type ConferenciaCV, type FeedbackCV } from "@/lib/ia-curriculo-tipos";
+import { CRITERIOS_CV, type ConferenciaCV, type FeedbackCV, type RequisitoCV, type ResultadoRequisito } from "@/lib/ia-curriculo-tipos";
 
 export { CRITERIOS_CV, type FeedbackCV };
 
@@ -73,6 +73,49 @@ export function conferir(l: LeituraCV): ConferenciaCV[] {
   return c;
 }
 
+/* ------------------------------------------------------------------ requisitos do admin */
+
+const normal = (t: string) => t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+const escRe = (t: string) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const MESES: Record<string, number> = { jan: 1, fev: 2, mar: 3, abr: 4, mai: 5, jun: 6, jul: 7, ago: 8, set: 9, out: 10, nov: 11, dez: 12 };
+
+/** Datas citadas num trecho (dd/mm/aaaa, mm/aaaa, “março de 2028”, “mar/28”), como [ano, mês]. */
+function datasNoTrecho(t: string): { ano: number; mes: number; perto: boolean }[] {
+  const r: { ano: number; mes: number; perto: boolean }[] = [];
+  const add = (ano: number, mes: number, i: number) => {
+    if (ano < 100) ano += 2000;
+    if (ano >= 2000 && ano <= 2100 && mes >= 1 && mes <= 12) r.push({ ano, mes, perto: /(valid|venc|ate|expira)[^0-9]{0,25}$/.test(t.slice(Math.max(0, i - 30), i)) });
+  };
+  for (const m of t.matchAll(/\b(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})\b/g)) add(+m[3], +m[2], m.index!);
+  for (const m of t.matchAll(/(?<![\d/.-])(\d{1,2})[/.-](\d{4})\b/g)) add(+m[2], +m[1], m.index!);
+  for (const m of t.matchAll(/\b(jan|fev|mar|abr|mai|jun|jul|ago|set|out|nov|dez)[a-z]*\.?(?:\s+de)?\s*[/ ]?\s*(\d{4}|\d{2})\b/g)) add(+m[2], MESES[m[1]], m.index!);
+  return r;
+}
+
+/** Procura os requisitos do admin no texto; para os que têm validade mínima, confere a data citada perto do termo. */
+export function buscarRequisitos(texto: string, requisitos: RequisitoCV[], hoje = new Date()): ResultadoRequisito[] {
+  const t = normal(texto);
+  return requisitos.filter((q) => q.ativo).map((q) => {
+    const posicoes: number[] = [];
+    for (const termo of q.termos.map(normal).filter(Boolean)) {
+      const re = new RegExp(`(^|[^a-z0-9])${escRe(termo)}(?=[^a-z0-9]|$)`, "g");
+      for (const m of t.matchAll(re)) posicoes.push(m.index! + m[1].length);
+    }
+    if (!posicoes.length) return { nome: q.nome, tipo: q.tipo, status: "ausente" as const };
+    if (!q.validade_meses) return { nome: q.nome, tipo: q.tipo, status: "ok" as const };
+    const datas = posicoes.flatMap((i) => datasNoTrecho(t.slice(i, i + 160)));
+    const preferidas = datas.some((d) => d.perto) ? datas.filter((d) => d.perto) : datas;
+    if (!preferidas.length) return { nome: q.nome, tipo: q.tipo, status: "sem_validade" as const, detalhe: `Informe a validade (ex.: válido até 03/${hoje.getFullYear() + 2}). As companhias pedem no mínimo ${q.validade_meses} meses.` };
+    const ult = preferidas.reduce((a, b) => (b.ano * 12 + b.mes > a.ano * 12 + a.mes ? b : a));
+    const meses = ult.ano * 12 + ult.mes - (hoje.getFullYear() * 12 + hoje.getMonth() + 1);
+    const data = `${String(ult.mes).padStart(2, "0")}/${ult.ano}`;
+    if (meses < q.validade_meses) {
+      return { nome: q.nome, tipo: q.tipo, status: "vencendo" as const, detalhe: meses < 0 ? `Vencido (${data}). Renove antes de se inscrever.` : `Válido até ${data}: as companhias pedem no mínimo ${q.validade_meses} meses de validade.` };
+    }
+    return { nome: q.nome, tipo: q.tipo, status: "ok" as const, detalhe: `Válido até ${data}` };
+  });
+}
+
 /* ------------------------------------------------------------------ IA */
 
 const ESQUEMA = {
@@ -103,20 +146,31 @@ const ESQUEMA = {
   },
 };
 
-export async function avaliarCurriculo(cfg: ConfigIA, d: { leitura: LeituraCV; conferencias: ConferenciaCV[]; companhia?: string }): Promise<FeedbackCV> {
+export async function avaliarCurriculo(cfg: ConfigIA, d: { leitura: LeituraCV; conferencias: ConferenciaCV[]; companhia?: string; requisitos: RequisitoCV[]; achados: ResultadoRequisito[] }): Promise<FeedbackCV> {
+  const situacao = (r: ResultadoRequisito) => r.status === "ok" ? `encontrado${r.detalhe ? ` (${r.detalhe})` : ""}` : r.status === "ausente" ? "NÃO encontrado" : `encontrado, mas ${r.detalhe}`;
+  const lista = (tipo: string) => d.requisitos.filter((q) => q.ativo && q.tipo === tipo).map((q) => {
+    const a = d.achados.find((x) => x.nome === q.nome);
+    return `- ${q.nome}: ${a ? situacao(a) : "?"}${q.instrucao ? `. Orientação: ${q.instrucao}` : ""}`;
+  }).join("\n");
   const sistema = [
     "Você é recrutador(a) experiente de comissários de voo no Brasil (LATAM, GOL, Azul) e conhece os sistemas de triagem de currículos (ATS, como a Gupy).",
     "Avalie o currículo de um candidato à vaga de comissário(a) de voo. O texto abaixo é exatamente o que o ATS conseguiu ler do arquivo: se algo importante não aparece no texto, o robô também não viu.",
     "Seja específico, gentil e direto, em português do Brasil, falando com o candidato (você). Nunca invente experiências, cursos ou dados: nas sugestões reescritas, use apenas fatos que estão no currículo.",
-    "O que o recrutador procura: atendimento ao cliente e hospitalidade, trabalho em equipe, comunicação, foco em segurança, resolução de problemas e calma sob pressão, disponibilidade para morar na base e escalas, idiomas (inglês e espanhol, com nível), formação (ensino médio completo; curso de comissário, CHT/CCT ANAC e CMA quando houver), natação/primeiros socorros quando houver.",
+    "O que o recrutador procura: atendimento ao cliente e hospitalidade, trabalho em equipe, comunicação, foco em segurança, resolução de problemas e calma sob pressão, disponibilidade para morar na base e escalas, idiomas (inglês e espanhol, com nível), formação (ensino médio completo; curso de comissário e CHT/CCT ANAC), natação/primeiros socorros quando houver.",
+    "Documentos: o CMA (Certificado Médico Aeronáutico) é EXIGIDO por todas as companhias e precisa ter validade mínima de 1 ano na data da candidatura; deve aparecer no currículo com a validade (ex.: “CMA válido até 03/2028”). Se faltar, estiver vencido ou vencer em menos de 1 ano, isso é a correção mais importante. Passaporte válido é opcional, mas é um grande diferencial: se não aparecer, sugira incluir caso o candidato tenha. Use as conferências automáticas abaixo como fonte para CMA e passaporte.",
     "Para o ATS: currículo em texto simples (sem colunas, tabelas, ícones ou texto em imagem), títulos de seção padrão, palavras-chave da vaga, datas e nomes de empresas claros, contato no topo. Tamanho ideal: 1 a 2 páginas. Não precisa de documentos (RG, CPF), estado civil detalhado ou foto, salvo se a companhia pedir.",
     "Experiências devem mostrar resultados e situações de atendimento, não só tarefas.",
+    "Os requisitos e palavras-chave definidos pela equipe Cabin Crew (abaixo, com o que a busca automática encontrou) são a referência principal: requisito EXIGIDO ausente ou com validade insuficiente pesa bastante na nota e deve estar em “melhorar”; DIFERENCIAL ausente é uma sugestão (só se for verdade para o candidato); palavras-chave ausentes entram em palavras_faltando.",
     "Nota geral de 0 a 100: 80 ou mais significa pronto para enviar. Dê nota a cada critério de 0 a 10.",
   ].join("\n");
   const texto = [
     d.companhia ? `Companhia-alvo: ${d.companhia}.` : "Companhia-alvo: não informada (considere LATAM, GOL e Azul).",
     `Formato do arquivo: ${d.leitura.formato.toUpperCase()}${d.leitura.paginas ? `, ${d.leitura.paginas} página(s)` : ""}.`,
+    `Data de hoje: ${new Date().toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}.`,
     `Conferências automáticas: ${d.conferencias.map((c) => `${c.texto}: ${c.ok ? "ok" : "não encontrado"}`).join("; ")}.`,
+    `Requisitos EXIGIDOS pelas companhias:\n${lista("exigido") || "(nenhum)"}`,
+    `DIFERENCIAIS:\n${lista("diferencial") || "(nenhum)"}`,
+    `PALAVRAS-CHAVE que o ATS procura:\n${lista("palavra") || "(nenhuma)"}`,
     `Texto lido pelo ATS:\n"""${d.leitura.texto.slice(0, 14000)}"""`,
   ].join("\n\n");
   const r = await fetch(`${API()}/v1/chat/completions`, {
@@ -150,5 +204,13 @@ export async function avaliarCurriculo(cfg: ConfigIA, d: { leitura: LeituraCV; c
     resumo_sugerido: s(f.resumo_sugerido, 1200),
     experiencias: (f.experiencias ?? []).slice(0, 4).map((e) => ({ antes: s(e.antes, 400), depois: s(e.depois, 500) })),
     conferencias: d.conferencias,
+    requisitos: d.achados,
   };
+}
+
+/** Requisitos ativos cadastrados no admin. */
+export async function carregarRequisitos(supabase: { from: (t: string) => unknown }): Promise<RequisitoCV[]> {
+  const q = (supabase.from("cv_requisitos") as { select: (c: string) => { order: (c: string) => PromiseLike<{ data: unknown }> } }).select("*").order("ordem");
+  const { data } = await q;
+  return ((data ?? []) as RequisitoCV[]).filter((r) => r.ativo);
 }

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
-import { CRITERIOS_CV, NOTA_CV_OK, type FeedbackCV } from "@/lib/ia-curriculo-tipos";
+import { CRITERIOS_CV, NOTA_CV_OK, type FeedbackCV, type ResultadoRequisito } from "@/lib/ia-curriculo-tipos";
 
 const btnPrim = "inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-full bg-brand-strong px-6 font-display font-bold text-white hover:bg-brand-deep disabled:cursor-not-allowed disabled:opacity-50";
 
@@ -14,6 +14,55 @@ function Copiar({ texto }: { texto: string }) {
       className="min-h-9 cursor-pointer rounded-full border-2 border-line px-3 text-[13px] font-semibold text-navy hover:border-navy">
       {ok ? "Copiado ✓" : "Copiar"}
     </button>
+  );
+}
+
+/** Requisitos das companhias (exigidos e diferenciais) e palavras-chave definidas pela equipe. */
+function Requisitos({ r }: { r: ResultadoRequisito[] }) {
+  const docs = r.filter((x) => x.tipo !== "palavra");
+  const palavras = r.filter((x) => x.tipo === "palavra");
+  const icone = (x: ResultadoRequisito) =>
+    x.status === "ok" ? ["✓", "text-[#1f9d55]"] : x.status !== "ausente" ? ["!", "text-[#b07d00]"] : x.tipo === "exigido" ? ["✗", "text-brand-strong"] : ["＋", "text-[#2f5bd3]"];
+  return (
+    <div className="flex flex-col gap-4 rounded-2xl border border-line p-4">
+      {docs.length > 0 && (
+        <div className="flex flex-col gap-2">
+          <strong className="font-display">Requisitos das companhias</strong>
+          <ul className="flex flex-col gap-2 text-[15px]">
+            {docs.map((x) => {
+              const [i, cor] = icone(x);
+              return (
+                <li key={x.nome} className="flex items-start gap-2">
+                  <span aria-hidden="true" className={`w-4 shrink-0 text-center font-bold ${cor}`}>{i}</span>
+                  <span className="flex flex-col">
+                    <span className="font-semibold">
+                      {x.nome}{" "}
+                      <span className={`ml-1 rounded-full px-2 py-0.5 text-[12px] font-semibold ${x.tipo === "exigido" ? "bg-brand-soft text-brand-deep" : "bg-[#eef3ff] text-[#2f5bd3]"}`}>{x.tipo === "exigido" ? "exigido" : "diferencial"}</span>
+                    </span>
+                    <span className="text-[14px] text-ink-2">
+                      {x.detalhe ?? (x.status === "ok" ? "Encontrado no currículo" : x.tipo === "exigido" ? "Não encontrado: as companhias pedem" : "Não encontrado: se você tiver, inclua")}
+                    </span>
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+      {palavras.length > 0 && (
+        <div className="flex flex-col gap-2">
+          <strong className="font-display">Palavras-chave que o robô procura</strong>
+          <ul className="flex flex-wrap gap-2">
+            {palavras.map((x) => (
+              <li key={x.nome} className={`rounded-full px-3 py-1 text-[14px] font-semibold ${x.status === "ok" ? "bg-[#e5f6ec] text-[#0f6b3a]" : "border border-dashed border-[#c9cedb] text-ink-2"}`}>
+                {x.status === "ok" ? "✓ " : ""}{x.nome}<span className="sr-only">{x.status === "ok" ? " (encontrada)" : " (não encontrada)"}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="text-[13px] text-muted">Em verde: encontradas no seu currículo. Tracejadas: inclua as que forem verdade para você.</p>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -39,13 +88,19 @@ export function FeedbackCurriculo({ f }: { f: FeedbackCV }) {
           <ul className="grid gap-x-6 gap-y-1.5 text-[15px] sm:grid-cols-2">
             {f.conferencias.map((c) => (
               <li key={c.id} className="flex items-start gap-2">
-                <span aria-hidden="true" className={c.ok ? "text-[#1f9d55]" : "text-brand-strong"}>{c.ok ? "✓" : "✗"}</span>
-                <span className={c.ok ? "" : "font-semibold text-brand-deep"}>{c.texto}{!c.ok && <span className="sr-only"> (não encontrado)</span>}</span>
+                <span aria-hidden="true" className={c.nivel === "dica" ? "text-[#2f5bd3]" : c.nivel === "alerta" ? "text-[#b07d00]" : c.ok ? "text-[#1f9d55]" : "text-brand-strong"}>
+                  {c.nivel === "dica" ? "＋" : c.nivel === "alerta" ? "!" : c.ok ? "✓" : "✗"}
+                </span>
+                <span className={c.nivel === "dica" ? "text-[#2f5bd3]" : c.nivel === "alerta" ? "font-semibold text-[#7a5a00]" : c.ok ? "" : "font-semibold text-brand-deep"}>
+                  {c.texto}{!c.ok && !c.nivel && <span className="sr-only"> (não encontrado)</span>}
+                </span>
               </li>
             ))}
           </ul>
         </div>
       )}
+
+      {!!f.requisitos?.length && <Requisitos r={f.requisitos} />}
 
       <div className="flex flex-col gap-2 rounded-2xl border border-line p-4">
         {grupos.map((g) => {
