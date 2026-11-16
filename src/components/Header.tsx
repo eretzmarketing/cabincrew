@@ -5,7 +5,7 @@ import { avatarUrl, getUser } from "@/lib/supabase/server";
 
 export default async function Header() {
   const [{ user, profile }, { forum_ativo, manutencao }] = await Promise.all([getUser(), getConfig()]);
-  const link = "text-navy hover:text-brand-strong";
+  const link = "text-navy hover:text-brand-strong inline-flex min-h-10 items-center md:min-h-0";
 
   return (
     <header className="border-b border-line bg-white">
@@ -15,7 +15,7 @@ export default async function Header() {
         </Link>
 
         {(user || !manutencao) && (
-          <nav aria-label="Principal" className="order-3 flex w-full flex-wrap items-center gap-x-6 gap-y-2 font-display text-[15px] font-semibold md:order-none md:w-auto">
+          <nav aria-label="Principal" className="order-3 flex w-full flex-wrap items-center gap-x-6 gap-y-0 font-display text-[15px] font-semibold md:order-none md:w-auto">
             {user && <Link href="/head-hunter" className={link}>Head Hunter</Link>}
             {user && <Link href="/english" className={link}>English</Link>}
             {user && <Link href="/spanish" className={link}>Spanish</Link>}

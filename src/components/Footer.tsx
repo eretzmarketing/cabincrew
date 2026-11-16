@@ -13,28 +13,28 @@ export default async function Footer() {
             <p className="text-[15px] leading-relaxed">A comunidade de quem quer ser e de quem já é comissário de voo.</p>
           </div>
           <nav aria-label="Rodapé" className="flex flex-wrap gap-14 text-[15px]">
-            <div className="flex flex-col gap-2.5">
+            <div className="flex flex-col gap-0.5">
               <strong className="font-display text-white">Head Hunter</strong>
-              <Link href="/planos" className="hover:text-white">Planos</Link>
-              <Link href="/loja" className="hover:text-white">Loja de apostilas</Link>
-              <Link href="/simulados-anac" className="hover:text-white">Simulados ANAC grátis</Link>
-              <Link href="/autenticar" className="hover:text-white">Autenticar certificado</Link>
-              <Link href="/head-hunter" className="hover:text-white">Área do aluno</Link>
-              <Link href="/conta" className="hover:text-white">Minha conta</Link>
+              <Link href="/planos" className="inline-flex min-h-9 items-center hover:text-white">Planos</Link>
+              <Link href="/loja" className="inline-flex min-h-9 items-center hover:text-white">Loja de apostilas</Link>
+              <Link href="/simulados-anac" className="inline-flex min-h-9 items-center hover:text-white">Simulados ANAC grátis</Link>
+              <Link href="/autenticar" className="inline-flex min-h-9 items-center hover:text-white">Autenticar certificado</Link>
+              <Link href="/head-hunter" className="inline-flex min-h-9 items-center hover:text-white">Área do aluno</Link>
+              <Link href="/conta" className="inline-flex min-h-9 items-center hover:text-white">Minha conta</Link>
             </div>
             {forum_ativo && (
-              <div className="flex flex-col gap-2.5">
+              <div className="flex flex-col gap-0.5">
                 <strong className="font-display text-white">Comunidade</strong>
-                <Link href="/forum" className="hover:text-white">Fórum de Seleções</Link>
-                <Link href="/regras" className="hover:text-white">Regras do fórum</Link>
+                <Link href="/forum" className="inline-flex min-h-9 items-center hover:text-white">Fórum de Seleções</Link>
+                <Link href="/regras" className="inline-flex min-h-9 items-center hover:text-white">Regras do fórum</Link>
               </div>
             )}
-            <div className="flex flex-col gap-2.5">
+            <div className="flex flex-col gap-0.5">
               <strong className="font-display text-white">Cabin Crew</strong>
-              <Link href="/termos" className="hover:text-white">Termos de Uso</Link>
-              <Link href="/privacidade" className="hover:text-white">Privacidade</Link>
-              <Link href="/reembolso" className="hover:text-white">Reembolso</Link>
-              <Link href="/contato" className="hover:text-white">Contato</Link>
+              <Link href="/termos" className="inline-flex min-h-9 items-center hover:text-white">Termos de Uso</Link>
+              <Link href="/privacidade" className="inline-flex min-h-9 items-center hover:text-white">Privacidade</Link>
+              <Link href="/reembolso" className="inline-flex min-h-9 items-center hover:text-white">Reembolso</Link>
+              <Link href="/contato" className="inline-flex min-h-9 items-center hover:text-white">Contato</Link>
             </div>
           </nav>
         </div>
