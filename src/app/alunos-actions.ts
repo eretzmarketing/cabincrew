@@ -88,6 +88,20 @@ export async function alterarCursoAluno(id: string, curso: string, acao: "suspen
   return { ok: true, msg: acao === "suspender" ? "Acesso suspenso." : acao === "reativar" ? "Acesso reativado." : "Aluno removido do curso." };
 }
 
+/** Estende o acesso de quem já concluiu (dias de revisão) ou ficou com o acesso vencido. */
+export async function prorrogarCursoAluno(id: string, curso: string, dias: number): Promise<Estado> {
+  const { supabase } = await admin();
+  if (!UUID.test(id) || !(await cursoExiste(curso)) || ![7, 15, 30, 60, 90].includes(dias)) return { erro: "Dados inválidos." };
+  const { data: ac } = await supabase.from("acessos").select("expira_em").eq("user_id", id).eq("produto", curso).maybeSingle();
+  if (!ac) return { erro: "Este aluno não tem acesso a este curso. Use Adicionar ao curso." };
+  const base = Math.max(Date.now(), ac.expira_em ? Date.parse(ac.expira_em as string) : Date.now());
+  const expira = new Date(base + dias * 86400000).toISOString();
+  const { error } = await supabase.from("acessos").update({ status: "ativo", expira_em: expira, encerrado_em: null, motivo: `prorrogado ${dias} dias pelo administrador` }).eq("user_id", id).eq("produto", curso);
+  if (error) return { erro: "Não foi possível prorrogar." };
+  revalidar(id);
+  return { ok: true, msg: `Acesso prorrogado até ${new Date(expira).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}.` };
+}
+
 export async function banirAluno(id: string, banir: boolean): Promise<Estado> {
   const { supabase } = await admin();
   if (!UUID.test(id)) return { erro: "Aluno inválido." };

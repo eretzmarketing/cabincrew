@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
-import { alterarCursoAluno, banirAluno, dadosGestaoAluno, excluirAluno, resetarModuloAluno, type DadosGestao } from "@/app/alunos-actions";
+import { alterarCursoAluno, banirAluno, dadosGestaoAluno, excluirAluno, prorrogarCursoAluno, resetarModuloAluno, type DadosGestao } from "@/app/alunos-actions";
 import BotaoWhatsapp, { type Sugestao } from "@/components/BotaoWhatsapp";
 
 type Aluno = { id: string; nome: string; email: string | null; whatsapp: string | null; bloqueado: boolean };
@@ -73,13 +73,22 @@ function Editar({ a, fechar }: { a: Aluno; fechar: () => void }) {
                   <span className="flex items-center gap-2 font-semibold">{nome}
                     <span className={`rounded-full px-2 py-0.5 text-[12px] font-semibold ${st ? ST[st]?.cor : "bg-[#eceef3] text-ink-2"}`}>{st ? ST[st]?.t ?? st : "Sem acesso"}</span>
                   </span>
+                  {ac?.expira_em && (st === "ativo" || st === "concluido") && (
+                    <span className="w-full text-[13px] text-ink-2 sm:order-last">
+                      {st === "concluido" ? "Acesso terminou em " : "Acesso até "}{new Date(ac.expira_em).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}
+                      {ac.concluido_em ? " (curso concluído)" : ""} · Prorrogar:{" "}
+                      {[7, 30, 90].map((n) => (
+                        <button key={n} type="button" disabled={pend} onClick={() => agir(() => prorrogarCursoAluno(a.id, c, n))} className="ml-1 min-h-8 cursor-pointer rounded-full border border-line px-2.5 text-[12px] font-semibold text-navy hover:border-navy">+{n} dias</button>
+                      ))}
+                    </span>
+                  )}
                   <span className="flex flex-wrap gap-2">
                     {st === "ativo" && <>
                       <button type="button" disabled={pend} onClick={() => agir(() => alterarCursoAluno(a.id, c, "suspender"))} className="min-h-9 cursor-pointer rounded-full border border-line px-3 text-[13px] font-semibold hover:border-navy">Suspender</button>
                       <button type="button" disabled={pend} onClick={() => agir(() => alterarCursoAluno(a.id, c, "remover"))} className="min-h-9 cursor-pointer rounded-full border border-line px-3 text-[13px] font-semibold text-brand-deep hover:border-brand-deep">Remover do curso</button>
                     </>}
                     {st === "suspenso" && <button type="button" disabled={pend} onClick={() => agir(() => alterarCursoAluno(a.id, c, "reativar"))} className="min-h-9 cursor-pointer rounded-full bg-navy px-3 text-[13px] font-semibold text-white">Reativar</button>}
-                    {(!st || st === "revogado" || st === "concluido") && <Link href={`/admin/head-hunter/alunos/adicionar?email=${encodeURIComponent(a.email ?? "")}&produto=${c}`} className="inline-flex min-h-9 items-center rounded-full bg-navy px-3 text-[13px] font-semibold text-white">Adicionar ao curso</Link>}
+                    {(!st || st === "revogado" || st === "concluido") && <Link href={`/admin/head-hunter/alunos/adicionar?email=${encodeURIComponent(a.email ?? "")}&produto=${c}`} className="inline-flex min-h-9 items-center rounded-full bg-navy px-3 text-[13px] font-semibold text-white">{st === "concluido" ? "Liberar de novo" : "Adicionar ao curso"}</Link>}
                   </span>
                 </div>
               );
