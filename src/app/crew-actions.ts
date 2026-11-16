@@ -201,6 +201,9 @@ export async function iniciarSimulado(form: FormData) {
   if (!user) redirect(`/entrar?modo=entrar&next=${volta}`);
   const { data, error } = await supabase.rpc("iniciar_simulado", { p_simulado: simulado });
   if (error || !data) redirect(`${volta}?erro=simulado`);
+  // opções escolhidas no aviso antes de começar (Simulados ANAC)
+  const gabarito = form.get("gabarito") === "on", auto = form.get("auto") === "on";
+  if (gabarito || auto) await supabase.rpc("definir_opcoes_tentativa", { p_tentativa: data, p_gabarito: gabarito, p_auto: auto });
   redirect(`/head-hunter/simulado/${data}?aula=${aula}`);
 }
 

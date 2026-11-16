@@ -20,6 +20,8 @@ export default function Prova({
   questoes,
   modo = "prova",
   saidasIniciais = 0,
+  gabaritoImediato = false,
+  autoProxima = false,
 }: {
   tentativaId: string;
   aulaId: string;
@@ -28,9 +30,15 @@ export default function Prova({
   questoes: QuestaoProva[];
   modo?: "prova" | "treino";
   saidasIniciais?: number;
+  /** escolhido no aviso antes de começar: mostra a correção ao responder */
+  gabaritoImediato?: boolean;
+  /** escolhido no aviso antes de começar: abre a próxima questão ao responder */
+  autoProxima?: boolean;
 }) {
   const treino = modo === "treino";
-  const provaReal = !treino && !!prazo;
+  // correção na hora: no treino ou quando o aluno ligou o gabarito imediato
+  const corrige = treino || gabaritoImediato;
+  const provaReal = !treino && !gabaritoImediato && !!prazo;
   const [correcao, setCorrecao] = useState<Record<string, { correta: string; explicacao: string | null }>>({});
   const [saidas, setSaidas] = useState(saidasIniciais);
   const [telaCheia, setTelaCheia] = useState(false);
@@ -38,6 +46,9 @@ export default function Prova({
   const [respostas, setRespostas] = useState<Record<string, string>>(() =>
     Object.fromEntries(questoes.filter((q) => q.resposta).map((q) => [q.id, q.resposta as string])),
   );
+  const [puladas, setPuladas] = useState<Set<string>>(() => new Set());
+  const puladasLidas = useRef(false);
+  const proximaTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [falhou, setFalhou] = useState(false);
   const [restante, setRestante] = useState<number | null>(null);
   const [confirmar, setConfirmar] = useState(false);
@@ -76,9 +87,24 @@ export default function Prova({
     return () => { document.removeEventListener("visibilitychange", sair); document.removeEventListener("fullscreenchange", cheia); };
   }, [provaReal, tentativaId]);
 
-  // Treino: ao voltar para a página, mostra a correção das questões já respondidas
+  // questões puladas (amarelas): guardadas na sessão para continuar marcadas se a página recarregar
   useEffect(() => {
-    if (!treino) return;
+    if (!puladasLidas.current) {
+      puladasLidas.current = true;
+      try {
+        const salvas = JSON.parse(sessionStorage.getItem(`puladas-${tentativaId}`) ?? "[]") as string[];
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        if (salvas.length) setPuladas(new Set(salvas));
+      } catch { /* sem armazenamento */ }
+      return;
+    }
+    try { sessionStorage.setItem(`puladas-${tentativaId}`, JSON.stringify([...puladas])); } catch { /* sem armazenamento */ }
+  }, [puladas, tentativaId]);
+  useEffect(() => () => { if (proximaTimer.current) clearTimeout(proximaTimer.current); }, []);
+
+  // Treino / gabarito imediato: ao voltar para a página, mostra a correção das questões já respondidas
+  useEffect(() => {
+    if (!corrige) return;
     let vivo = true;
     (async () => {
       for (const x of questoes.filter((z) => z.resposta)) {
@@ -87,23 +113,46 @@ export default function Prova({
       }
     })();
     return () => { vivo = false; };
-  }, [treino, questoes, tentativaId]);
+  }, [corrige, questoes, tentativaId]);
 
   const q = questoes[atual];
   const respondidas = Object.keys(respostas).length;
 
+  function irPara(i: number) {
+    if (proximaTimer.current) { clearTimeout(proximaTimer.current); proximaTimer.current = null; }
+    setAtual(Math.max(0, Math.min(questoes.length - 1, i)));
+  }
+
+  /** Abre a próxima questão (depois de um tempinho para o aluno ver a marcação ou a correção). */
+  function avancarSozinho(de: number, espera: number) {
+    if (!autoProxima || de >= questoes.length - 1) return;
+    if (proximaTimer.current) clearTimeout(proximaTimer.current);
+    proximaTimer.current = setTimeout(() => { proximaTimer.current = null; setAtual((i) => (i === de ? de + 1 : i)); }, espera);
+  }
+
   function escolher(letra: string) {
-    if (treino && (correcao[q.id] || respostas[q.id])) return;
+    if (corrige && (correcao[q.id] || respostas[q.id])) return;
     const id = q.id;
+    const de = atual;
     setRespostas((r) => ({ ...r, [id]: letra }));
+    setPuladas((p) => { if (!p.has(id)) return p; const n = new Set(p); n.delete(id); return n; });
+    if (!corrige) avancarSozinho(de, 450);
     startTransition(async () => {
       const ok = await responderQuestao(tentativaId, id, letra);
       setFalhou(!ok);
-      if (ok && treino) {
+      if (ok && corrige) {
         const r = await conferirQuestao(tentativaId, id);
         if (r) setCorrecao((c) => ({ ...c, [id]: r }));
+        // com gabarito: dá tempo de ver se acertou (mais tempo quando errou, para ver a certa)
+        avancarSozinho(de, r && r.correta !== letra ? 2600 : 1300);
       }
     });
+  }
+
+  function pular() {
+    const id = q.id;
+    if (!respostas[id]) setPuladas((p) => new Set(p).add(id));
+    if (atual < questoes.length - 1) irPara(atual + 1);
   }
 
   if (!q) {
@@ -117,7 +166,7 @@ export default function Prova({
       <div className="flex min-w-0 flex-1 flex-col gap-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-col">
-            <span className="text-sm font-semibold text-[#b0002a]">{treino ? "Treino · correção na hora" : provaReal ? "Prova real" : "Simulado"} · {simulado.titulo}</span>
+            <span className="text-sm font-semibold text-[#b0002a]">{treino ? "Treino · correção na hora" : gabaritoImediato ? "Simulado · gabarito imediato" : provaReal ? "Prova real" : "Simulado"} · {simulado.titulo}</span>
             <h1 className="font-display text-2xl font-extrabold">Questão {atual + 1} de {questoes.length}</h1>
           </div>
           {restante !== null && (
@@ -163,7 +212,7 @@ export default function Prova({
               const c = correcao[q.id];
               const certa = !!c && c.correta === a.letra;
               const errada = !!c && marcada && !certa;
-              const travada = treino && !!respostas[q.id];
+              const travada = corrige && !!respostas[q.id];
               return (
                 <label
                   key={a.letra}
@@ -189,7 +238,7 @@ export default function Prova({
               );
             })}
           </fieldset>
-          {treino && correcao[q.id] && (
+          {corrige && correcao[q.id] && (
             <div role="status" className={`rounded-xl px-4 py-3 text-[15px] leading-relaxed ${correcao[q.id].correta === respostas[q.id] ? "bg-[#e5f6ec] text-[#0f6b3a]" : "bg-brand-soft text-brand-deep"}`}>
               <strong>{correcao[q.id].correta === respostas[q.id] ? "Acertou! " : `Resposta certa: ${correcao[q.id].correta}. `}</strong>
               {correcao[q.id].explicacao}
@@ -201,16 +250,25 @@ export default function Prova({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <button
             type="button"
-            onClick={() => setAtual((i) => Math.max(0, i - 1))}
+            onClick={() => irPara(atual - 1)}
             disabled={atual === 0}
             className="min-h-12 cursor-pointer rounded-full border-2 border-line bg-white px-6 font-semibold text-navy hover:border-navy disabled:opacity-40"
           >
             ← Anterior
           </button>
+          {!respostas[q.id] && (
+            <button
+              type="button"
+              onClick={pular}
+              className="min-h-12 cursor-pointer rounded-full border-2 border-[#e0a100] bg-[#fff8e6] px-6 font-semibold text-[#7a5a00] hover:bg-[#fff0c2]"
+            >
+              Pular questão ⤼
+            </button>
+          )}
           {atual < questoes.length - 1 ? (
             <button
               type="button"
-              onClick={() => setAtual((i) => Math.min(questoes.length - 1, i + 1))}
+              onClick={() => irPara(atual + 1)}
               className="min-h-12 cursor-pointer rounded-full bg-navy px-7 font-display font-bold text-white"
             >
               Próxima →
@@ -231,22 +289,42 @@ export default function Prova({
         <nav aria-label="Ir para a questão" className="grid grid-cols-8 gap-1.5 lg:grid-cols-5">
           {questoes.map((x, i) => {
             const feita = !!respostas[x.id];
+            const c = correcao[x.id];
+            const estado = feita && c ? (c.correta === respostas[x.id] ? "certa" : "errada") : feita ? "feita" : puladas.has(x.id) ? "pulada" : "aberta";
+            const cor = {
+              certa: "bg-[#1f9d55] text-white",
+              errada: "bg-brand-strong text-white",
+              feita: "bg-navy text-white",
+              pulada: "bg-[#ffd666] text-[#5c4300]",
+              aberta: "bg-soft text-navy hover:bg-[#e3e6ee]",
+            }[estado];
+            const fala = { certa: ", acertou", errada: ", errou", feita: ", respondida", pulada: ", pulada", aberta: "" }[estado];
             return (
               <button
                 key={x.id}
                 type="button"
-                onClick={() => setAtual(i)}
+                onClick={() => irPara(i)}
                 aria-current={i === atual ? "step" : undefined}
-                aria-label={`Questão ${i + 1}${feita ? ", respondida" : ""}`}
-                className={`h-10 cursor-pointer rounded-lg text-sm font-semibold ${
-                  i === atual ? "ring-2 ring-brand ring-offset-1" : ""
-                } ${feita ? "bg-navy text-white" : "bg-soft text-navy hover:bg-[#e3e6ee]"}`}
+                aria-label={`Questão ${i + 1}${fala}`}
+                className={`h-10 cursor-pointer rounded-lg text-sm font-semibold ${i === atual ? "ring-2 ring-brand ring-offset-1" : ""} ${cor}`}
               >
                 {i + 1}
               </button>
             );
           })}
         </nav>
+        <ul className="flex flex-wrap gap-x-3 gap-y-1 text-[12px] text-ink-2" aria-label="Legenda">
+          {corrige ? (
+            <>
+              <li className="flex items-center gap-1.5"><span className="h-3 w-3 rounded bg-[#1f9d55]" aria-hidden="true" />Acertou</li>
+              <li className="flex items-center gap-1.5"><span className="h-3 w-3 rounded bg-brand-strong" aria-hidden="true" />Errou</li>
+            </>
+          ) : (
+            <li className="flex items-center gap-1.5"><span className="h-3 w-3 rounded bg-navy" aria-hidden="true" />Respondida</li>
+          )}
+          <li className="flex items-center gap-1.5"><span className="h-3 w-3 rounded bg-[#ffd666]" aria-hidden="true" />Pulada</li>
+          <li className="flex items-center gap-1.5"><span className="h-3 w-3 rounded bg-soft ring-1 ring-line" aria-hidden="true" />Sem resposta</li>
+        </ul>
 
         <form ref={formRef} action={finalizarSimulado} className="flex flex-col gap-3">
           <input type="hidden" name="tentativa_id" value={tentativaId} />

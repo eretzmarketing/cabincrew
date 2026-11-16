@@ -42,6 +42,8 @@ export default async function SimuladoPage({ params, searchParams }: { params: P
         questoes={(questoes ?? []) as QuestaoProva[]}
         modo={(tentativa as Tentativa & { modo?: string }).modo === "treino" ? "treino" : "prova"}
         saidasIniciais={(tentativa as Tentativa & { saidas_aba?: number }).saidas_aba ?? 0}
+        gabaritoImediato={!!(tentativa as Tentativa & { gabarito_imediato?: boolean }).gabarito_imediato}
+        autoProxima={!!(tentativa as Tentativa & { auto_proxima?: boolean }).auto_proxima}
       />
     </main>
   );

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { iniciarSimulado } from "@/app/crew-actions";
+import IniciarSimulado from "@/components/IniciarSimulado";
 import { Arrow } from "@/components/icons";
 import { cursosDoAluno } from "@/lib/crew-gate";
 import { exigirLogin } from "@/lib/supabase/server";
@@ -231,11 +231,10 @@ export default async function SimuladosAnac() {
                       <li>⏱ {duracao(completa.tempo_min)}</li>
                       <li>📊 Resultado separado por bloco</li>
                     </ul>
-                    <form action={iniciarSimulado} className="mt-auto">
-                      <input type="hidden" name="simulado_id" value={completa.id} />
-                      <input type="hidden" name="aula_id" value={completa.aula} />
-                      <button className="inline-flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-brand-strong px-6 font-display font-bold text-white hover:bg-brand-deep">Iniciar prova completa <Arrow /></button>
-                    </form>
+                    <div className="mt-auto">
+                      <IniciarSimulado simuladoId={completa.id} aulaId={completa.aula} titulo={`Prova completa: ${completa.qtd_questoes} questões de todos os blocos`} rotulo="Iniciar prova completa"
+                        className="inline-flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-brand-strong px-6 font-display font-bold text-white hover:bg-brand-deep" />
+                    </div>
                   </div>
                 )}
               </div>
@@ -261,11 +260,8 @@ export default async function SimuladosAnac() {
                       <div className="mt-auto flex items-center justify-between gap-3 border-t border-[#eceef3] pt-4">
                         <span className="text-sm text-muted">{b.sim ? `📖 ${b.sim.qtd_questoes} questões · ⏱ ${duracao(b.sim.tempo_min)}` : "Em breve"}</span>
                         {b.sim && (
-                          <form action={iniciarSimulado}>
-                            <input type="hidden" name="simulado_id" value={b.sim.id} />
-                            <input type="hidden" name="aula_id" value={b.sim.aula} />
-                            <button aria-label={`Iniciar simulado do bloco ${b.n}: ${b.titulo}`} className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-xl bg-brand-strong px-5 font-display font-bold text-white hover:bg-brand-deep">Iniciar <Arrow /></button>
-                          </form>
+                          <IniciarSimulado simuladoId={b.sim.id} aulaId={b.sim.aula} titulo={`Bloco ${b.n}: ${b.titulo}`} rotulo="Iniciar" rotuloAcessivel={`Iniciar simulado do bloco ${b.n}: ${b.titulo}`}
+                            className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-xl bg-brand-strong px-5 font-display font-bold text-white hover:bg-brand-deep" />
                         )}
                       </div>
                     </div>
