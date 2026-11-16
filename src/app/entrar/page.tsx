@@ -16,7 +16,7 @@ export default async function EntrarPage({
   const { next, erro, modo, equipe, conta } = await searchParams;
   const { manutencao } = await getConfig();
   const soEquipe = manutencao && equipe !== undefined; // em manutenção: só login da equipe, sem cadastro
-  const destino = next && next.startsWith("/") && !next.startsWith("//") ? next : "/head-hunter";
+  const destino = next && next.startsWith("/") && !next.startsWith("//") ? next : "/inicio";
   const { user } = await getUser();
   if (user) redirect(destino);
 

@@ -98,7 +98,7 @@ const FAQ: [string, string][] = [
 export default async function Home() {
   const { user, profile } = await getUser();
   // alunos logados vão direto para o painel; o administrador vê a página para conferir
-  if (user && !profile?.is_admin) redirect("/head-hunter");
+  if (user && !profile?.is_admin) redirect("/inicio");
 
   return (
     <main className="overflow-x-clip">

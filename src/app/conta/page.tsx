@@ -152,11 +152,15 @@ export default async function ContaPage({ searchParams }: { searchParams: Promis
         {/* cursos */}
         <section id="cursos" className={secao}>
           <h2 className={h2}>Meus cursos</h2>
-          {meus.length ? (
-            <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{meus.map((c) => <CardCurso key={c.slug} c={c} />)}</ul>
-          ) : (
-            <p className="rounded-[20px] border border-line bg-white p-6 text-ink-2">Você ainda não tem cursos. Comece pelos <Link href="/simulados-anac" className="font-semibold text-navy underline">Simulados ANAC grátis</Link> ou veja os <Link href="/planos" className="font-semibold text-navy underline">planos</Link>.</p>
-          )}
+          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {meus.map((c) => <CardCurso key={c.slug} c={c} />)}
+            <li className="flex flex-col gap-3 rounded-[20px] border border-line bg-white p-5">
+              <span className="self-start rounded-full bg-[#e5f6ec] px-2.5 py-1 text-[12px] font-bold text-[#0f6b3a]">Grátis na sua conta</span>
+              <strong className="font-display text-[17px] leading-snug">Simulados da banca ANAC</strong>
+              <span className="text-[14px] text-ink-2">Treine para a prova teórica quantas vezes quiser, com gabarito comentado.</span>
+              <Link href="/simulados-anac" className="mt-auto inline-flex min-h-11 items-center justify-center rounded-full bg-brand-strong px-4 font-display font-bold text-white hover:bg-brand-deep">Fazer simulado</Link>
+            </li>
+          </ul>
           {outros.length > 0 && (
             <>
               <h3 className="pt-2 font-display text-lg font-bold text-ink-2">Outros cursos da Cabin Crew</h3>

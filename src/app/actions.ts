@@ -45,7 +45,7 @@ export async function queroSerAvisado(_: FormState, form: FormData): Promise<For
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 function destinoSeguro(form: FormData) {
-  return seguro(String(form.get("next") ?? "/head-hunter"));
+  return seguro(String(form.get("next") || "/inicio"));
 }
 
 /** Aceita (11) 98765-4321, 11987654321, +55 11 98765-4321… e devolve +5511987654321 */
@@ -99,7 +99,9 @@ export async function cadastrar(_: FormState, form: FormData): Promise<FormState
   });
   avisarAluno(sessao, "boas_vindas");
   revalidatePath("/", "layout");
-  redirect(destinoSeguro(form));
+  // tela de boas-vindas (simulados ANAC grátis); quem veio de uma página específica (ex.: comprar) continua para lá depois
+  const destino = destinoSeguro(form);
+  redirect(destino === "/inicio" || destino === "/head-hunter" ? "/boas-vindas" : `/boas-vindas?next=${encodeURIComponent(destino)}`);
 }
 
 export async function entrar(_: FormState, form: FormData): Promise<FormState> {
@@ -288,8 +290,7 @@ export async function moderarRelato(form: FormData) {
 }
 
 function seguro(caminho: string) {
-  return caminho.startsWith("/") && !caminho.startsWith("//") ? caminho 
- : "/head-hunter";
+  return caminho.startsWith("/") && !caminho.startsWith("//") ? caminho : "/inicio";
 }
 
 /* ---------- Foto de perfil (avatar) ---------- */
