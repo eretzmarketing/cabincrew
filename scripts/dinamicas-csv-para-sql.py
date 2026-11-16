@@ -1,16 +1,16 @@
 import csv, sys
 src = sys.argv[1]  # CSV exportado da tabela group_dynamics da Horsky
-CATS = {
-  "af975c9b-771b-4286-ba3b-ebcd0513a167": ("quebra-gelo", "Quebra-gelo e apresentação", "Para o grupo se conhecer no começo da dinâmica: é aqui que a primeira impressão acontece.", 1),
-  "2c756703-043a-49f8-9e12-71619efd8e48": ("trabalho-em-equipe", "Trabalho em equipe", "Desafios em grupo que mostram como você colabora, se comunica e ajuda os colegas.", 2),
-  "a3706f1e-5337-4427-81b9-8bfbce499d36": ("comunicacao", "Comunicação e expressão", "Atividades de fala, argumentação e improviso, inclusive sob pressão.", 3),
-  "5fddae1e-ad6f-4832-b204-32e56ce05e9e": ("resolucao-de-problemas", "Resolução de problemas e decisão", "Casos e situações em que o grupo precisa analisar, priorizar e decidir.", 4),
-  "7aa987a9-5dc9-4062-bb14-e87c24e4e6e5": ("lideranca", "Liderança", "Situações para conduzir o grupo, delegar, mediar conflitos e decidir na emergência.", 5),
-  "60a07995-5f3d-410b-b5a1-7d4914136b9f": ("autoconhecimento", "Autoconhecimento", "Reflexões sobre valores, qualidades, emoções e objetivos, muito usadas para conhecer o perfil do candidato.", 6),
-  "9ef902e5-e28b-49d3-92b9-3109792901cd": ("inovacao", "Criatividade e inovação", "Técnicas para gerar ideias e propor soluções diferentes.", 7),
-  "3a09c2d1-bf8f-436e-8309-57860330e68e": ("planejamento", "Planejamento e feedback", "Organizar ações, dar e receber feedback e avaliar o trabalho do grupo.", 8),
-  "b4dc88e8-f95f-4fd3-b007-32f1e0a8c140": ("energizadores", "Energizadores", "Atividades rápidas para animar o grupo e observar disposição e espírito de equipe.", 9),
-  "ffba1757-4b37-4edf-9cbb-4b3d1f0f7131": ("encerramento", "Encerramento e integração", "Fechamento da dinâmica com reconhecimento, gratidão e compromissos do grupo.", 10),
+CATS = {  # nomes e descrições das categorias como na Horsky
+  "af975c9b-771b-4286-ba3b-ebcd0513a167": ("quebra-gelo", "Quebra-Gelo e Apresentação", "Dinâmicas para iniciar encontros e conhecer os participantes", 1),
+  "2c756703-043a-49f8-9e12-71619efd8e48": ("trabalho-em-equipe", "Trabalho em Equipe", "Atividades que desenvolvem colaboração e cooperação", 2),
+  "a3706f1e-5337-4427-81b9-8bfbce499d36": ("comunicacao", "Criatividade e Comunicação", "Dinâmicas para estimular a expressão e a criatividade", 3),
+  "5fddae1e-ad6f-4832-b204-32e56ce05e9e": ("resolucao-de-problemas", "Análise de Problemas", "Exercícios de resolução de problemas e pensamento crítico", 4),
+  "9ef902e5-e28b-49d3-92b9-3109792901cd": ("inovacao", "Criatividade e Inovação", "Dinâmicas para pensar fora da caixa", 5),
+  "60a07995-5f3d-410b-b5a1-7d4914136b9f": ("autoconhecimento", "Autoconhecimento", "Atividades de reflexão pessoal e autoavaliação", 6),
+  "7aa987a9-5dc9-4062-bb14-e87c24e4e6e5": ("lideranca", "Liderança Situacional", "Exercícios que desenvolvem habilidades de liderança", 7),
+  "b4dc88e8-f95f-4fd3-b007-32f1e0a8c140": ("energizadores", "Dinâmicas Energizantes", "Atividades rápidas para energizar o grupo", 8),
+  "ffba1757-4b37-4edf-9cbb-4b3d1f0f7131": ("encerramento", "Encerramento e Integração", "Atividades para fechar o encontro com reconhecimento e conexão entre o grupo", 9),
+  "3a09c2d1-bf8f-436e-8309-57860330e68e": ("planejamento", "Planejamento e Feedback", "Atividades para organizar ações, dar e receber feedback", 10),
 }
 lit = lambda v: "null" if v is None or str(v).strip() == "" else "'" + str(v).strip().replace("'", "''") + "'"
 rows = list(csv.DictReader(open(src, encoding="utf-8-sig")))
