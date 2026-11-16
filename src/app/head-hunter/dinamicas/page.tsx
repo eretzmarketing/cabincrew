@@ -96,7 +96,8 @@ export default async function DinamicasPage({ searchParams }: { searchParams: Pr
     supabase.from("modulos").select("id, titulo").eq("recurso", "dinamicas").eq("curso", "head-hunter").limit(1).maybeSingle(),
   ]);
   const categorias = (cats ?? []) as Categoria[];
-  const todas = (dins ?? []) as Dinamica[];
+  // dinâmicas de categoria oculta também ficam escondidas
+  const todas = ((dins ?? []) as Dinamica[]).filter((d) => categorias.some((c) => c.id === d.categoria_id));
   const atual = categorias.find((c) => c.slug === cat);
   const busca = q.trim().toLowerCase();
   const conta = new Map<number, number>();
