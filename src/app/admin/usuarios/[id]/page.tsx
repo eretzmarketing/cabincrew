@@ -247,7 +247,7 @@ export default async function AlunoPage({ params }: { params: Promise<{ id: stri
                       <button name="acao" value="encerrar" className="min-h-11 cursor-pointer rounded-full border-2 border-line px-4 text-[14px] font-semibold text-brand-deep hover:border-brand-deep">Encerrar acesso</button>
                     </form>
                   ) : (
-                    <Link href={`/admin/head-hunter/alunos/adicionar?email=${encodeURIComponent(l.email ?? "")}&produto=${curso}`} className="inline-flex min-h-11 items-center self-start rounded-full bg-navy px-4 text-[14px] font-semibold text-white hover:bg-navy-deep">{acesso ? "Liberar de novo" : "Liberar acesso"}</Link>
+                    <Link href={`/admin/usuarios/adicionar?email=${encodeURIComponent(l.email ?? "")}&produto=${curso}`} className="inline-flex min-h-11 items-center self-start rounded-full bg-navy px-4 text-[14px] font-semibold text-white hover:bg-navy-deep">{acesso ? "Liberar de novo" : "Liberar acesso"}</Link>
                   )}
                 </div>
               );

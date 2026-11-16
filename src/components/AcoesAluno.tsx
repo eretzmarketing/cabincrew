@@ -88,7 +88,7 @@ function Editar({ a, fechar }: { a: Aluno; fechar: () => void }) {
                       <button type="button" disabled={pend} onClick={() => agir(() => alterarCursoAluno(a.id, c, "remover"))} className="min-h-9 cursor-pointer rounded-full border border-line px-3 text-[13px] font-semibold text-brand-deep hover:border-brand-deep">Remover do curso</button>
                     </>}
                     {st === "suspenso" && <button type="button" disabled={pend} onClick={() => agir(() => alterarCursoAluno(a.id, c, "reativar"))} className="min-h-9 cursor-pointer rounded-full bg-navy px-3 text-[13px] font-semibold text-white">Reativar</button>}
-                    {(!st || st === "revogado" || st === "concluido") && <Link href={`/admin/head-hunter/alunos/adicionar?email=${encodeURIComponent(a.email ?? "")}&produto=${c}`} className="inline-flex min-h-9 items-center rounded-full bg-navy px-3 text-[13px] font-semibold text-white">{st === "concluido" ? "Liberar de novo" : "Adicionar ao curso"}</Link>}
+                    {(!st || st === "revogado" || st === "concluido") && <Link href={`/admin/usuarios/adicionar?email=${encodeURIComponent(a.email ?? "")}&produto=${c}`} className="inline-flex min-h-9 items-center rounded-full bg-navy px-3 text-[13px] font-semibold text-white">{st === "concluido" ? "Liberar de novo" : "Adicionar ao curso"}</Link>}
                   </span>
                 </div>
               );

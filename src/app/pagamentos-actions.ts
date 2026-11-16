@@ -243,5 +243,5 @@ export async function cancelarAcessoPendente(form: FormData) {
   const email = String(form.get("email") ?? "").toLowerCase();
   const produto = String(form.get("produto") ?? "");
   if (email) await supabase.from("acessos_pendentes").delete().eq("email", email).eq("produto", produto);
-  revalidatePath("/admin/head-hunter/alunos/adicionar");
+  revalidatePath("/admin/usuarios/adicionar");
 }

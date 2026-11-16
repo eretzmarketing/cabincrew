@@ -74,7 +74,7 @@ export default async function AlunosHeadHunterPage({ searchParams }: { searchPar
       {excluido && <p role="status" className="rounded-2xl bg-[#e5f6ec] px-5 py-4 font-semibold text-[#0f6b3a]">Conta de {excluido} excluída. O registro ficou em <Link href="/admin/contas-excluidas" className="underline">Usuários › Contas excluídas</Link>.</p>}
         <div className="flex flex-wrap gap-2">
           <a href="/admin/head-hunter/alunos/csv" download className={btnSecundario}>⬇ Exportar (CSV)</a>
-          <Link href="/admin/head-hunter/alunos/adicionar" className={btnPrimario}>+ Adicionar aluno</Link>
+          <Link href="/admin/usuarios/adicionar" className={btnPrimario}>+ Adicionar aluno</Link>
         </div>
       </div>
 

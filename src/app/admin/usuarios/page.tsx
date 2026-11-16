@@ -3,7 +3,7 @@ import Link from "next/link";
 import AcoesAluno from "@/components/AcoesAluno";
 import AvatarAluno from "@/components/AvatarAluno";
 import BotaoWhatsapp from "@/components/BotaoWhatsapp";
-import { Titulo, btnSecundario } from "@/components/admin-ui";
+import { Titulo, btnPrimario, btnSecundario } from "@/components/admin-ui";
 import { avatarUrl, getUser } from "@/lib/supabase/server";
 import { SLUGS_CURSOS, nomeCurso, siglaCurso } from "@/lib/cursos";
 
@@ -66,8 +66,11 @@ export default async function UsuariosPage({ searchParams }: { searchParams: Pro
     <>
       <div className="flex flex-wrap items-end justify-between gap-4">
         <Titulo sub={`${total} ${total === 1 ? "cadastro" : "cadastros"}${filtrando ? " com estes filtros" : ""}.`}>Usuários</Titulo>
-        {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- download do CSV, não é página */}
-        <a href="/admin/usuarios/csv" className={btnSecundario}>⬇ Exportar (CSV)</a>
+        <div className="flex flex-wrap gap-2">
+          {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- download do CSV, não é página */}
+          <a href="/admin/usuarios/csv" className={btnSecundario}>⬇ Exportar (CSV)</a>
+          <Link href="/admin/usuarios/adicionar" className={btnPrimario}>+ Adicionar aluno</Link>
+        </div>
       </div>
 
       {sp.excluido && <p role="status" className="rounded-2xl bg-[#e5f6ec] px-5 py-4 font-semibold text-[#0f6b3a]">Conta de {sp.excluido} excluída. O registro ficou em <Link href="/admin/contas-excluidas" className="underline">Contas excluídas</Link>.</p>}
