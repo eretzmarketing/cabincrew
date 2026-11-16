@@ -7,7 +7,7 @@ import { chaveAula } from "@/lib/ingles-a-bordo";
 import { CURSOS_IDIOMA, type ProdutoIdioma } from "@/lib/cursos-idioma";
 import { cursoIdioma } from "@/lib/cursos-dados";
 import { redirect } from "next/navigation";
-import { getUser } from "@/lib/supabase/server";
+import { createClient, getUser } from "@/lib/supabase/server";
 import type { FormState } from "@/app/actions";
 import { BANCOS } from "@/lib/crew";
 import { LETRAS, chaveEnunciado, type QuestaoImportada } from "@/lib/importar-questoes";
@@ -208,12 +208,28 @@ export async function iniciarSimulado(form: FormData) {
 }
 
 /** Salva uma resposta; chamado a cada clique durante a prova. */
+// Responder precisa ser rápido: não consulta o login nem o perfil antes (o banco já confere o aluno pela sessão).
 export async function responderQuestao(tentativa: string, questao: string, letra: string) {
   if (!UUID.test(tentativa) || !UUID.test(questao)) return false;
-  const { supabase, user } = await getUser();
-  if (!user) return false;
+  const supabase = await createClient();
   const { data } = await supabase.rpc("responder_questao", { p_tentativa: tentativa, p_questao: questao, p_letra: letra });
   return data === true;
+}
+
+/** Gabarito imediato / treino: grava a resposta e já devolve a correção, numa chamada só. */
+export async function responderComCorrecao(tentativa: string, questao: string, letra: string): Promise<{ ok: boolean; correcao: { correta: string; explicacao: string | null } | null }> {
+  if (!UUID.test(tentativa) || !UUID.test(questao)) return { ok: false, correcao: null };
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("responder_conferir", { p_tentativa: tentativa, p_questao: questao, p_letra: letra });
+  if (!error) {
+    const r = ((data ?? []) as { ok: boolean; correta: string | null; explicacao: string | null }[])[0];
+    return { ok: !!r?.ok, correcao: r?.correta ? { correta: r.correta, explicacao: r.explicacao } : null };
+  }
+  // banco sem o SQL 0068: faz em duas chamadas
+  const { data: ok } = await supabase.rpc("responder_questao", { p_tentativa: tentativa, p_questao: questao, p_letra: letra });
+  const { data: c } = await supabase.rpc("conferir_questao", { p_tentativa: tentativa, p_questao: questao });
+  const r = ((c ?? []) as { correta: string; explicacao: string | null }[])[0];
+  return { ok: ok === true, correcao: r ?? null };
 }
 
 export async function finalizarSimulado(form: FormData) {
@@ -757,8 +773,7 @@ export async function salvarCheckin(_: unknown, form: FormData): Promise<{ erro?
 
 export async function conferirQuestao(tentativa: string, questao: string): Promise<{ correta: string; explicacao: string | null } | null> {
   if (!UUID.test(tentativa) || !UUID.test(questao)) return null;
-  const { supabase, user } = await getUser();
-  if (!user) return null;
+  const supabase = await createClient();
   const { data } = await supabase.rpc("conferir_questao", { p_tentativa: tentativa, p_questao: questao });
   const r = (data ?? [])[0] as { correta: string; explicacao: string | null } | undefined;
   return r ?? null;

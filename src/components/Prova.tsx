@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { conferirQuestao, finalizarSimulado, registrarSaidaAba, responderQuestao } from "@/app/crew-actions";
+import { conferirQuestao, finalizarSimulado, registrarSaidaAba, responderComCorrecao, responderQuestao } from "@/app/crew-actions";
 import type { QuestaoProva, Simulado } from "@/lib/crew";
 
 function relogio(ms: number) {
@@ -138,13 +138,17 @@ export default function Prova({
     setPuladas((p) => { if (!p.has(id)) return p; const n = new Set(p); n.delete(id); return n; });
     if (!corrige) avancarSozinho(de, 450);
     startTransition(async () => {
-      const ok = await responderQuestao(tentativaId, id, letra);
-      setFalhou(!ok);
-      if (ok && corrige) {
-        const r = await conferirQuestao(tentativaId, id);
-        if (r) setCorrecao((c) => ({ ...c, [id]: r }));
-        // com gabarito: dá tempo de ver se acertou (mais tempo quando errou, para ver a certa)
-        avancarSozinho(de, r && r.correta !== letra ? 2600 : 1300);
+      if (!corrige) {
+        setFalhou(!(await responderQuestao(tentativaId, id, letra)));
+        return;
+      }
+      // gabarito imediato / treino: grava e já recebe a correção numa chamada só
+      const { ok, correcao: r } = await responderComCorrecao(tentativaId, id, letra);
+      setFalhou(!ok && !r);
+      if (r) {
+        setCorrecao((c) => ({ ...c, [id]: r }));
+        // dá tempo de ver se acertou (mais tempo quando errou, para ver a certa)
+        avancarSozinho(de, r.correta !== letra ? 2600 : 1300);
       }
     });
   }

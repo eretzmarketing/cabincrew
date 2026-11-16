@@ -73,7 +73,6 @@ export default function IniciarSimulado({ simuladoId, aulaId, rotulo, titulo, ro
             <Opcao name="auto" titulo="Próxima questão automática" valor={auto} setValor={setAuto}
               texto="Ao responder, a próxima questão abre sozinha." />
           </div>
-          <p className="text-[13px] text-muted">Para treinar como no dia da prova, deixe as duas desligadas. O cronômetro começa quando você clicar em Começar.</p>
           <div className="flex gap-3">
             <button type="button" onClick={() => ref.current?.close()} className="min-h-12 cursor-pointer rounded-full border-2 border-line px-6 font-semibold text-navy hover:border-navy">Cancelar</button>
             <Comecar />
