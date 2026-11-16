@@ -100,7 +100,6 @@ export default function Checkout({ publicKey, base, email, nome, cupomInicial, e
         <ul className="flex flex-col gap-1.5 border-t border-white/15 pt-4 text-[14px] text-[#d7dbe6]">
           <li>✓ Acesso liberado na hora após a aprovação</li>
           <li>✓ Acesso até você concluir o curso{produto.diasExtras > 0 ? `, mais ${produto.diasExtras} dias para revisar` : ""}</li>
-          <li>✓ 7 dias de garantia, conforme o Código de Defesa do Consumidor</li>
         </ul>
         <span className="text-[12px] text-[#aab3c8]">Pagamento processado pelo Mercado Pago. Os dados do cartão não passam pelo site da Cabin Crew.</span>
       </aside>

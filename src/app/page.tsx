@@ -91,7 +91,6 @@ const FAQ: [string, string][] = [
   ["Serve para quem ainda está fazendo o curso de comissário?", "Sim. Comece pelos simulados da ANAC para a prova teórica. Quando a seleção das companhias estiver perto, o Head Hunter leva você por todas as etapas."],
   ["Funciona no celular?", "Sim, tudo funciona no celular sem instalar aplicativo, inclusive os simulados e a gravação do vídeo de apresentação."],
   ["Tem certificado?", "Sim. Ao concluir o curso você emite o certificado com carga horária e código de autenticação, pronto para o LinkedIn."],
-  ["E se eu não gostar?", "Você tem 7 dias de garantia: se achar que não é para você, devolvemos o valor."],
 ];
 
 /* ------------------------------------------------------------------ página */
@@ -122,7 +121,7 @@ export default async function Home() {
             <ul className="flex flex-wrap gap-x-6 gap-y-2 text-[15px] text-[#c4c9d8]">
               <li className="flex items-center gap-2"><span className="text-[#7ee2a8]"><Check size={16} /></span>Simulados ANAC grátis</li>
               <li className="flex items-center gap-2"><span className="text-[#7ee2a8]"><Check size={16} /></span>Sem cartão para começar</li>
-              <li className="flex items-center gap-2"><span className="text-[#7ee2a8]"><Check size={16} /></span>Garantia de 7 dias</li>
+              <li className="flex items-center gap-2"><span className="text-[#7ee2a8]"><Check size={16} /></span>Funciona no celular</li>
             </ul>
           </div>
           <div className="relative pb-10 lg:pb-0">
@@ -130,18 +129,6 @@ export default async function Home() {
             <Celular src="/img/lp/cel-missao.webp" alt="Missão do dia no celular" className="absolute -bottom-2 -left-3 w-[30%] max-w-[190px] sm:-left-8 lg:-bottom-14" />
           </div>
         </div>
-      </section>
-
-      {/* NÚMEROS */}
-      <section className="border-b border-line bg-white">
-        <dl className="mx-auto grid max-w-[1200px] grid-cols-2 gap-y-8 px-6 py-10 md:grid-cols-4">
-          {[["3", "companhias: LATAM, GOL e Azul"], ["7", "etapas da seleção cobertas"], ["11", "critérios na análise de IA"], ["7 dias", "de garantia"]].map(([n, t]) => (
-            <div key={t} className="flex flex-col items-center gap-1 text-center">
-              <dt className="order-2 text-[15px] text-ink-2">{t}</dt>
-              <dd className="order-1 font-display text-[34px] leading-none font-extrabold text-brand-strong md:text-[40px]">{n}</dd>
-            </div>
-          ))}
-        </dl>
       </section>
 
       {/* PROBLEMA */}
@@ -231,19 +218,13 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* GARANTIA + FAQ */}
+      {/* FAQ */}
       <section className="bg-soft">
         <div className="mx-auto grid max-w-[1200px] gap-12 px-6 py-24 lg:grid-cols-[1fr_1.3fr]">
           <div className="flex flex-col gap-5">
             <span className="font-display text-[14px] font-bold tracking-[.14em] text-brand-strong uppercase">Dúvidas</span>
             <h2 className="font-display text-[30px] leading-tight font-extrabold md:text-[38px]">Perguntas frequentes</h2>
-            <div className="flex gap-4 rounded-[20px] border border-line bg-white p-6">
-              <span className="text-3xl" aria-hidden="true">🛡️</span>
-              <div className="flex flex-col gap-1">
-                <strong className="font-display text-[18px]">Garantia de 7 dias</strong>
-                <p className="text-[15px] leading-relaxed text-ink-2">Entrou e achou que não é para você? Devolvemos o valor, sem burocracia.</p>
-              </div>
-            </div>
+            <p className="text-[16px] leading-relaxed text-ink-2">Ficou com alguma dúvida? <Link href="/contato" className="font-semibold text-navy underline">Fale com a gente</Link>.</p>
           </div>
           <div className="flex flex-col gap-3">
             {FAQ.map(([p, r]) => (
