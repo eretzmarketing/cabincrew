@@ -26,7 +26,7 @@ export function diasDesde(iso: string | null, hoje = diaSP(new Date())) {
   return Math.round((Date.parse(`${hoje}T12:00:00Z`) - Date.parse(`${diaSP(iso)}T12:00:00Z`)) / 86400000);
 }
 
-export function situacao(l: LinhaAluno): Situacao {
+export function situacao(l: { ultima: string | null }): Situacao {
   const d = diasDesde(l.ultima);
   if (d === null) return "nunca";
   if (d <= 2) return "ativo";
@@ -82,4 +82,34 @@ export function quando(iso: string | null) {
   if (d === 0) return "hoje";
   if (d === 1) return "ontem";
   return `há ${d} dias`;
+}
+
+/* ---------------------------------------------------------------- Acompanhamento de qualquer curso */
+
+/** Linha da consulta admin_acompanhamento (SQL 0072). */
+export type LinhaCurso = {
+  id: string; nome: string | null; apelido: string | null; email: string | null; whatsapp: string | null;
+  cadastro: string; bloqueado: boolean; avatar_em: string | null; acesso_status: string | null; acesso_expira: string | null;
+  feitas: number; media: number | null; ultima: string | null; dias_14: number; total_aulas: number;
+};
+
+/** Riscos comuns a todos os cursos: parou de estudar ou o acesso está acabando com o curso pela metade. */
+export function riscosCurso(l: LinhaCurso, total: number): string[] {
+  const r: string[] = [];
+  const s = situacao(l);
+  if (s === "parado" && l.dias_14 === 0 && l.feitas >= 3) r.push("estudava e parou");
+  if (l.acesso_status === "ativo" && l.acesso_expira && total > 0) {
+    const dias = Math.ceil((Date.parse(l.acesso_expira) - Date.parse(new Date().toISOString())) / 86400000);
+    const pct = Math.round((l.feitas / total) * 100);
+    if (dias >= 0 && dias <= 10 && pct < 80) r.push(`acesso termina em ${dias} ${dias === 1 ? "dia" : "dias"} com ${pct}% do curso`);
+  }
+  return r;
+}
+
+export function mensagemCurso(l: { nome: string | null; apelido: string | null; email: string | null; ultima: string | null }, curso: string) {
+  const primeiro = nomeAluno(l).split(" ")[0];
+  const s = situacao(l);
+  if (s === "nunca") return `Oi, ${primeiro}! Aqui é o Daniel, do Cabin Crew. Vi que você já tem o ${curso}, mas ainda não começou. Que tal fazer a primeira aula hoje? São poucos minutos. Posso te ajudar em algo?`;
+  if (s === "ativo") return `Oi, ${primeiro}! Aqui é o Daniel, do Cabin Crew. Parabéns pela constância no ${curso}! Continue assim. ✈️`;
+  return `Oi, ${primeiro}! Aqui é o Daniel, do Cabin Crew. Senti sua falta no ${curso}. Que tal voltar hoje com uma aula rapidinha? Se estiver com alguma dificuldade, me conta!`;
 }

@@ -42,6 +42,8 @@ Nunca peça senha do banco, tokens ou chaves no chat. Se o Daniel colar um, avis
 - IA: vídeo (`src/lib/ia-video.ts`) e currículo (`src/lib/ia-curriculo.ts`), limite por compra + liberação na ficha do aluno.
 - Admin: `src/app/admin/*`, menu em `src/components/AdminNav.tsx`. Gestão de alunos em Usuários.
   Toda liberação de acesso do aluno fica em `/admin/usuarios/[id]/acessos` (cursos, Questões Plus, IA, reset de módulos).
+  Acompanhamento por curso (quem estuda/parou/em risco): `/admin/acompanhamento?curso=…` + RPC `admin_acompanhamento` (SQL 0072);
+  `/admin/head-hunter/alunos` redireciona para a aba Head Hunter.
 - Painel do aluno: `src/app/conta/page.tsx` + `src/lib/painel-aluno.ts`.
 - Questões (SQL 0070): Reportar erro (grátis, `questao_reportes`), Comentários e Favoritas = "Questões Plus"
   (`src/components/AcoesQuestao.tsx`, `src/app/questoes-actions.ts`, `src/lib/plus.ts`). Cobrança: chave `plus_cobrar`

@@ -84,7 +84,7 @@ function Excluir({ a, fechar, voltarPara }: { a: Aluno; fechar: () => void; volt
             <button type="button" onClick={fechar} className="min-h-11 cursor-pointer rounded-full border-2 border-line px-5 font-semibold">Cancelar</button>
             <button type="button" disabled={pend || conf.trim().toUpperCase() !== "EXCLUIR"} onClick={() => iniciar(async () => {
               const r = await excluirAluno(a.id, motivo, conf);
-              if (r.ok) { fechar(); router.push(`${voltarPara ?? "/admin/head-hunter/alunos"}?excluido=${encodeURIComponent(a.nome)}`); router.refresh(); } else setRes(r);
+              if (r.ok) { fechar(); router.push(`${voltarPara ?? "/admin/acompanhamento"}?excluido=${encodeURIComponent(a.nome)}`); router.refresh(); } else setRes(r);
             })}
               className="min-h-11 cursor-pointer rounded-full bg-brand-strong px-5 font-semibold text-white disabled:opacity-40">{pend ? "Excluindo…" : "Excluir conta"}</button>
           </div>

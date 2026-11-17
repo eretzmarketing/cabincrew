@@ -38,7 +38,7 @@ export default async function RankingAdminPage() {
   ]);
   return (
     <>
-      <Titulo sub={<>Top 20 de cada semana (segunda a domingo). Alunos que escolheram se esconder não aparecem. Para agir sobre um aluno, use a aba <Link href="/admin/head-hunter/alunos" className="font-semibold underline underline-offset-4">Alunos</Link>.</>}>Ranking</Titulo>
+      <Titulo sub={<>Top 20 de cada semana (segunda a domingo). Alunos que escolheram se esconder não aparecem. Para agir sobre um aluno, use <Link href="/admin/acompanhamento?curso=head-hunter" className="font-semibold underline underline-offset-4">Usuários › Acompanhamento</Link>.</>}>Ranking</Titulo>
       <div className="grid gap-6 lg:grid-cols-2">
         <Lista titulo="Esta semana" r={atual} />
         <Lista titulo="Semana passada" r={passada} />

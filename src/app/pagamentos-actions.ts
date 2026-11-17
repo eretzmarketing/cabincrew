@@ -232,7 +232,7 @@ export async function adicionarAoCurso(_: Estado, form: FormData): Promise<Estad
       avisado = r.ok ? " Aviso enviado no WhatsApp ✓" : ` (WhatsApp não enviado: ${r.erro})`;
     }
   }
-  revalidatePath("/admin/head-hunter/alunos");
+  revalidatePath("/admin/acompanhamento");
   if (aluno) redirect(`/admin/usuarios/${aluno.id}?ok=acesso`);
   return { ok: true, msg: `Acesso reservado para ${email}. Assim que a pessoa criar a conta com esse e-mail, o ${prod.nome} é liberado sozinho.${avisado}` };
 }

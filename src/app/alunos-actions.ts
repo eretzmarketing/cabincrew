@@ -16,7 +16,7 @@ async function admin() {
 }
 
 function revalidar(id: string) {
-  revalidatePath("/admin/head-hunter/alunos");
+  revalidatePath("/admin/acompanhamento");
   revalidatePath("/admin/usuarios");
   revalidatePath(`/admin/usuarios/${id}`);
   revalidatePath(`/admin/usuarios/${id}/acessos`);

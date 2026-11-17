@@ -22,9 +22,8 @@ export const GRUPOS: Grupo[] = [
     ],
   },
   {
-    id: "head-hunter", label: "Head Hunter: alunos e treinos",
+    id: "head-hunter", label: "Head Hunter: treinos",
     itens: [
-      { href: "/admin/head-hunter/alunos", label: "Alunos" },
       { href: "/admin/head-hunter/ranking", label: "Ranking" },
       { href: "/admin/opq", label: "Perfil comportamental" },
       { href: "/admin/entrevista", label: "Entrevista em inglês" },
@@ -51,6 +50,7 @@ export const GRUPOS: Grupo[] = [
     id: "pessoas", label: "Usuários", secao: "Alunos e vendas",
     itens: [
       { href: "/admin/usuarios", label: "Usuários" },
+      { href: "/admin/acompanhamento", label: "Acompanhamento" },
       { href: "/admin/usuarios/adicionar", label: "Adicionar aluno" },
       { href: "/admin/interessados", label: "Lista de interesse" },
       { href: "/admin/contas-excluidas", label: "Contas excluídas" },
