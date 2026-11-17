@@ -167,7 +167,8 @@ export async function adicionarAoCurso(_: Estado, form: FormData): Promise<Estad
   const o = ORIGENS[origem];
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return { erro: "Informe o e-mail do aluno." };
   if (!o) return { erro: "Escolha se é cortesia ou pagamento por fora." };
-  const { data: prod } = await supabase.from("produtos").select("slug, nome, inclui, endereco").eq("slug", t("produto") || "head-hunter").maybeSingle();
+  const { data: prod } = await supabase.from("produtos").select("slug, nome, inclui, endereco, excluido").eq("slug", t("produto") || "head-hunter").maybeSingle();
+  if (prod?.excluido) return { erro: "Esse plano foi excluído. Escolha outro." };
   if (!prod) return { erro: "Escolha o curso." };
   const cursos = ((prod.inclui as string[] | null) ?? [prod.slug as string]);
 

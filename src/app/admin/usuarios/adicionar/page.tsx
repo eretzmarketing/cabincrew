@@ -16,7 +16,7 @@ export default async function AdicionarAlunoPage({ searchParams }: { searchParam
   const { email = "", nome = "", produto = "head-hunter" } = await searchParams;
   const { supabase } = await getUser();
   const [{ data: prod }, { data: pend, error }] = await Promise.all([
-    supabase.from("produtos").select("slug, nome, preco").order("ordem"),
+    supabase.from("produtos").select("*").order("ordem"),
     supabase.from("acessos_pendentes").select("email, produto, nome, motivo, criado_em").order("criado_em", { ascending: false }),
   ]);
   const agora = new Date(new Date().getTime() - 3 * 3600000).toISOString().slice(0, 16);
@@ -29,7 +29,9 @@ export default async function AdicionarAlunoPage({ searchParams }: { searchParam
       {error ? <p className="rounded-2xl bg-brand-soft p-5 text-brand-deep">Rode o SQL <strong>0043_acesso_manual.sql</strong> no Supabase para ativar esta página.</p> : (
         <>
           <Card>
-            <AdicionarAlunoForm emailInicial={email} nomeInicial={nome} produtos={((prod ?? []) as { slug: string; nome: string; preco: number }[]).map((p) => ({ ...p, preco: Number(p.preco) }))} produtoInicial={produto} agora={agora} formas={FORMAS} />
+            <AdicionarAlunoForm emailInicial={email} nomeInicial={nome} produtos={((prod ?? []) as { slug: string; nome: string; preco: number; ativo?: boolean; excluido?: boolean }[])
+              .filter((p) => !p.excluido) // planos excluídos não aparecem
+              .map((p) => ({ slug: p.slug, nome: p.ativo === false ? `${p.nome} (desativado)` : p.nome, preco: Number(p.preco) }))} produtoInicial={produto} agora={agora} formas={FORMAS} />
           </Card>
           <section className="flex flex-col gap-3">
             <h2 className="font-display text-2xl font-extrabold">Aguardando cadastro</h2>
