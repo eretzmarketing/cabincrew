@@ -129,11 +129,12 @@ export function Distribuicao({ dados, minima }: { dados: { faixa: number; n: num
 
 /** Funil em barras horizontais, cada etapa em % da primeira. */
 export function Funil({ etapas }: { etapas: { rotulo: string; valor: number; detalhe?: string }[] }) {
-  const base = Math.max(1, etapas[0]?.valor ?? 1);
+  // a primeira etapa é a base (100%); nenhuma barra passa do limite
+  const base = Math.max(1, ...etapas.map((e) => e.valor));
   return (
     <ol className="flex flex-col gap-3">
       {etapas.map((e, i) => {
-        const pct = Math.round((e.valor / base) * 100);
+        const pct = Math.min(100, Math.round((e.valor / base) * 100));
         return (
           <li key={e.rotulo} className="flex flex-col gap-1">
             <span className="flex items-baseline justify-between gap-3 text-[15px]">

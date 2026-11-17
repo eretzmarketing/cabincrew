@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import BotaoWhatsapp from "@/components/BotaoWhatsapp";
 import Link from "next/link";
-import { bloquearUsuario, excluirUsuario, liberarAnac } from "@/app/crew-actions";
+import { bloquearUsuario, excluirUsuario } from "@/app/crew-actions";
 import { Titulo } from "@/components/admin-ui";
 import { Barras, Distribuicao, Funil, LinhaNota, Variacao } from "@/components/graficos";
 import { getUser } from "@/lib/supabase/server";
@@ -28,7 +28,6 @@ type Aluno = {
 };
 
 const FILTROS = [
-  { k: "acesso", rotulo: "Com acesso" },
   { k: "fizeram", rotulo: "Fizeram simulados" },
   { k: "bloqueados", rotulo: "Bloqueados" },
   { k: "todos", rotulo: "Todos os cadastros" },
@@ -75,13 +74,15 @@ function Bloco({ titulo, sub, children, className = "" }: { titulo: string; sub?
 
 export default async function AdminAnac({ searchParams }: { searchParams: Promise<{ f?: string; q?: string; ok?: string }> }) {
   const sp = await searchParams;
-  const filtro = FILTROS.some((x) => x.k === sp.f) ? sp.f! : "acesso";
+  const filtro = FILTROS.some((x) => x.k === sp.f) ? sp.f! : "fizeram";
   const busca = (sp.q ?? "").trim().slice(0, 80);
   const { supabase, user } = await getUser();
 
-  const [painelRes, alunosRes] = await Promise.all([
+  // Simulados ANAC são grátis: todo cadastrado (não bloqueado) pode fazer
+  const [painelRes, alunosRes, { count: cadastrados }] = await Promise.all([
     supabase.rpc("admin_anac_painel"),
     supabase.rpc("admin_anac_alunos", { p_filtro: busca ? "todos" : filtro, p_busca: busca }),
+    supabase.from("profiles").select("id", { count: "exact", head: true }).eq("is_admin", false).eq("bloqueado", false),
   ]);
 
   if (painelRes.error) {
@@ -95,6 +96,7 @@ export default async function AdminAnac({ searchParams }: { searchParams: Promis
     );
   }
   const p = painelRes.data as Painel;
+  if (alunosRes.error) console.error("[admin anac] lista de alunos:", alunosRes.error.message);
   const alunos = (alunosRes.data ?? []) as Aluno[];
   const aqui = `/admin/anac?${new URLSearchParams({ ...(busca ? { q: busca } : { f: filtro }) })}`;
   const sem = p.semana;
@@ -163,7 +165,7 @@ export default async function AdminAnac({ searchParams }: { searchParams: Promis
             {p.funil && (
               <Bloco titulo="Funil dos alunos" sub="De quem pode fazer até quem já foi aprovado pelo menos uma vez.">
                 <Funil etapas={[
-                  { rotulo: "Podem fazer", valor: p.funil.elegiveis, detalhe: p.para_todos ? "todos os alunos ativos" : "alunos adicionados" },
+                  { rotulo: "Cadastrados", valor: Math.max(cadastrados ?? 0, p.funil.comecaram), detalhe: "todos podem fazer: os Simulados ANAC são grátis" },
                   { rotulo: "Começaram um simulado", valor: p.funil.comecaram },
                   { rotulo: "Entregaram um simulado", valor: p.funil.entregaram },
                   { rotulo: "Já foram aprovados", valor: p.funil.aprovados, detalhe: `nota de ${minima}% ou mais em algum simulado` },
@@ -298,7 +300,7 @@ export default async function AdminAnac({ searchParams }: { searchParams: Promis
         {sp.ok && <p role="status" className="rounded-xl bg-[#e5f6ec] px-4 py-3 text-[15px] text-[#0f6b3a]">{sp.ok}</p>}
 
         <form role="search" action="/admin/anac#alunos" className="flex flex-wrap gap-2 rounded-[20px] border border-line bg-white p-4">
-          <label htmlFor="busca-aluno" className="w-full text-sm font-semibold text-navy">Adicionar ou encontrar aluno</label>
+          <label htmlFor="busca-aluno" className="w-full text-sm font-semibold text-navy">Encontrar aluno</label>
           <input id="busca-aluno" name="q" defaultValue={busca} placeholder="Nome, e-mail ou WhatsApp" className="min-h-12 min-w-0 flex-[1_1_280px] rounded-xl border border-[#c9cedb] px-4 text-[15px]" />
           <button className="min-h-12 cursor-pointer rounded-xl bg-navy px-6 font-semibold text-white">Buscar</button>
           {busca && <Link href="/admin/anac#alunos" className="inline-flex min-h-12 items-center px-3 font-semibold">Limpar</Link>}
@@ -319,7 +321,7 @@ export default async function AdminAnac({ searchParams }: { searchParams: Promis
           </nav>
         )}
 
-        <div className="overflow-x-auto rounded-2xl border border-line bg-white">
+        <div className="relative overflow-x-auto rounded-2xl border border-line bg-white">
           <table className="w-full min-w-[920px] text-left text-[15px]">
             <thead className="border-b border-line text-sm text-muted">
               <tr>
@@ -345,21 +347,11 @@ export default async function AdminAnac({ searchParams }: { searchParams: Promis
                     <td className="p-3">
                       <span className="flex flex-col items-start gap-1">
                         {a.bloqueado && <span className="rounded-full bg-brand-soft px-2.5 py-1 text-xs font-bold text-brand-deep">Bloqueado</span>}
-                        {a.tem_acesso
-                          ? <span className="rounded-full bg-[#e5f6ec] px-2.5 py-1 text-xs font-semibold text-[#0f6b3a]">Com acesso</span>
-                          : <span className="rounded-full bg-[#eef0f4] px-2.5 py-1 text-xs font-semibold text-ink-2">{p.para_todos ? "Acesso geral" : "Sem acesso"}</span>}
+                        {!a.bloqueado && <span className="rounded-full bg-[#e5f6ec] px-2.5 py-1 text-xs font-semibold text-[#0f6b3a]">Acesso grátis</span>}
                       </span>
                     </td>
                     <td className="p-3">
                       <div className="flex flex-wrap justify-end gap-1.5">
-                        <form action={liberarAnac}>
-                          <input type="hidden" name="id" value={a.id} />
-                          <input type="hidden" name="liberar" value={String(!a.tem_acesso)} />
-                          <input type="hidden" name="voltar" value={aqui} />
-                          <button className={`min-h-10 cursor-pointer rounded-full px-3.5 text-sm font-semibold ${a.tem_acesso ? "border border-line text-ink-2 hover:bg-soft" : "bg-[#0f6b3a] text-white hover:bg-[#0b5730]"}`}>
-                            {a.tem_acesso ? "Remover acesso" : "Liberar acesso"}
-                          </button>
-                        </form>
                         {!eu && !a.is_admin && (
                           <>
                             <form action={bloquearUsuario}>
@@ -391,7 +383,7 @@ export default async function AdminAnac({ searchParams }: { searchParams: Promis
               })}
               {!alunos.length && (
                 <tr><td colSpan={5} className="p-8 text-center text-ink-2">
-                  {busca ? "Nenhum cadastro encontrado com essa busca." : filtro === "acesso" ? "Nenhum aluno adicionado ainda. Busque pelo nome, e-mail ou WhatsApp acima para liberar." : "Ninguém aqui ainda."}
+                  {busca ? "Nenhum cadastro encontrado com essa busca." : filtro === "fizeram" ? "Ninguém entregou um simulado ainda." : "Ninguém aqui ainda."}
                 </td></tr>
               )}
             </tbody>
