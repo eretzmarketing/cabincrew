@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
-import { alterarCursoAluno, banirAluno, dadosGestaoAluno, excluirAluno, prorrogarCursoAluno, resetarModuloAluno, type DadosGestao } from "@/app/alunos-actions";
+import { banirAluno, excluirAluno } from "@/app/alunos-actions";
 import BotaoWhatsapp, { type Sugestao } from "@/components/BotaoWhatsapp";
 
 type Aluno = { id: string; nome: string; email: string | null; whatsapp: string | null; bloqueado: boolean };
@@ -41,89 +41,6 @@ function Aviso({ r }: { r: Res }) {
   if (r.erro) return <p role="alert" className="rounded-xl bg-brand-soft px-4 py-2.5 text-[14px] text-brand-deep">{r.erro}</p>;
   if (r.msg) return <p role="status" className="rounded-xl bg-[#e5f6ec] px-4 py-2.5 text-[14px] text-[#0f6b3a]">{r.msg}</p>;
   return null;
-}
-
-const ST: Record<string, { t: string; cor: string }> = {
-  ativo: { t: "Ativo", cor: "bg-[#e5f6ec] text-[#0f6b3a]" }, suspenso: { t: "Suspenso", cor: "bg-[#fff8e6] text-[#7a5a00]" },
-  revogado: { t: "Removido", cor: "bg-[#eceef3] text-ink-2" }, concluido: { t: "Concluído", cor: "bg-[#eef1ff] text-navy" },
-};
-
-function Editar({ a, fechar }: { a: Aluno; fechar: () => void }) {
-  const router = useRouter();
-  const [d, setD] = useState<DadosGestao | null>(null);
-  const [res, setRes] = useState<Res>({});
-  const [pend, iniciar] = useTransition();
-  const [confirmar, setConfirmar] = useState<string | null>(null);
-  const [agora, setAgora] = useState(0);
-  const recarregar = () => dadosGestaoAluno(a.id).then((x) => { setD(x); setAgora(new Date().getTime()); });
-  useEffect(() => { dadosGestaoAluno(a.id).then((x) => { setD(x); setAgora(new Date().getTime()); }); }, [a.id]);
-  const agir = (f: () => Promise<Res>) => iniciar(async () => { setRes(await f()); setConfirmar(null); await recarregar(); router.refresh(); });
-
-  return (
-    <Janela titulo={`Editar ${a.nome}`} sub={a.email ?? undefined} fechar={fechar}>
-      {!d ? <p className="text-ink-2" role="status">Carregando…</p> : (
-        <>
-          <section className="flex flex-col gap-2">
-            <h4 className="font-display font-extrabold">Cursos</h4>
-            {d.cursos.map(({ slug: c, nome }) => {
-              const ac = d.acessos.find((x) => x.produto === c);
-              const st = ac ? (ac.status === "ativo" && ac.expira_em && Date.parse(ac.expira_em) < agora ? "concluido" : ac.status) : null;
-              return (
-                <div key={c} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-line px-4 py-3">
-                  <span className="flex items-center gap-2 font-semibold">{nome}
-                    <span className={`rounded-full px-2 py-0.5 text-[12px] font-semibold ${st ? ST[st]?.cor : "bg-[#eceef3] text-ink-2"}`}>{st ? ST[st]?.t ?? st : "Sem acesso"}</span>
-                  </span>
-                  {ac?.expira_em && (st === "ativo" || st === "concluido") && (
-                    <span className="w-full text-[13px] text-ink-2 sm:order-last">
-                      {st === "concluido" ? "Acesso terminou em " : "Acesso até "}{new Date(ac.expira_em).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}
-                      {ac.concluido_em ? " (curso concluído)" : ""} · Prorrogar:{" "}
-                      {[7, 30, 90].map((n) => (
-                        <button key={n} type="button" disabled={pend} onClick={() => agir(() => prorrogarCursoAluno(a.id, c, n))} className="ml-1 min-h-8 cursor-pointer rounded-full border border-line px-2.5 text-[12px] font-semibold text-navy hover:border-navy">+{n} dias</button>
-                      ))}
-                    </span>
-                  )}
-                  <span className="flex flex-wrap gap-2">
-                    {st === "ativo" && <>
-                      <button type="button" disabled={pend} onClick={() => agir(() => alterarCursoAluno(a.id, c, "suspender"))} className="min-h-9 cursor-pointer rounded-full border border-line px-3 text-[13px] font-semibold hover:border-navy">Suspender</button>
-                      <button type="button" disabled={pend} onClick={() => agir(() => alterarCursoAluno(a.id, c, "remover"))} className="min-h-9 cursor-pointer rounded-full border border-line px-3 text-[13px] font-semibold text-brand-deep hover:border-brand-deep">Remover do curso</button>
-                    </>}
-                    {st === "suspenso" && <button type="button" disabled={pend} onClick={() => agir(() => alterarCursoAluno(a.id, c, "reativar"))} className="min-h-9 cursor-pointer rounded-full bg-navy px-3 text-[13px] font-semibold text-white">Reativar</button>}
-                    {(!st || st === "revogado" || st === "concluido") && <Link href={`/admin/usuarios/adicionar?email=${encodeURIComponent(a.email ?? "")}&produto=${c}`} className="inline-flex min-h-9 items-center rounded-full bg-navy px-3 text-[13px] font-semibold text-white">{st === "concluido" ? "Liberar de novo" : "Adicionar ao curso"}</Link>}
-                  </span>
-                </div>
-              );
-            })}
-          </section>
-
-          {d.secoes.filter((s) => s.mods.some((m) => m.total > 0)).map(({ curso: c, titulo: t, mods }) => (
-            <section key={c} className="flex flex-col gap-2">
-              <h4 className="font-display font-extrabold">{t}</h4>
-              <ul className="flex flex-col divide-y divide-[#eceef3] rounded-xl border border-line">
-                {mods.filter((m) => m.total > 0).map((m) => {
-                  const k = `${c}-${m.id}`;
-                  return (
-                    <li key={k} className="flex flex-wrap items-center justify-between gap-2 px-4 py-2">
-                      <span className="min-w-0 flex-1 text-[14px]"><span className="font-semibold">{m.titulo}</span> <span className="text-muted">· {m.feitas}/{m.total} aulas</span></span>
-                      {confirmar === k ? (
-                        <span className="flex gap-2">
-                          <button type="button" disabled={pend} onClick={() => agir(() => resetarModuloAluno(a.id, c, m.id))} className="min-h-9 cursor-pointer rounded-full bg-brand-strong px-3 text-[13px] font-semibold text-white">Confirmar reset</button>
-                          <button type="button" onClick={() => setConfirmar(null)} className="min-h-9 cursor-pointer px-2 text-[13px] font-semibold">Cancelar</button>
-                        </span>
-                      ) : (
-                        <button type="button" disabled={!m.feitas} onClick={() => setConfirmar(k)} className="min-h-9 cursor-pointer rounded-full border border-line px-3 text-[13px] font-semibold hover:border-navy disabled:cursor-default disabled:opacity-40">Resetar</button>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-            </section>
-          ))}
-          <span className="text-[13px] text-muted">Resetar apaga as aulas concluídas{" "}e os simulados das aulas daquele módulo. Não dá para desfazer.</span>
-          <Aviso r={res} />
-        </>
-      )}
-    </Janela>
-  );
 }
 
 function Banir({ a, fechar }: { a: Aluno; fechar: () => void }) {
@@ -177,18 +94,17 @@ function Excluir({ a, fechar, voltarPara }: { a: Aluno; fechar: () => void; volt
   );
 }
 
-/** Ícones de ação de um aluno: ver ficha, WhatsApp, editar, banir e excluir. */
-export default function AcoesAluno({ aluno, sugestoes, verFicha = true, voltarPara }: { aluno: Aluno; sugestoes?: Sugestao[]; verFicha?: boolean; voltarPara?: string }) {
-  const [aberto, setAberto] = useState<"editar" | "banir" | "excluir" | null>(null);
+/** Ícones de ação de um aluno: ver ficha, WhatsApp, acessos (página), banir e excluir. */
+export default function AcoesAluno({ aluno, sugestoes, verFicha = true, editar = true, voltarPara }: { aluno: Aluno; sugestoes?: Sugestao[]; verFicha?: boolean; editar?: boolean; voltarPara?: string }) {
+  const [aberto, setAberto] = useState<"banir" | "excluir" | null>(null);
   const fechar = () => setAberto(null);
   return (
     <div className="flex items-center justify-end gap-1.5">
       {verFicha && <Link href={`/admin/usuarios/${aluno.id}`} className={icone} title="Ver ficha completa" aria-label={`Ver ficha de ${aluno.nome}`}><IOlho /></Link>}
       {aluno.whatsapp ? <BotaoWhatsapp telefone={aluno.whatsapp} nome={aluno.nome} userId={aluno.id} sugestoes={sugestoes} tamanho="sm" /> : <span className="w-9" aria-hidden="true" />}
-      <button type="button" className={icone} onClick={() => setAberto("editar")} title="Editar cursos e módulos" aria-label={`Editar ${aluno.nome}`}><ILapis /></button>
+      {editar && <Link href={`/admin/usuarios/${aluno.id}/acessos`} className={icone} title="Acessos: cursos, Questões Plus e IA" aria-label={`Acessos de ${aluno.nome}`}><ILapis /></Link>}
       <button type="button" className={`${icone} ${aluno.bloqueado ? "border-brand-deep bg-brand-soft text-brand-deep" : ""}`} onClick={() => setAberto("banir")} title={aluno.bloqueado ? "Banido (clique para remover)" : "Banir"} aria-label={aluno.bloqueado ? `Remover banimento de ${aluno.nome}` : `Banir ${aluno.nome}`}><IBanir /></button>
       <button type="button" className={`${icone} hover:border-brand-deep hover:text-brand-deep`} onClick={() => setAberto("excluir")} title="Excluir conta" aria-label={`Excluir ${aluno.nome}`}><ILixo /></button>
-      {aberto === "editar" && <Editar a={aluno} fechar={fechar} />}
       {aberto === "banir" && <Banir a={aluno} fechar={fechar} />}
       {aberto === "excluir" && <Excluir a={aluno} fechar={fechar} voltarPara={voltarPara} />}
     </div>

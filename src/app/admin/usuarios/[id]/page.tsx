@@ -13,8 +13,6 @@ import {
 } from "@/lib/painel-alunos";
 import { getUser } from "@/lib/supabase/server";
 import { emitirCertificadoAdmin } from "@/app/certificados-actions";
-import { alterarAcesso } from "@/app/pagamentos-actions";
-import { liberarPlus, removerPlus } from "@/app/questoes-admin-actions";
 import { getConfig } from "@/lib/config";
 import { CURSOS_CERT } from "@/lib/certificados";
 import { STATUS_COMPRA, dataHoraBR, dinheiro, fimArrependimento, type Compra } from "@/lib/compras";
@@ -22,7 +20,6 @@ import { cursoIdioma, infoCursos } from "@/lib/cursos-dados";
 import { FeedbackVisual } from "@/components/VideoIA";
 import type { FeedbackIA } from "@/lib/ia-video-tipos";
 import { POR_ALUNO_PADRAO, configIA, saldoVideoIA } from "@/lib/ia-video";
-import { LiberarIAForm } from "@/components/IAForm";
 import { FeedbackCurriculo } from "@/components/CurriculoIA";
 import type { FeedbackCV } from "@/lib/ia-curriculo-tipos";
 
@@ -188,7 +185,7 @@ export default async function AlunoPage({ params }: { params: Promise<{ id: stri
               <p className="text-[15px] text-ink-2">
                 Usou <strong>{saldoIA.usadas}</strong> de <strong>{saldoIA.limite}</strong> ({cfgIA?.porAluno ?? POR_ALUNO_PADRAO} do Head Hunter{saldoIA.extras ? ` + ${saldoIA.extras} liberada(s) por você` : ""}).
               </p>
-              <LiberarIAForm aluno={id} />
+              <Link href={`/admin/usuarios/${id}/acessos#ia`} className="self-start text-[14px] font-semibold text-navy underline">Liberar mais análises</Link>
             </Card>
           )}
 
@@ -203,7 +200,7 @@ export default async function AlunoPage({ params }: { params: Promise<{ id: stri
               <p className="text-[15px] text-ink-2">
                 Usou <strong>{saldoCV.usadas}</strong> de <strong>{saldoCV.limite}</strong> ({cfgIA?.porAlunoCv ?? POR_ALUNO_PADRAO} do Head Hunter{saldoCV.extras ? ` + ${saldoCV.extras} liberada(s) por você` : ""}).
               </p>
-              <LiberarIAForm aluno={id} recurso="curriculo" />
+              <Link href={`/admin/usuarios/${id}/acessos#ia`} className="self-start text-[14px] font-semibold text-navy underline">Liberar mais análises</Link>
               {((cvs ?? []) as { id: number; nota: number; ia: FeedbackCV; arquivo: string | null; created_at: string }[]).map((c) => (
                 <details key={c.id} className="rounded-xl border border-line px-4">
                   <summary className="flex min-h-12 cursor-pointer flex-wrap items-center gap-3 text-[15px]">
@@ -234,61 +231,35 @@ export default async function AlunoPage({ params }: { params: Promise<{ id: stri
             </Card>
           )}
 
-          <Card>
-            <h2 className="font-display text-xl font-extrabold">Acesso aos cursos</h2>
-            {CURSOS.map(({ slug: curso, nome: rotulo }) => {
-              const acesso = ((acessosAluno ?? []) as { produto: string; status: string; liberado_em: string; encerrado_em: string | null; concluido_em: string | null; expira_em: string | null; motivo: string | null }[]).find((x) => x.produto === curso);
-              const ativo = acesso?.status === "ativo" && (!acesso.expira_em || Date.parse(acesso.expira_em) > Date.parse(new Date().toISOString()));
-              return (
-                <div key={curso} className="flex flex-col gap-2 border-t border-line pt-3 first-of-type:border-0 first-of-type:pt-0">
-                  <p className="text-[15px]">
-                    <strong className="font-display">{rotulo}:</strong>{" "}
-                    {!acesso ? "sem acesso." : ativo ? <><strong className="text-[#0f6b3a]">ativo</strong> desde {dataHoraBR(acesso.liberado_em)}</>
-                      : <><strong>{acesso.status === "revogado" ? "encerrado" : "concluído"}</strong> em {dataHoraBR(acesso.encerrado_em ?? acesso.expira_em ?? acesso.liberado_em)}</>}
-                    {acesso?.concluido_em && <span className="block text-[14px]">Concluiu o curso em {dataHoraBR(acesso.concluido_em)}{acesso.expira_em ? ` · acesso até ${dataHoraBR(acesso.expira_em)}` : ""}</span>}
-                    {acesso?.motivo && <span className="block text-[13px] text-muted">{acesso.motivo}</span>}
-                  </p>
-                  {ativo ? (
-                    <form action={alterarAcesso}>
-                      <input type="hidden" name="user_id" value={l.id} /><input type="hidden" name="produto" value={curso} />
-                      <button name="acao" value="encerrar" className="min-h-11 cursor-pointer rounded-full border-2 border-line px-4 text-[14px] font-semibold text-brand-deep hover:border-brand-deep">Encerrar acesso</button>
-                    </form>
-                  ) : (
-                    <Link href={`/admin/usuarios/adicionar?email=${encodeURIComponent(l.email ?? "")}&produto=${curso}`} className="inline-flex min-h-11 items-center self-start rounded-full bg-navy px-4 text-[14px] font-semibold text-white hover:bg-navy-deep">{acesso ? "Liberar de novo" : "Liberar acesso"}</Link>
-                  )}
-                </div>
-              );
-            })}
-            <span className="text-[13px] text-muted">Compras pelo Mercado Pago liberam sozinhas. Para cortesia, Pix direto ou curso presencial, use Liberar acesso.</span>
+          <Card className="border-2 border-navy">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 className="font-display text-xl font-extrabold">🔑 Acessos</h2>
+              <Link href={`/admin/usuarios/${l.id}/acessos`} className="inline-flex min-h-11 items-center rounded-full bg-navy px-5 text-[14px] font-semibold text-white hover:bg-navy-deep">Gerenciar acessos →</Link>
+            </div>
+            <ul className="flex flex-col gap-2 text-[15px]">
+              {CURSOS.map(({ slug: curso, nome: rotulo }) => {
+                const acesso = ((acessosAluno ?? []) as { produto: string; status: string; expira_em: string | null }[]).find((x) => x.produto === curso);
+                const ativo = acesso?.status === "ativo" && (!acesso.expira_em || Date.parse(acesso.expira_em) > Date.parse(new Date().toISOString()));
+                return (
+                  <li key={curso} className="flex flex-wrap items-center justify-between gap-2">
+                    <span>{rotulo}</span>
+                    <span className={`rounded-full px-2.5 py-0.5 text-[12px] font-bold ${ativo ? "bg-[#e5f6ec] text-[#0f6b3a]" : acesso?.status === "suspenso" ? "bg-[#fff8e6] text-[#7a5a00]" : "bg-[#eceef3] text-ink-2"}`}>
+                      {ativo ? `Ativo${acesso?.expira_em ? ` até ${dataHoraBR(acesso.expira_em).split(",")[0]}` : ""}` : acesso?.status === "suspenso" ? "Suspenso" : acesso ? "Encerrado" : "Sem acesso"}
+                    </span>
+                  </li>
+                );
+              })}
+              {!semPlus && (
+                <li className="flex flex-wrap items-center justify-between gap-2 border-t border-line pt-2">
+                  <span>⭐ Questões Plus</span>
+                  <span className={`rounded-full px-2.5 py-0.5 text-[12px] font-bold ${plusAtivo ? "bg-[#e5f6ec] text-[#0f6b3a]" : "bg-[#eceef3] text-ink-2"}`}>
+                    {plusAtivo ? `Liberado${plusAluno?.ate ? ` até ${dataHoraBR(plusAluno.ate).split(",")[0]}` : ""}` : cfgSite.plus_cobrar ? "Não liberado" : "Grátis (cobrança desligada)"}
+                  </span>
+                </li>
+              )}
+            </ul>
+            <span className="text-[13px] text-muted">Cursos, Questões Plus, análises da IA e progresso dos módulos ficam em Gerenciar acessos.</span>
           </Card>
-
-          {!semPlus && (
-            <Card>
-              <h2 className="font-display text-xl font-extrabold">⭐ Questões Plus</h2>
-              <p className="text-[15px]">
-                {plusAtivo ? <><strong className="text-[#0f6b3a]">Liberado</strong> {plusAluno?.ate ? `até ${dataHoraBR(plusAluno.ate)}` : "sem prazo"}{plusAluno?.observacao ? ` · ${plusAluno.observacao}` : ""}</>
-                  : plusAluno ? <><strong className="text-brand-deep">Vencido</strong> em {dataHoraBR(plusAluno.ate!)}</>
-                  : "Não liberado."}
-                <span className="block text-[13px] text-muted">
-                  {cfgSite.plus_cobrar ? "A cobrança está ligada: sem liberação, o aluno não comenta nem favorita." : "A cobrança está desligada: hoje todos usam de graça. A liberação vale quando você ligar a cobrança."}
-                </span>
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {[["30", "+1 mês"], ["90", "+3 meses"], ["365", "+1 ano"], ["sem", "Sem prazo"]].map(([v, t]) => (
-                  <form key={v} action={liberarPlus}>
-                    <input type="hidden" name="user_id" value={l.id} /><input type="hidden" name="prazo" value={v} /><input type="hidden" name="voltar" value={`/admin/usuarios/${l.id}`} />
-                    <button className="min-h-11 cursor-pointer rounded-full bg-navy px-4 text-[14px] font-semibold text-white hover:bg-navy-deep">{t}</button>
-                  </form>
-                ))}
-                {plusAluno && (
-                  <form action={removerPlus}>
-                    <input type="hidden" name="user_id" value={l.id} /><input type="hidden" name="voltar" value={`/admin/usuarios/${l.id}`} />
-                    <button className="min-h-11 cursor-pointer rounded-full border-2 border-line px-4 text-[14px] font-semibold text-brand-deep hover:border-brand-deep">Remover</button>
-                  </form>
-                )}
-              </div>
-            </Card>
-          )}
 
           <Card>
             <h2 className="font-display text-xl font-extrabold">Aceite dos termos</h2>

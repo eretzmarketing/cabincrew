@@ -19,6 +19,7 @@ function revalidar(id: string) {
   revalidatePath("/admin/head-hunter/alunos");
   revalidatePath("/admin/usuarios");
   revalidatePath(`/admin/usuarios/${id}`);
+  revalidatePath(`/admin/usuarios/${id}/acessos`);
 }
 
 export type DadosGestao = {

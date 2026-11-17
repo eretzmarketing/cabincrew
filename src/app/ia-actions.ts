@@ -60,5 +60,6 @@ export async function liberarAnalisesIA(_: Estado, form: FormData): Promise<Esta
     } else aviso = " (O aluno não tem WhatsApp cadastrado.)";
   }
   revalidatePath(`/admin/usuarios/${aluno}`);
+  revalidatePath(`/admin/usuarios/${aluno}/acessos`);
   return { ok: true, msg: `Liberado ✓${aviso}` };
 }

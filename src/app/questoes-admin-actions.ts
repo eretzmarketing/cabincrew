@@ -64,6 +64,7 @@ export async function liberarPlus(form: FormData) {
   if (error) redirect(comMsg(volta, "erro", "Não foi possível liberar. Rode o SQL 0070 no Supabase."));
   revalidatePath("/admin/questoes/plus");
   revalidatePath(`/admin/usuarios/${id}`);
+  revalidatePath(`/admin/usuarios/${id}/acessos`);
   redirect(comMsg(volta, "ok", ate ? `Questões Plus liberado até ${new Date(ate).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}.` : "Questões Plus liberado sem prazo."));
 }
 
@@ -74,6 +75,7 @@ export async function removerPlus(form: FormData) {
   if (UUID.test(id)) await supabase.from("plus_assinantes").delete().eq("user_id", id);
   revalidatePath("/admin/questoes/plus");
   revalidatePath(`/admin/usuarios/${id}`);
+  revalidatePath(`/admin/usuarios/${id}/acessos`);
   redirect(comMsg(volta, "ok", "Acesso ao Questões Plus removido."));
 }
 
