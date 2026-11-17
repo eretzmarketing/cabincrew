@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import Prova from "@/components/Prova";
 import { exigirLogin } from "@/lib/supabase/server";
+import { contarComentarios, plusStatus } from "@/lib/plus";
 import type { QuestaoProva, Simulado, Tentativa } from "@/lib/crew";
 
 export const metadata: Metadata = { title: "Simulado · Head Hunter", robots: { index: false } };
@@ -32,6 +33,10 @@ export default async function SimuladoPage({ params, searchParams }: { params: P
     supabase.from("simulados").select("*").eq("id", tentativa.simulado_id).single(),
   ]);
 
+  const lista = (questoes ?? []) as QuestaoProva[];
+  const plus = await plusStatus(supabase);
+  const comentarios = plus.pronto ? await contarComentarios(supabase, lista.map((q) => q.id)) : {};
+
   return (
     <main className="min-h-[70vh] bg-soft px-4 py-6 pb-16 md:px-6">
       <Prova
@@ -39,11 +44,13 @@ export default async function SimuladoPage({ params, searchParams }: { params: P
         aulaId={aulaId}
         simulado={sim as Simulado}
         prazo={tentativa.prazo}
-        questoes={(questoes ?? []) as QuestaoProva[]}
+        questoes={lista}
         modo={(tentativa as Tentativa & { modo?: string }).modo === "treino" ? "treino" : "prova"}
         saidasIniciais={(tentativa as Tentativa & { saidas_aba?: number }).saidas_aba ?? 0}
         gabaritoImediato={!!(tentativa as Tentativa & { gabarito_imediato?: boolean }).gabarito_imediato}
         autoProxima={!!(tentativa as Tentativa & { auto_proxima?: boolean }).auto_proxima}
+        plus={plus.pronto ? { cobrar: plus.cobrar, preco: plus.preco, tem: plus.tem } : null}
+        comentarios={comentarios}
       />
     </main>
   );

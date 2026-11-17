@@ -14,6 +14,8 @@ import {
 import { getUser } from "@/lib/supabase/server";
 import { emitirCertificadoAdmin } from "@/app/certificados-actions";
 import { alterarAcesso } from "@/app/pagamentos-actions";
+import { liberarPlus, removerPlus } from "@/app/questoes-admin-actions";
+import { getConfig } from "@/lib/config";
 import { CURSOS_CERT } from "@/lib/certificados";
 import { STATUS_COMPRA, dataHoraBR, dinheiro, fimArrependimento, type Compra } from "@/lib/compras";
 import { cursoIdioma, infoCursos } from "@/lib/cursos-dados";
@@ -51,6 +53,11 @@ export default async function AlunoPage({ params }: { params: Promise<{ id: stri
     saldoVideoIA(supabase, id, cfgIA?.porAlunoCv ?? POR_ALUNO_PADRAO, "curriculo"),
     supabase.from("curriculo_analises").select("id, nota, ia, arquivo, created_at").eq("user_id", id).order("created_at", { ascending: false }).limit(10),
   ]);
+  const [{ data: plusAluno, error: semPlus }, cfgSite] = await Promise.all([
+    supabase.from("plus_assinantes").select("ate, origem, observacao, created_at").eq("user_id", id).maybeSingle(),
+    getConfig(),
+  ]);
+  const plusAtivo = !!plusAluno && (!plusAluno.ate || Date.parse(plusAluno.ate) > Date.parse(new Date().toISOString()));
   const temHH = ((acessosAluno ?? []) as { produto: string }[]).some((a) => a.produto === "head-hunter");
   const { data: videosIA } = await supabase.from("video_treinos").select("created_at, duracao_seg, meta_seg, nota_ia, ia, transcricao").eq("user_id", id).not("ia", "is", null).order("created_at", { ascending: false }).limit(6);
 
@@ -254,6 +261,34 @@ export default async function AlunoPage({ params }: { params: Promise<{ id: stri
             })}
             <span className="text-[13px] text-muted">Compras pelo Mercado Pago liberam sozinhas. Para cortesia, Pix direto ou curso presencial, use Liberar acesso.</span>
           </Card>
+
+          {!semPlus && (
+            <Card>
+              <h2 className="font-display text-xl font-extrabold">⭐ Questões Plus</h2>
+              <p className="text-[15px]">
+                {plusAtivo ? <><strong className="text-[#0f6b3a]">Liberado</strong> {plusAluno?.ate ? `até ${dataHoraBR(plusAluno.ate)}` : "sem prazo"}{plusAluno?.observacao ? ` · ${plusAluno.observacao}` : ""}</>
+                  : plusAluno ? <><strong className="text-brand-deep">Vencido</strong> em {dataHoraBR(plusAluno.ate!)}</>
+                  : "Não liberado."}
+                <span className="block text-[13px] text-muted">
+                  {cfgSite.plus_cobrar ? "A cobrança está ligada: sem liberação, o aluno não comenta nem favorita." : "A cobrança está desligada: hoje todos usam de graça. A liberação vale quando você ligar a cobrança."}
+                </span>
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {[["30", "+1 mês"], ["90", "+3 meses"], ["365", "+1 ano"], ["sem", "Sem prazo"]].map(([v, t]) => (
+                  <form key={v} action={liberarPlus}>
+                    <input type="hidden" name="user_id" value={l.id} /><input type="hidden" name="prazo" value={v} /><input type="hidden" name="voltar" value={`/admin/usuarios/${l.id}`} />
+                    <button className="min-h-11 cursor-pointer rounded-full bg-navy px-4 text-[14px] font-semibold text-white hover:bg-navy-deep">{t}</button>
+                  </form>
+                ))}
+                {plusAluno && (
+                  <form action={removerPlus}>
+                    <input type="hidden" name="user_id" value={l.id} /><input type="hidden" name="voltar" value={`/admin/usuarios/${l.id}`} />
+                    <button className="min-h-11 cursor-pointer rounded-full border-2 border-line px-4 text-[14px] font-semibold text-brand-deep hover:border-brand-deep">Remover</button>
+                  </form>
+                )}
+              </div>
+            </Card>
+          )}
 
           <Card>
             <h2 className="font-display text-xl font-extrabold">Aceite dos termos</h2>

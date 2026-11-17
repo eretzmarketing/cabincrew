@@ -6,9 +6,11 @@ export type Config = {
   crew_select_aberto: boolean;
   manutencao: boolean;
   anac_para_todos: boolean;
+  /** Questões Plus (comentários e favoritas): desligado = grátis para todos */
+  plus_cobrar: boolean;
 };
 
-const PADRAO: Config = { forum_ativo: false, crew_select_aberto: true, manutencao: false, anac_para_todos: false };
+const PADRAO: Config = { forum_ativo: false, crew_select_aberto: true, manutencao: false, anac_para_todos: false, plus_cobrar: false };
 
 /** Chaves liga/desliga do site, lidas uma vez por requisição (funciona também para visitantes). */
 export const getConfig = cache(async (): Promise<Config> => {

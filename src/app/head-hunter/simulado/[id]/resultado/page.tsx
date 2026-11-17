@@ -3,6 +3,9 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { iniciarSimulado, iniciarTreino } from "@/app/crew-actions";
 import { Check } from "@/components/icons";
+import AcoesQuestao, { BarraFavoritas } from "@/components/AcoesQuestao";
+import { iniciarFavoritas } from "@/app/questoes-actions";
+import { FAVORITAS_MINIMO, contarComentarios, plusStatus } from "@/lib/plus";
 import { exigirLogin } from "@/lib/supabase/server";
 import type { QuestaoGabarito, Simulado, Tentativa } from "@/lib/crew";
 
@@ -15,7 +18,7 @@ export default async function ResultadoPage({ params, searchParams }: { params: 
   const { aula } = await searchParams;
   if (!UUID.test(id)) notFound();
   const aulaId = aula && UUID.test(aula) ? aula : "";
-  const { supabase } = await exigirLogin(`/head-hunter/simulado/${id}/resultado`);
+  const { supabase, user } = await exigirLogin(`/head-hunter/simulado/${id}/resultado`);
 
   const { data: t } = await supabase.from("tentativas").select("*").eq("id", id).maybeSingle();
   const tentativa = t as Tentativa | null;
@@ -28,6 +31,18 @@ export default async function ResultadoPage({ params, searchParams }: { params: 
   ]);
   const simulado = sim as Simulado;
   const gabarito = (gab ?? []) as QuestaoGabarito[];
+  // Reportar / Comentar / Favoritar (Questões Plus)
+  const plus = await plusStatus(supabase);
+  const ids = gabarito.map((q) => q.id);
+  const [comentarios, { data: favs }, { count: totalFav }] = plus.pronto && ids.length
+    ? await Promise.all([
+        contarComentarios(supabase, ids),
+        supabase.from("questao_favoritas").select("questao_id").eq("user_id", user.id).in("questao_id", ids),
+        supabase.from("questao_favoritas").select("questao_id", { count: "exact", head: true }).eq("user_id", user.id),
+      ])
+    : [{} as Record<string, number>, { data: [] }, { count: 0 }];
+  const favoritas = new Set(((favs ?? []) as { questao_id: string }[]).map((f) => f.questao_id));
+  const plusTela = { cobrar: plus.cobrar, preco: plus.preco, tem: plus.tem };
   const nota = tentativa.nota ?? 0;
   const aprovado = nota >= simulado.nota_minima;
   const emBranco = gabarito.filter((q) => !q.resposta).length;
@@ -35,8 +50,9 @@ export default async function ResultadoPage({ params, searchParams }: { params: 
   const origem = (simulado as Simulado & { origem?: string | null }).origem ?? "";
   const anac = origem.startsWith("cc-anac");
   const treino = origem.startsWith("cc-treino-") ? origem.slice("cc-treino-".length) : null;
+  const deFavoritas = origem === "cc-favoritas";
   const saidas = (tentativa as Tentativa & { saidas_aba?: number }).saidas_aba ?? 0;
-  const voltar = treino === "anac" ? { href: "/simulados-anac", texto: "Simulados ANAC" } : treino ? { href: "/head-hunter#jornada", texto: "Voltar à jornada" } : anac ? { href: "/simulados-anac", texto: "Simulados ANAC" } : aulaId ? { href: `/head-hunter/aula/${aulaId}`, texto: "Voltar para a aula" } : null;
+  const voltar = deFavoritas ? { href: "/simulados-anac/favoritas", texto: "Minhas favoritas" } : treino === "anac" ? { href: "/simulados-anac", texto: "Simulados ANAC" } : treino ? { href: "/head-hunter#jornada", texto: "Voltar à jornada" } : anac ? { href: "/simulados-anac", texto: "Simulados ANAC" } : aulaId ? { href: `/head-hunter/aula/${aulaId}`, texto: "Voltar para a aula" } : null;
 
   // desempenho por categoria (ex.: blocos da ANAC)
   const porCategoria = new Map<string, { certas: number; total: number }>();
@@ -70,7 +86,11 @@ export default async function ResultadoPage({ params, searchParams }: { params: 
             </p>
           )}
           <div className="flex flex-wrap gap-3">
-            {treino ? (
+            {deFavoritas ? (
+              <form action={iniciarFavoritas}>
+                <button className="min-h-12 cursor-pointer rounded-full bg-white px-6 font-display font-bold text-navy">Fazer de novo</button>
+              </form>
+            ) : treino ? (
               <form action={iniciarTreino}>
                 <input type="hidden" name="banco" value={treino} />
                 <button className="min-h-12 cursor-pointer rounded-full bg-white px-6 font-display font-bold text-navy">Mais 10 questões</button>
@@ -84,7 +104,7 @@ export default async function ResultadoPage({ params, searchParams }: { params: 
             )}
             {voltar && (
               <Link href={voltar.href} className="inline-flex min-h-12 items-center rounded-full border-2 border-white/60 px-6 font-semibold text-white">
-                {treino ? "Voltar à jornada" : anac ? "Voltar aos Simulados ANAC" : voltar.texto}
+                {deFavoritas ? "Minhas favoritas" : treino ? "Voltar à jornada" : anac ? "Voltar aos Simulados ANAC" : voltar.texto}
               </Link>
             )}
           </div>
@@ -112,6 +132,7 @@ export default async function ResultadoPage({ params, searchParams }: { params: 
         {gabarito.length > 0 ? (
           <section className="flex flex-col gap-4">
             <h2 className="font-display text-xl font-extrabold">Gabarito comentado</h2>
+            {plus.pronto && <BarraFavoritas inicial={totalFav ?? 0} minimo={FAVORITAS_MINIMO} plus={plusTela} />}
             {gabarito.map((q) => {
               const acertou = q.resposta === q.correta;
               return (
@@ -155,6 +176,12 @@ export default async function ResultadoPage({ params, searchParams }: { params: 
                   </ul>
                   {q.explicacao && (
                     <p className="rounded-xl bg-soft px-4 py-3 text-[15px] leading-relaxed"><strong>Explicação: </strong>{q.explicacao}</p>
+                  )}
+                  {plus.pronto && (
+                    <div className="border-t border-line pt-4">
+                      <AcoesQuestao questao={{ id: q.id, enunciado: q.enunciado, alternativas: q.alternativas, correta: q.correta }}
+                        tentativaId={id} comentarios={comentarios[q.id] ?? 0} plus={plusTela} favorita={favoritas.has(q.id)} />
+                    </div>
                   )}
                 </article>
               );

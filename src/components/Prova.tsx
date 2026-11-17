@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { conferirQuestao, finalizarSimulado, registrarSaidaAba, responderComCorrecao, responderQuestao } from "@/app/crew-actions";
+import AcoesQuestao, { type PlusTela } from "@/components/AcoesQuestao";
 import type { QuestaoProva, Simulado } from "@/lib/crew";
 
 function relogio(ms: number) {
@@ -22,6 +23,8 @@ export default function Prova({
   saidasIniciais = 0,
   gabaritoImediato = false,
   autoProxima = false,
+  plus = null,
+  comentarios = {},
 }: {
   tentativaId: string;
   aulaId: string;
@@ -34,6 +37,9 @@ export default function Prova({
   gabaritoImediato?: boolean;
   /** escolhido no aviso antes de começar: abre a próxima questão ao responder */
   autoProxima?: boolean;
+  /** Reportar / Comentar depois da correção (null = banco sem o SQL 0070) */
+  plus?: PlusTela | null;
+  comentarios?: Record<string, number>;
 }) {
   const treino = modo === "treino";
   // correção na hora: no treino ou quando o aluno ligou o gabarito imediato
@@ -246,6 +252,12 @@ export default function Prova({
             <div role="status" className={`rounded-xl px-4 py-3 text-[15px] leading-relaxed ${correcao[q.id].correta === respostas[q.id] ? "bg-[#e5f6ec] text-[#0f6b3a]" : "bg-brand-soft text-brand-deep"}`}>
               <strong>{correcao[q.id].correta === respostas[q.id] ? "Acertou! " : `Resposta certa: ${correcao[q.id].correta}. `}</strong>
               {correcao[q.id].explicacao}
+            </div>
+          )}
+          {plus && corrige && correcao[q.id] && (
+            <div className="border-t border-line pt-4">
+              <AcoesQuestao key={q.id} questao={{ id: q.id, enunciado: q.enunciado, alternativas: q.alternativas, correta: correcao[q.id].correta }}
+                tentativaId={tentativaId} comentarios={comentarios[q.id] ?? 0} plus={plus} />
             </div>
           )}
           {falhou && <p role="alert" className="text-sm text-brand-deep">Não conseguimos salvar sua última resposta. Verifique a internet e marque de novo.</p>}

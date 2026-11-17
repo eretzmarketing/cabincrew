@@ -42,3 +42,7 @@ Nunca peça senha do banco, tokens ou chaves no chat. Se o Daniel colar um, avis
 - IA: vídeo (`src/lib/ia-video.ts`) e currículo (`src/lib/ia-curriculo.ts`), limite por compra + liberação na ficha do aluno.
 - Admin: `src/app/admin/*`, menu em `src/components/AdminNav.tsx`. Gestão de alunos em Usuários.
 - Painel do aluno: `src/app/conta/page.tsx` + `src/lib/painel-aluno.ts`.
+- Questões (SQL 0070): Reportar erro (grátis, `questao_reportes`), Comentários e Favoritas = "Questões Plus"
+  (`src/components/AcoesQuestao.tsx`, `src/app/questoes-actions.ts`, `src/lib/plus.ts`). Cobrança: chave `plus_cobrar`
+  (desligada = grátis para todos); liberação manual em `plus_assinantes` (Admin › Simulados ANAC › Questões Plus ou ficha do aluno).
+  Cobrança automática mensal pelo Mercado Pago ainda não existe (origem 'compra' já prevista na tabela).

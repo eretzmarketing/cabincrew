@@ -37,7 +37,10 @@ export const GRUPOS: Grupo[] = [
     id: "anac", label: "Simulados ANAC",
     itens: [
       { href: "/admin/anac", label: "Simulados" },
-      { href: "/admin/questoes", label: "Banco de questões" },
+      { href: "/admin/questoes", label: "Banco de questões", exato: true },
+      { href: "/admin/questoes/reportes", label: "Questões reportadas" },
+      { href: "/admin/questoes/comentarios", label: "Comentários" },
+      { href: "/admin/questoes/plus", label: "Questões Plus" },
     ],
   },
   { id: "certificados", label: "Certificados", itens: [{ href: "/admin/certificados", label: "Certificados" }] },

@@ -32,8 +32,10 @@ function Opcao({ name, titulo, texto, valor, setValor }: { name: string; titulo:
 }
 
 /** Botão “Iniciar” dos Simulados ANAC: abre um aviso para o aluno escolher Gabarito imediato e Próxima questão automática. */
-export default function IniciarSimulado({ simuladoId, aulaId, rotulo, titulo, rotuloAcessivel, className }: {
+export default function IniciarSimulado({ simuladoId, aulaId, rotulo, titulo, rotuloAcessivel, className, acao = iniciarSimulado }: {
   simuladoId: number; aulaId: string; rotulo: string; titulo: string; rotuloAcessivel?: string; className: string;
+  /** outra forma de começar (ex.: simulado de favoritas) */
+  acao?: (form: FormData) => Promise<void>;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const [gabarito, setGabarito] = useState(false);
@@ -57,7 +59,7 @@ export default function IniciarSimulado({ simuladoId, aulaId, rotulo, titulo, ro
       <dialog ref={ref} aria-labelledby={`sim-${simuladoId}-titulo`}
         onClick={(e) => { if (e.target === ref.current) ref.current?.close(); }}
         className="m-auto w-[min(520px,calc(100vw-32px))] rounded-[24px] p-0 text-navy shadow-2xl backdrop:bg-[#232a3d]/60">
-        <form action={iniciarSimulado} onSubmit={() => lembrar(gabarito, auto)} className="flex flex-col gap-5 p-6 md:p-7">
+        <form action={acao} onSubmit={() => lembrar(gabarito, auto)} className="flex flex-col gap-5 p-6 md:p-7">
           <input type="hidden" name="simulado_id" value={simuladoId} />
           <input type="hidden" name="aula_id" value={aulaId} />
           <div className="flex items-start justify-between gap-3">
