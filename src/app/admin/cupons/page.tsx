@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: "Cupons" };
 export const dynamic = "force-dynamic";
 
 const reais = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-const dataBR = (iso: string) => new Date(iso).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
+const dataBR = (iso: string) => new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }).replace(",", " às");
 
 function situacao(c: CupomAdmin, usos: number) {
   const agora = new Date().toISOString();

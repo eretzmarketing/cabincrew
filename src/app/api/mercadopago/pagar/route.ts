@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { precosFinais } from "@/lib/cupons";
 import { validarCupom } from "@/lib/cupons-servidor";
-import { configMP, criarPagamento, referencia, registrarPagamento, URL_WEBHOOK } from "@/lib/mercadopago";
+import { avisarCompra, configMP, criarPagamento, referencia, registrarPagamento, URL_WEBHOOK, type AvisoCompra } from "@/lib/mercadopago";
 import { cursosDoAluno } from "@/lib/crew-gate";
 import { VERSAO_LEGAL } from "@/lib/legal";
 import { getUser } from "@/lib/supabase/server";
@@ -34,11 +34,11 @@ function expiraEm30min() {
 
 export async function POST(req: Request) {
   const cfg = configMP();
-  if (!cfg) return NextResponse.json({ erro: "Pagamentos ainda não configurados. Fale com a Cabin Crew." }, { status: 503 });
   const { supabase, user, profile } = await getUser();
   if (!user || !profile) return NextResponse.json({ erro: "Entre na sua conta para comprar." }, { status: 401 });
 
   const corpo = (await req.json().catch(() => ({}))) as { produto?: string; metodo?: string; cpf?: string; cupom?: string; aceite?: string; cartao?: Record<string, unknown> };
+  if (!cfg && corpo.metodo !== "gratis") return NextResponse.json({ erro: "Pagamentos ainda não configurados. Fale com a Cabin Crew." }, { status: 503 });
   const slug = corpo.produto ?? "head-hunter";
   if (corpo.aceite !== VERSAO_LEGAL) return NextResponse.json({ erro: "Aceite os Termos de Uso e a Política de Reembolso para continuar." }, { status: 400 });
   // prova do aceite, ligada ao pagamento criado
@@ -56,6 +56,22 @@ export async function POST(req: Request) {
   const { cupom, erro: erroCupom } = await validarCupom(supabase, corpo.cupom, slug);
   if (corpo.cupom && !cupom) return NextResponse.json({ erro: erroCupom ?? "Cupom inválido." }, { status: 400 });
   const precos = precosFinais(Number(prod.preco), Number(prod.desconto_pix), cupom);
+
+  // cupom de 100%: libera direto, sem Mercado Pago (o banco confere o cupom e o preço de novo)
+  if (corpo.metodo === "gratis") {
+    if (!cupom || precos.cartao !== 0) return NextResponse.json({ erro: "Este cupom não deixa o curso grátis." }, { status: 400 });
+    const { data, error } = await supabase.rpc("cupom_liberar_gratis", { p_produto: slug, p_cupom: cupom.codigo });
+    if (error) {
+      console.error("[cupom] não foi possível liberar grátis:", error.message);
+      const msg = error.message.includes("cupom_liberar_gratis") ? "Rode o SQL 0069_cupom_100.sql no Supabase." : error.message;
+      return NextResponse.json({ erro: msg }, { status: 400 });
+    }
+    const r = ((data ?? []) as (AvisoCompra & { compra_id: number })[])[0];
+    await registrarAceite(`cupom-${r?.compra_id ?? cupom.codigo}`);
+    await avisarCompra(r, slug, "R$ 0,00", `cupom ${cupom.codigo}`);
+    return NextResponse.json({ id: r?.compra_id, status: "approved" });
+  }
+  if (!cfg) return NextResponse.json({ erro: "Pagamentos ainda não configurados. Fale com a Cabin Crew." }, { status: 503 });
 
   const nome = String(profile.nome || profile.apelido || "").trim();
   const [primeiro, ...resto] = nome.split(" ");

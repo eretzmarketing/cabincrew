@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { CampoCupom, PagarCartao, PagarPix } from "@/components/Checkout";
+import { CampoCupom, LiberarGratis, PagarCartao, PagarPix } from "@/components/Checkout";
 import { comCupom, type Cupom } from "@/lib/cupons";
 import { reais, type Endereco } from "@/lib/loja";
 
@@ -37,7 +37,7 @@ export default function LojaCheckout({ publicKey, produto, quantidadeInicial, em
   const itens = produto.preco * qtd;
   const comDesconto = comCupom(itens, cupom);
   const total = comDesconto.preco + produto.frete;
-  const totalPix = Math.max(1, Math.round(comDesconto.preco * (100 - produto.descontoPix)) / 100) + produto.frete;
+  const totalPix = (comDesconto.preco === 0 ? 0 : Math.max(1, Math.round(comDesconto.preco * (100 - produto.descontoPix)) / 100)) + produto.frete;
   const max = Math.min(10, produto.estoque ?? 10);
   const mudar = (k: keyof typeof d, v: string) => setD((x) => ({ ...x, [k]: v }));
 
@@ -149,18 +149,22 @@ export default function LojaCheckout({ publicKey, produto, quantidadeInicial, em
             <input type="checkbox" checked={aceite} onChange={(e) => setAceite(e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 accent-[#c8102e]" />
             <span>Li e aceito os <a href="/termos" target="_blank" className="font-semibold text-navy underline">Termos de Uso</a> e a <a href="/reembolso" target="_blank" className="font-semibold text-navy underline">Política de Reembolso</a> (7 dias para desistir a partir do recebimento).</span>
           </label>
-          <div role="radiogroup" aria-label="Forma de pagamento" className="grid gap-3 sm:grid-cols-2">
-            {([["pix", "Pix", `${reais(totalPix)}${produto.descontoPix ? ` · ${produto.descontoPix}% off` : ""}`], ["cartao", "Cartão de crédito", `${reais(total)} · até 12x`]] as const).map(([k, r, t]) => (
-              <button key={k} type="button" role="radio" aria-checked={metodo === k} onClick={() => setMetodo(k)}
-                className={`flex min-h-16 cursor-pointer flex-col items-start justify-center rounded-2xl border-2 px-4 py-3 text-left ${metodo === k ? "border-navy bg-[#f4f6fb]" : "border-line hover:border-[#9aa3b8]"}`}>
-                <span className="font-display text-[17px] font-extrabold">{r}</span>
-                <span className={`text-[14px] ${k === "pix" ? "font-semibold text-[#0f6b3a]" : "text-ink-2"}`}>{t}</span>
-              </button>
-            ))}
-          </div>
-          {metodo === "pix"
-            ? <PagarPix key={`pix-${qtd}-${cupom?.codigo ?? ""}`} cpfInicial={d.cpf} aceite={aceite} produto={pagamento} cobranca={cobranca} aoAprovar={() => setFim("aprovado")} />
-            : <PagarCartao key={`cartao-${qtd}-${cupom?.codigo ?? ""}`} aceite={aceite} publicKey={publicKey} produto={pagamento} email={email} cobranca={cobranca} aoAprovar={() => setFim("aprovado")} aoAnalisar={() => setFim("analise")} />}
+          {total === 0 ? <LiberarGratis produto={pagamento} aceite={aceite} cobranca={cobranca} aoAprovar={() => setFim("aprovado")} texto="Seu cupom cobre 100% do pedido e o frete é grátis. Não precisa pagar nada: é só confirmar." /> : (
+            <>
+            <div role="radiogroup" aria-label="Forma de pagamento" className="grid gap-3 sm:grid-cols-2">
+              {([["pix", "Pix", `${reais(totalPix)}${produto.descontoPix ? ` · ${produto.descontoPix}% off` : ""}`], ["cartao", "Cartão de crédito", `${reais(total)} · até 12x`]] as const).map(([k, r, t]) => (
+                <button key={k} type="button" role="radio" aria-checked={metodo === k} onClick={() => setMetodo(k)}
+                  className={`flex min-h-16 cursor-pointer flex-col items-start justify-center rounded-2xl border-2 px-4 py-3 text-left ${metodo === k ? "border-navy bg-[#f4f6fb]" : "border-line hover:border-[#9aa3b8]"}`}>
+                  <span className="font-display text-[17px] font-extrabold">{r}</span>
+                  <span className={`text-[14px] ${k === "pix" ? "font-semibold text-[#0f6b3a]" : "text-ink-2"}`}>{t}</span>
+                </button>
+              ))}
+            </div>
+            {metodo === "pix"
+              ? <PagarPix key={`pix-${qtd}-${cupom?.codigo ?? ""}`} cpfInicial={d.cpf} aceite={aceite} produto={pagamento} cobranca={cobranca} aoAprovar={() => setFim("aprovado")} />
+              : <PagarCartao key={`cartao-${qtd}-${cupom?.codigo ?? ""}`} aceite={aceite} publicKey={publicKey} produto={pagamento} email={email} cobranca={cobranca} aoAprovar={() => setFim("aprovado")} aoAnalisar={() => setFim("analise")} />}
+            </>
+          )}
         </section>
       )}
 

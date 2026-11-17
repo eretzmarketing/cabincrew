@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
-import { configMP, criarPagamento, registrarPagamento, URL_WEBHOOK } from "@/lib/mercadopago";
+import { configMP, criarPagamento, registrarPagamento, URL_WEBHOOK, type Pagamento } from "@/lib/mercadopago";
 import { referenciaLoja, type PedidoLoja } from "@/lib/loja";
 import { VERSAO_LEGAL } from "@/lib/legal";
 import { getUser } from "@/lib/supabase/server";
@@ -53,6 +53,17 @@ export async function POST(req: Request) {
   };
   const ligar = (mpId: number, metodo: string) =>
     supabase.rpc("loja_ligar_pagamento", { p_chave: cfg.chave, p_pedido: pedido.id, p_mp: String(mpId), p_metodo: metodo });
+
+  // cupom de 100% e frete grátis: pedido sem cobrança, confirmado direto (o total foi calculado no banco)
+  if (Number(pedido.total) === 0) {
+    if (corpo.metodo !== "gratis") return NextResponse.json({ erro: "Este pedido é grátis: recarregue a página e confirme." }, { status: 400 });
+    const ref = `cupom-${pedido.id}`;
+    await registrarAceite(ref);
+    const r = await registrarPagamento({ id: ref as unknown as number, status: "approved", transaction_amount: 0, external_reference: referenciaLoja(pedido.id, user.id), payment_method_id: "cupom" } as Pagamento);
+    if (r.situacao !== "pago") return NextResponse.json({ erro: r.erro ?? "Não foi possível confirmar o pedido." }, { status: 400 });
+    return NextResponse.json({ id: pedido.id, status: "approved", pedido: pedido.id });
+  }
+  if (corpo.metodo === "gratis") return NextResponse.json({ erro: "Este pedido tem valor a pagar. Recarregue a página." }, { status: 400 });
 
   try {
     if (corpo.metodo === "pix") {

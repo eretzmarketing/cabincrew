@@ -50,7 +50,7 @@ export default function Checkout({ publicKey, base, email, nome, cupomInicial, e
     return (
       <section className="flex flex-col items-center gap-4 rounded-[22px] bg-white p-8 text-center shadow-sm md:p-12" role="status">
         <span aria-hidden="true" className="flex h-20 w-20 items-center justify-center rounded-full bg-[#e5f6ec] text-[40px]">✓</span>
-        <h2 className="font-display text-[28px] font-extrabold">Pagamento aprovado! Bem-vindo(a) a bordo, {nome.split(" ")[0]}. ✈️</h2>
+        <h2 className="font-display text-[28px] font-extrabold">{produto.preco === 0 ? "Acesso liberado!" : "Pagamento aprovado!"} Bem-vindo(a) a bordo, {nome.split(" ")[0]}. ✈️</h2>
         <p className="max-w-[520px] text-[17px] text-ink-2">Seu acesso ao {produto.nome} já está liberado. A confirmação também chega no seu WhatsApp.</p>
         <a href={produto.endereco} className="inline-flex min-h-14 items-center rounded-xl bg-brand-strong px-8 font-display text-[17px] font-bold text-white hover:bg-brand-deep">Começar agora</a>
       </section>
@@ -74,35 +74,63 @@ export default function Checkout({ publicKey, base, email, nome, cupomInicial, e
           <input type="checkbox" checked={aceite} onChange={(e) => setAceite(e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 accent-[#c8102e]" />
           <span>Li e aceito os <a href="/termos" target="_blank" className="font-semibold text-navy underline">Termos de Uso</a> e a <a href="/reembolso" target="_blank" className="font-semibold text-navy underline">Política de Reembolso</a> (7 dias de arrependimento). Entendo que o acesso vale até eu concluir o curso{produto.diasExtras > 0 ? `, mais ${produto.diasExtras} dias para revisar` : ""}.</span>
         </label>
-        <h2 className="font-display text-xl font-extrabold">Como você quer pagar?</h2>
-        <div role="radiogroup" aria-label="Forma de pagamento" className="grid gap-3 sm:grid-cols-2">
-          {([["pix", "Pix", `${reais(produto.pix)}${produto.descontoPix ? ` · ${produto.descontoPix}% off` : ""}`], ["cartao", "Cartão de crédito", `${reais(produto.preco)} · até 12x`]] as const).map(([k, r, d]) => (
-            <button key={k} type="button" role="radio" aria-checked={metodo === k} onClick={() => setMetodo(k)}
-              className={`flex min-h-16 cursor-pointer flex-col items-start justify-center rounded-2xl border-2 px-4 py-3 text-left ${metodo === k ? "border-navy bg-[#f4f6fb]" : "border-line hover:border-[#9aa3b8]"}`}>
-              <span className="font-display text-[17px] font-extrabold">{r}</span>
-              <span className={`text-[14px] ${k === "pix" ? "font-semibold text-[#0f6b3a]" : "text-ink-2"}`}>{d}</span>
-            </button>
-          ))}
-        </div>
-        {metodo === "pix" ? <PagarPix key={produto.cupom ?? "-"} aceite={aceite} produto={produto} aoAprovar={() => setAprovado(true)} /> : <PagarCartao aceite={aceite} publicKey={publicKey} produto={produto} email={email} aoAprovar={() => setAprovado(true)} aoAnalisar={() => setAnalise(true)} />}
+        {produto.preco === 0 ? <LiberarGratis produto={produto} aceite={aceite} aoAprovar={() => setAprovado(true)} /> : (
+          <>
+          <h2 className="font-display text-xl font-extrabold">Como você quer pagar?</h2>
+          <div role="radiogroup" aria-label="Forma de pagamento" className="grid gap-3 sm:grid-cols-2">
+            {([["pix", "Pix", `${reais(produto.pix)}${produto.descontoPix ? ` · ${produto.descontoPix}% off` : ""}`], ["cartao", "Cartão de crédito", `${reais(produto.preco)} · até 12x`]] as const).map(([k, r, d]) => (
+              <button key={k} type="button" role="radio" aria-checked={metodo === k} onClick={() => setMetodo(k)}
+                className={`flex min-h-16 cursor-pointer flex-col items-start justify-center rounded-2xl border-2 px-4 py-3 text-left ${metodo === k ? "border-navy bg-[#f4f6fb]" : "border-line hover:border-[#9aa3b8]"}`}>
+                <span className="font-display text-[17px] font-extrabold">{r}</span>
+                <span className={`text-[14px] ${k === "pix" ? "font-semibold text-[#0f6b3a]" : "text-ink-2"}`}>{d}</span>
+              </button>
+            ))}
+          </div>
+          {metodo === "pix" ? <PagarPix key={produto.cupom ?? "-"} aceite={aceite} produto={produto} aoAprovar={() => setAprovado(true)} /> : <PagarCartao aceite={aceite} publicKey={publicKey} produto={produto} email={email} aoAprovar={() => setAprovado(true)} aoAnalisar={() => setAnalise(true)} />}
+          </>
+        )}
       </section>
 
       <aside className="flex flex-col gap-4 rounded-[22px] bg-navy p-6 text-white lg:sticky lg:top-24">
         <span className="font-display text-xs font-bold tracking-[.1em] text-[#aab3c8] uppercase">Seu pedido</span>
         <div className="flex items-baseline justify-between gap-3">
           <strong className="font-display text-xl">{produto.nome}</strong>
-          <span className="font-display text-xl font-extrabold">{reais(metodo === "pix" ? produto.pix : produto.preco)}</span>
+          <span className="font-display text-xl font-extrabold">{produto.preco === 0 ? "Grátis" : reais(metodo === "pix" ? produto.pix : produto.preco)}</span>
         </div>
         {produto.descontoCupom > 0 && <p className="text-[14px] text-[#bfe9cf]">Cupom {produto.cupom}: {reais(produto.descontoCupom)} de desconto{produto.precoBase !== produto.preco ? ` (de ${reais(produto.precoBase)})` : ""}.</p>}
-        {metodo === "pix" && produto.descontoPix > 0 && <p className="text-[14px] text-[#bfe9cf]">Você economiza mais {reais(produto.preco - produto.pix)} no Pix.</p>}
+        {metodo === "pix" && produto.descontoPix > 0 && produto.preco > 0 && <p className="text-[14px] text-[#bfe9cf]">Você economiza mais {reais(produto.preco - produto.pix)} no Pix.</p>}
         <CampoCupom produto={base.slug} cupom={cupom} setCupom={setCupom} erroInicial={erroCupomInicial} />
-        {metodo === "cartao" && <p className="text-[14px] text-[#d7dbe6]">No parcelamento, os juros do cartão são calculados pelo Mercado Pago e aparecem antes de você confirmar.</p>}
+        {metodo === "cartao" && produto.preco > 0 && <p className="text-[14px] text-[#d7dbe6]">No parcelamento, os juros do cartão são calculados pelo Mercado Pago e aparecem antes de você confirmar.</p>}
         <ul className="flex flex-col gap-1.5 border-t border-white/15 pt-4 text-[14px] text-[#d7dbe6]">
           <li>✓ Acesso liberado na hora após a aprovação</li>
           <li>✓ Acesso até você concluir o curso{produto.diasExtras > 0 ? `, mais ${produto.diasExtras} dias para revisar` : ""}</li>
         </ul>
         <span className="text-[12px] text-[#aab3c8]">Pagamento processado pelo Mercado Pago. Os dados do cartão não passam pelo site da Cabin Crew.</span>
       </aside>
+    </div>
+  );
+}
+
+/** Cupom de 100%: não tem cobrança, só confirma e libera o acesso. */
+export function LiberarGratis({ produto, aceite, aoAprovar, cobranca, texto }: { produto: ProdutoPagamento; aceite: boolean; aoAprovar: () => void; cobranca?: Cobranca; texto?: string }) {
+  const [pend, setPend] = useState(false);
+  const [erro, setErro] = useState("");
+  async function liberar() {
+    if (!aceite) return setErro("Marque o aceite dos Termos de Uso acima para continuar.");
+    setPend(true); setErro("");
+    const r = await pagar({ ...cobranca?.extra, produto: produto.slug, metodo: "gratis", cupom: produto.cupom, aceite: VERSAO_LEGAL }, cobranca?.url);
+    setPend(false);
+    if (r.status === "approved") aoAprovar(); else setErro(r.erro ?? "Não foi possível liberar o acesso.");
+  }
+  return (
+    <div className="flex flex-col gap-3 rounded-2xl border-2 border-[#2fa36b] bg-[#f3fbf6] p-5">
+      <h2 className="font-display text-xl font-extrabold">🎁 Seu cupom cobre 100% do valor</h2>
+      <p className="text-[16px] text-ink-2">{texto ?? "Não precisa pagar nada nem informar cartão ou Pix. É só confirmar para liberar o seu acesso."}</p>
+      {erro && <p role="alert" className="rounded-xl bg-[#fff1f3] px-4 py-3 text-[15px] font-semibold text-brand-deep">{erro}</p>}
+      <button type="button" onClick={liberar} disabled={pend}
+        className="inline-flex min-h-14 cursor-pointer items-center justify-center rounded-xl bg-brand-strong px-8 font-display text-[17px] font-bold text-white hover:bg-brand-deep disabled:opacity-60">
+        {pend ? "Confirmando…" : cobranca ? "Confirmar pedido grátis" : "Liberar meu acesso grátis"}
+      </button>
     </div>
   );
 }

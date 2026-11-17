@@ -4,18 +4,19 @@ export type Cupom = { codigo: string; tipo: "percentual" | "valor"; valor: numbe
 export const normalizarCupom = (v: string) => v.toUpperCase().replace(/[^A-Z0-9_-]/g, "").slice(0, 30);
 const centavos = (v: number) => Math.round(v * 100) / 100;
 
-/** Preço com o cupom (mínimo de R$ 1,00, exigido pelo Mercado Pago). */
+/** Preço com o cupom: grátis (R$ 0) se o desconto cobre tudo; senão, mínimo de R$ 1,00 (exigido pelo Mercado Pago). */
 export function comCupom(preco: number, cupom: Cupom | null) {
   if (!cupom) return { preco: centavos(preco), desconto: 0 };
   const desconto = cupom.tipo === "percentual" ? preco * Number(cupom.valor) / 100 : Number(cupom.valor);
-  const final = Math.max(1, centavos(preco - desconto));
+  const resto = centavos(preco - desconto);
+  const final = resto <= 0 ? 0 : Math.max(1, resto);
   return { preco: final, desconto: centavos(preco - final) };
 }
 
 /** Preços no cartão e no Pix: primeiro o cupom, depois o desconto do Pix por cima. */
 export function precosFinais(preco: number, descontoPix: number, cupom: Cupom | null) {
   const c = comCupom(Number(preco), cupom);
-  const pix = Math.max(1, Math.round(c.preco * (100 - Number(descontoPix))) / 100);
+  const pix = c.preco === 0 ? 0 : Math.max(1, Math.round(c.preco * (100 - Number(descontoPix))) / 100);
   return { cartao: c.preco, pix, descontoCupom: c.desconto };
 }
 

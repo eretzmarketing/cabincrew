@@ -16,10 +16,11 @@ async function admin() {
   return ctx;
 }
 
-/** "2026-11-30" no horário de Brasília: início do dia (ou fim do dia, para a validade). */
-function dia(v: string, fimDoDia: boolean) {
+/** "2026-11-30" + "18:30" no horário de Brasília. Sem horário: início do dia (ou 23:59:59, para a validade). */
+function dia(v: string, hora: string, fimDoDia: boolean) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return null;
-  return new Date(`${v}T${fimDoDia ? "23:59:59" : "00:00:00"}-03:00`).toISOString();
+  const h = /^([01]\d|2[0-3]):[0-5]\d$/.test(hora) ? `${hora}:${fimDoDia ? "59" : "00"}` : fimDoDia ? "23:59:59" : "00:00:00";
+  return new Date(`${v}T${h}-03:00`).toISOString();
 }
 
 /** Admin: cria ou edita um cupom. */
@@ -35,11 +36,11 @@ export async function salvarCupom(_: Estado, form: FormData): Promise<Estado> {
   const fim = String(form.get("fim") ?? "");
   if (codigo.length < 3) return { erro: "O código precisa ter pelo menos 3 letras ou números (ex.: ESCOLA10)." };
   if (!Number.isFinite(valor) || valor <= 0) return { erro: "Informe o valor do desconto." };
-  if (tipo === "percentual" && valor >= 100) return { erro: "O desconto em % vai até 99%. Para acesso grátis, use Adicionar aluno › Cortesia." };
+  if (tipo === "percentual" && valor > 100) return { erro: "O desconto em % vai até 100%." };
   if (limite && (!/^\d+$/.test(limite) || Number(limite) < 1)) return { erro: "A quantidade de usos precisa ser um número (ou deixe em branco para ilimitado)." };
-  const dInicio = inicio ? dia(inicio, false) : null;
-  const dFim = fim ? dia(fim, true) : null;
-  if (dInicio && dFim && dFim < dInicio) return { erro: "A data final é antes da inicial." };
+  const dInicio = inicio ? dia(inicio, String(form.get("inicio_hora") ?? ""), false) : null;
+  const dFim = fim ? dia(fim, String(form.get("fim_hora") ?? ""), true) : null;
+  if (dInicio && dFim && dFim <= dInicio) return { erro: "O fim da validade é antes do início." };
 
   const dados = {
     codigo, tipo, valor: Math.round(valor * 100) / 100,

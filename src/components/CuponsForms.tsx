@@ -38,6 +38,7 @@ function OpcoesDestino({ planos }: { planos: Plano[] }) {
 }
 
 const diaBR = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" }) : "");
+const horaBR = (iso: string | null) => (iso ? new Date(iso).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }) : "");
 
 export function CupomForm({ c, planos }: { c?: CupomAdmin; planos: Plano[] }) {
   const [s, acao, pend] = useActionState(salvarCupom, {});
@@ -71,7 +72,7 @@ export function CupomForm({ c, planos }: { c?: CupomAdmin; planos: Plano[] }) {
         </fieldset>
         <div className="flex flex-col gap-1">
           <label htmlFor={`val-${c?.codigo ?? "novo"}`} className={rot}>{tipo === "percentual" ? "Desconto (%) *" : "Desconto (R$) *"}</label>
-          <input id={`val-${c?.codigo ?? "novo"}`} name="valor" inputMode="decimal" required defaultValue={c ? String(c.valor).replace(".", ",") : ""} placeholder={tipo === "percentual" ? "10" : "50,00"} className={campo} />
+          <input id={`val-${c?.codigo ?? "novo"}`} name="valor" inputMode="decimal" required defaultValue={c ? String(c.valor).replace(".", ",") : ""} placeholder={tipo === "percentual" ? "10 (até 100)" : "50,00"} className={campo} />
         </div>
         <div className="flex flex-col gap-1">
           <label htmlFor={`lim-${c?.codigo ?? "novo"}`} className={rot}>Quantidade de usos</label>
@@ -79,14 +80,22 @@ export function CupomForm({ c, planos }: { c?: CupomAdmin; planos: Plano[] }) {
         </div>
       </div>
       <div className="grid gap-4 md:grid-cols-2">
-        <div className="flex flex-col gap-1">
-          <label htmlFor={`ini-${c?.codigo ?? "novo"}`} className={rot}>Vale a partir de</label>
-          <input id={`ini-${c?.codigo ?? "novo"}`} name="inicio" type="date" defaultValue={diaBR(c?.inicio ?? null)} className={campo} />
-        </div>
-        <div className="flex flex-col gap-1">
-          <label htmlFor={`fim-${c?.codigo ?? "novo"}`} className={rot}>Vale até (inclusive)</label>
-          <input id={`fim-${c?.codigo ?? "novo"}`} name="fim" type="date" defaultValue={diaBR(c?.fim ?? null)} className={campo} />
-        </div>
+        <fieldset className="flex flex-col gap-1">
+          <legend className={`${rot} mb-1`}>Vale a partir de</legend>
+          <div className="grid grid-cols-[1fr_auto] gap-2">
+            <input aria-label="Data de início" name="inicio" type="date" defaultValue={diaBR(c?.inicio ?? null)} className={campo} />
+            <input aria-label="Horário de início" name="inicio_hora" type="time" defaultValue={horaBR(c?.inicio ?? null)} className={`${campo} w-[120px]`} />
+          </div>
+          <span className="text-[13px] text-muted">Sem horário: começa às 00:00.</span>
+        </fieldset>
+        <fieldset className="flex flex-col gap-1">
+          <legend className={`${rot} mb-1`}>Vale até</legend>
+          <div className="grid grid-cols-[1fr_auto] gap-2">
+            <input aria-label="Data final" name="fim" type="date" defaultValue={diaBR(c?.fim ?? null)} className={campo} />
+            <input aria-label="Horário final" name="fim_hora" type="time" defaultValue={horaBR(c?.fim ?? null)} className={`${campo} w-[120px]`} />
+          </div>
+          <span className="text-[13px] text-muted">Sem horário: vale até 23:59 do dia. Horário de Brasília.</span>
+        </fieldset>
       </div>
       <fieldset className="flex flex-col gap-2">
         <legend className={`${rot} mb-1`}>Vale para <span className="font-normal text-muted">(nenhum marcado = todos os cursos; apostilas só se marcadas)</span></legend>

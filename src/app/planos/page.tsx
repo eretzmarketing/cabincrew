@@ -102,9 +102,9 @@ export default async function PlanosPage({ searchParams }: { searchParams: Promi
               </div>
               <div className="flex flex-col">
                 {riscado > 0 && <span className={`text-[15px] line-through ${escuro ? "text-[#aab3c8]" : "text-muted"}`}>{reais(riscado)}</span>}
-                <strong className="font-display text-[40px] leading-none font-extrabold">{reais(precos.cartao)}</strong>
+                <strong className="font-display text-[40px] leading-none font-extrabold">{precos.cartao === 0 ? "Grátis" : reais(precos.cartao)}</strong>
                 {cupom && <span className="mt-1 self-start rounded-full bg-[#fff3c4] px-3 py-1 text-[13px] font-bold text-[#7a5a00]">🏷️ {cupom.codigo}</span>}
-                <span className={`pt-1 text-[14px] ${escuro ? "text-[#d7dbe6]" : "text-muted"}`}>em até 12x no cartão{Number(p.desconto_pix) > 0 ? ` · ${reais(pix)} no Pix` : ""}</span>
+                <span className={`pt-1 text-[14px] ${escuro ? "text-[#d7dbe6]" : "text-muted"}`}>{precos.cartao === 0 ? "com o seu cupom" : <>em até 12x no cartão{Number(p.desconto_pix) > 0 ? ` · ${reais(pix)} no Pix` : ""}</>}</span>
                 {economia > 0 && <span className="mt-2 self-start rounded-full bg-[#e5f6ec] px-3 py-1 text-[13px] font-bold text-[#0f6b3a]">Economize {reais(economia)}</span>}
               </div>
               <Topicos itens={p.topicos ?? []} claro={escuro} />
