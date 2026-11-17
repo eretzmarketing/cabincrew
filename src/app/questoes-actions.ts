@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { avatarUrl, createClient, getUser } from "@/lib/supabase/server";
 import { avisarEquipe, enviarEmail, SITE } from "@/lib/suporte";
 import { BANCOS } from "@/lib/crew";
+import { favoritasPorBloco } from "@/lib/plus";
 
 const UUID = /^[0-9a-f-]{36}$/i;
 type Erro = { erro: string; plus?: boolean };
@@ -131,16 +132,18 @@ export async function favoritarQuestao(questao: string, marcar: boolean): Promis
     }
     return mensagemErro(error.message, "Não foi possível salvar agora.");
   }
-  const { count } = await supabase.from("questao_favoritas").select("questao_id", { count: "exact", head: true }).eq("user_id", user.id);
+  // o contador mostra o bloco com mais favoritas (o simulado é por bloco)
+  const { maior } = await favoritasPorBloco(supabase);
   revalidatePath("/simulados-anac/favoritas");
-  return { ok: true, total: count ?? 0 };
+  return { ok: true, total: maior };
 }
 
 /** Começa o simulado exclusivo das favoritas (form do aviso “Começar”). */
 export async function iniciarFavoritas(form: FormData) {
   const { supabase, user } = await getUser();
   if (!user) redirect("/entrar?modo=entrar&next=/simulados-anac/favoritas");
-  const { data, error } = await supabase.rpc("iniciar_favoritas", { p_gabarito: form.get("gabarito") === "on", p_auto: form.get("auto") === "on" });
+  const bloco = String(form.get("bloco") ?? "").slice(0, 120);
+  const { data, error } = await supabase.rpc("iniciar_favoritas", { p_bloco: bloco, p_gabarito: form.get("gabarito") === "on", p_auto: form.get("auto") === "on" });
   if (error || !data) redirect("/simulados-anac/favoritas?erro=1");
   redirect(`/head-hunter/simulado/${data}`);
 }

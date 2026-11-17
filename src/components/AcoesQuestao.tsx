@@ -93,12 +93,12 @@ export function BarraFavoritas({ inicial, minimo, plus }: { inicial: number; min
   return (
     <div className="flex flex-col gap-3 rounded-[20px] border-2 border-[#f2d27a] bg-[#fffaf0] p-5 md:flex-row md:items-center md:justify-between">
       <div className="flex flex-1 flex-col gap-2">
-        <strong className="font-display text-[17px] text-navy">⭐ Monte o seu simulado de favoritas</strong>
+        <strong className="font-display text-[17px] text-navy">⭐ Monte os seus simulados de favoritas</strong>
         <span className="text-[14px] leading-relaxed text-ink-2">
           {!plus.tem ? "Recurso do Questões Plus. "
-            : pronto ? "Pronto! Você já pode fazer um simulado só com as suas favoritas. "
-            : `Favorite as questões que quer revisar. Com ${minimo}, você libera um simulado exclusivo. `}
-          <strong className="text-navy">{total} de {minimo}</strong>
+            : pronto ? "Pronto! Você já tem um bloco com favoritas suficientes para o seu simulado (20 questões, 30 min). "
+            : `Favorite as questões que quer revisar. Com ${minimo} favoritas de um mesmo bloco, você libera um simulado exclusivo daquele bloco. `}
+          <strong className="text-navy">{total} de {minimo} no bloco com mais favoritas</strong>
         </span>
         <div className="h-2 max-w-[360px] rounded-full bg-[#f2e3bd]" aria-hidden="true">
           <div className="h-2 rounded-full bg-[#e0a100]" style={{ width: `${Math.min(100, (total / minimo) * 100)}%` }} />

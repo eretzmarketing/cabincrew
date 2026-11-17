@@ -46,3 +46,4 @@ Nunca peça senha do banco, tokens ou chaves no chat. Se o Daniel colar um, avis
   (`src/components/AcoesQuestao.tsx`, `src/app/questoes-actions.ts`, `src/lib/plus.ts`). Cobrança: chave `plus_cobrar`
   (desligada = grátis para todos); liberação manual em `plus_assinantes` (Admin › Simulados ANAC › Questões Plus ou ficha do aluno).
   Cobrança automática mensal pelo Mercado Pago ainda não existe (origem 'compra' já prevista na tabela).
+  Simulado de favoritas (SQL 0071): por bloco, 20 sorteadas das favoritas do bloco, 30 min; libera com 20 favoritas no bloco.

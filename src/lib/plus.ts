@@ -22,4 +22,15 @@ export async function contarComentarios(supabase: SupabaseClient, ids: string[])
   return Object.fromEntries(((data ?? []) as { questao_id: string; total: number }[]).map((r) => [r.questao_id, r.total]));
 }
 
+export const OUTRAS = "Outras questões";
+export const blocoDe = (categoria: string | null) => categoria || OUTRAS;
+
+/** Quantas favoritas o aluno tem em cada bloco (o simulado de favoritas é por bloco). */
+export async function favoritasPorBloco(supabase: SupabaseClient): Promise<{ blocos: Map<string, number>; maior: number }> {
+  const { data } = await supabase.rpc("minhas_favoritas");
+  const blocos = new Map<string, number>();
+  for (const f of (data ?? []) as { categoria: string | null }[]) blocos.set(blocoDe(f.categoria), (blocos.get(blocoDe(f.categoria)) ?? 0) + 1);
+  return { blocos, maior: Math.max(0, ...blocos.values()) };
+}
+
 export const precoBR = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });

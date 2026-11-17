@@ -4,7 +4,7 @@ import IniciarSimulado from "@/components/IniciarSimulado";
 import { Arrow } from "@/components/icons";
 import { cursosDoAluno } from "@/lib/crew-gate";
 import { exigirLogin } from "@/lib/supabase/server";
-import { FAVORITAS_MINIMO, plusStatus } from "@/lib/plus";
+import { FAVORITAS_MINIMO, favoritasPorBloco, plusStatus } from "@/lib/plus";
 
 export const metadata: Metadata = { title: "Simulados ANAC grátis", description: "Simulados gratuitos no estilo da prova teórica da ANAC para comissário de voo: 4 blocos temáticos e a prova completa." };
 
@@ -68,9 +68,7 @@ export default async function SimuladosAnac() {
   // Simulados ANAC: grátis para qualquer pessoa cadastrada
   const { supabase, user } = await exigirLogin("/simulados-anac");
   const [temHeadHunter, plus] = await Promise.all([cursosDoAluno(supabase, user.id).then((c) => c.has("head-hunter")), plusStatus(supabase)]);
-  const { count: favoritas } = plus.pronto
-    ? await supabase.from("questao_favoritas").select("questao_id", { count: "exact", head: true }).eq("user_id", user.id)
-    : { count: 0 };
+  const { maior: favoritas } = plus.pronto ? await favoritasPorBloco(supabase) : { maior: 0 };
 
   const origens = [...BLOCOS.map((b) => b.origem), COMPLETA];
   const { data: sims } = await supabase.from("simulados").select("id, origem, titulo, qtd_questoes, tempo_min, nota_minima").in("origem", origens);
@@ -251,8 +249,8 @@ export default async function SimuladosAnac() {
                   <strong className="font-display text-[19px]">Minhas questões favoritas{!plus.tem ? " · Questões Plus" : ""}</strong>
                   <span className="text-[15px] text-ink-2">
                     {(favoritas ?? 0) >= FAVORITAS_MINIMO && plus.tem
-                      ? "Seu simulado de favoritas está liberado."
-                      : `Favorite questões no gabarito final. Com ${FAVORITAS_MINIMO}, você libera um simulado exclusivo (${favoritas ?? 0} de ${FAVORITAS_MINIMO}).`}
+                      ? "Você já tem simulado de favoritas liberado: 20 questões sorteadas do bloco, em 30 minutos."
+                      : `Favorite questões no gabarito final. Com ${FAVORITAS_MINIMO} favoritas de um mesmo bloco, você libera um simulado exclusivo dele (${favoritas} de ${FAVORITAS_MINIMO}).`}
                   </span>
                 </span>
                 <span className="font-semibold">Ver favoritas →</span>

@@ -5,7 +5,7 @@ import { iniciarSimulado, iniciarTreino } from "@/app/crew-actions";
 import { Check } from "@/components/icons";
 import AcoesQuestao, { BarraFavoritas } from "@/components/AcoesQuestao";
 import { iniciarFavoritas } from "@/app/questoes-actions";
-import { FAVORITAS_MINIMO, contarComentarios, plusStatus } from "@/lib/plus";
+import { FAVORITAS_MINIMO, blocoDe, contarComentarios, favoritasPorBloco, plusStatus } from "@/lib/plus";
 import { exigirLogin } from "@/lib/supabase/server";
 import type { QuestaoGabarito, Simulado, Tentativa } from "@/lib/crew";
 
@@ -34,13 +34,13 @@ export default async function ResultadoPage({ params, searchParams }: { params: 
   // Reportar / Comentar / Favoritar (Questões Plus)
   const plus = await plusStatus(supabase);
   const ids = gabarito.map((q) => q.id);
-  const [comentarios, { data: favs }, { count: totalFav }] = plus.pronto && ids.length
+  const [comentarios, { data: favs }, { maior: totalFav }] = plus.pronto && ids.length
     ? await Promise.all([
         contarComentarios(supabase, ids),
         supabase.from("questao_favoritas").select("questao_id").eq("user_id", user.id).in("questao_id", ids),
-        supabase.from("questao_favoritas").select("questao_id", { count: "exact", head: true }).eq("user_id", user.id),
+        favoritasPorBloco(supabase),
       ])
-    : [{} as Record<string, number>, { data: [] }, { count: 0 }];
+    : [{} as Record<string, number>, { data: [] }, { maior: 0 }];
   const favoritas = new Set(((favs ?? []) as { questao_id: string }[]).map((f) => f.questao_id));
   const plusTela = { cobrar: plus.cobrar, preco: plus.preco, tem: plus.tem };
   const nota = tentativa.nota ?? 0;
@@ -88,6 +88,7 @@ export default async function ResultadoPage({ params, searchParams }: { params: 
           <div className="flex flex-wrap gap-3">
             {deFavoritas ? (
               <form action={iniciarFavoritas}>
+                <input type="hidden" name="bloco" value={blocoDe(gabarito[0]?.categoria ?? null)} />
                 <button className="min-h-12 cursor-pointer rounded-full bg-white px-6 font-display font-bold text-navy">Fazer de novo</button>
               </form>
             ) : treino ? (
@@ -132,7 +133,7 @@ export default async function ResultadoPage({ params, searchParams }: { params: 
         {gabarito.length > 0 ? (
           <section className="flex flex-col gap-4">
             <h2 className="font-display text-xl font-extrabold">Gabarito comentado</h2>
-            {plus.pronto && <BarraFavoritas inicial={totalFav ?? 0} minimo={FAVORITAS_MINIMO} plus={plusTela} />}
+            {plus.pronto && <BarraFavoritas inicial={totalFav} minimo={FAVORITAS_MINIMO} plus={plusTela} />}
             {gabarito.map((q) => {
               const acertou = q.resposta === q.correta;
               return (
