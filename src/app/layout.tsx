@@ -3,6 +3,8 @@ import localFont from "next/font/local";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import EmBreve from "@/components/EmBreve";
+import BarraNavegacao from "@/components/BarraNavegacao";
+import { Suspense } from "react";
 import { headers } from "next/headers";
 import { getConfig } from "@/lib/config";
 import { getUser } from "@/lib/supabase/server";
@@ -53,6 +55,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   return (
     <html lang="pt-BR" className={`${inter.variable} ${montserrat.variable}`}>
       <body className="font-sans antialiased min-h-screen flex flex-col">
+        <Suspense fallback={null}><BarraNavegacao /></Suspense>
         {bloqueado ? (
           <EmBreve logado={!!user} />
         ) : (
