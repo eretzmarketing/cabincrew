@@ -97,12 +97,12 @@ export default async function Acompanhamento({ searchParams }: { searchParams: P
       </div>
       {sp.excluido && <p role="status" className="rounded-2xl bg-[#e5f6ec] px-5 py-4 font-semibold text-[#0f6b3a]">Conta de {sp.excluido} excluída. O registro ficou em <Link href="/admin/contas-excluidas" className="underline">Usuários › Contas excluídas</Link>.</p>}
 
-      <nav aria-label="Curso" className="flex gap-2 overflow-x-auto border-b border-line pb-px">
+      <nav aria-label="Curso" className="flex flex-wrap gap-2">
         {cursos.map((c) => {
           const ativo = c.slug === curso.slug;
           return (
             <Link key={c.slug} href={`/admin/acompanhamento?curso=${c.slug}`} aria-current={ativo ? "page" : undefined}
-              className={`-mb-px inline-flex min-h-12 shrink-0 items-center border-b-[3px] px-4 font-display text-[15px] font-bold ${ativo ? "border-brand-strong text-navy" : "border-transparent text-muted hover:text-navy"}`}>
+              className={`inline-flex min-h-11 items-center rounded-xl border-2 px-4 font-display text-[14px] font-bold transition ${ativo ? "border-navy bg-navy text-white" : "border-line bg-white text-navy hover:border-navy"}`}>
               {c.titulo}
             </Link>
           );

@@ -42,7 +42,6 @@ export default async function QuestoesErros({ searchParams }: { searchParams: Pr
     return `/admin/questoes/erros${p.size ? `?${p}` : ""}`;
   };
   const aqui = link({});
-  const chip = (ativo: boolean) => `inline-flex min-h-10 items-center rounded-full px-4 text-sm font-semibold ${ativo ? "bg-navy text-white" : "border border-line bg-white text-navy hover:border-navy"}`;
   const blocos = (d?.blocos ?? []).filter((b) => BLOCOS.includes(b.bloco)).sort((a, b) => pct(b.erros, b.respostas) - pct(a.erros, a.respostas));
 
   return (
@@ -54,24 +53,43 @@ export default async function QuestoesErros({ searchParams }: { searchParams: Pr
         <p className="rounded-2xl bg-brand-soft p-5 text-brand-deep">Rode o SQL <strong>0073_questoes_erros.sql</strong> no Supabase para ativar este painel.</p>
       ) : (
         <>
-          <nav aria-label="Bloco" className="flex gap-2 overflow-x-auto border-b border-line pb-px">
-            {[null, ...BLOCOS].map((b) => (
-              <Link key={b ?? "todos"} href={link({ bloco: b })} aria-current={b === bloco ? "page" : undefined}
-                className={`-mb-px inline-flex min-h-12 shrink-0 items-center border-b-[3px] px-4 font-display text-[15px] font-bold ${b === bloco ? "border-brand-strong text-navy" : "border-transparent text-muted hover:text-navy"}`}>
-                {b ?? "Todos os blocos"}
-              </Link>
-            ))}
-          </nav>
-
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-            <nav aria-label="Período" className="flex flex-wrap items-center gap-2">
-              <span className="text-sm font-semibold">Período:</span>
-              {PERIODOS.map(([v, t]) => <Link key={t} href={link({ dias: v || null })} className={chip(String(dias ?? "") === v)}>{t}</Link>)}
-            </nav>
-            <nav aria-label="Mínimo de respostas" className="flex flex-wrap items-center gap-2">
-              <span className="text-sm font-semibold">Mín. de respostas:</span>
-              {MINIMOS.map((m) => <Link key={m} href={link({ min: m === 5 ? null : String(m) })} className={chip(m === min)}>{m}</Link>)}
-            </nav>
+          <div className="flex flex-col gap-4 rounded-2xl border border-line bg-white p-4 md:p-5">
+            <div className="flex flex-col gap-2">
+              <span className="text-[13px] font-bold tracking-wide text-muted uppercase">Bloco</span>
+              <nav aria-label="Bloco" className="flex flex-wrap gap-2">
+                {[null, ...BLOCOS].map((b) => {
+                  const ativo = b === bloco;
+                  return (
+                    <Link key={b ?? "todos"} href={link({ bloco: b })} aria-current={ativo ? "page" : undefined}
+                      className={`inline-flex min-h-11 items-center rounded-xl border-2 px-4 font-display text-[14px] font-bold transition ${ativo ? "border-navy bg-navy text-white" : "border-line bg-white text-navy hover:border-navy"}`}>
+                      {b ?? "Todos os blocos"}
+                    </Link>
+                  );
+                })}
+              </nav>
+            </div>
+            <div className="flex flex-wrap gap-x-8 gap-y-4 border-t border-line pt-4">
+              <div className="flex flex-col gap-2">
+                <span className="text-[13px] font-bold tracking-wide text-muted uppercase">Período</span>
+                <nav aria-label="Período" className="inline-flex flex-wrap rounded-xl bg-soft p-1">
+                  {PERIODOS.map(([v, t]) => {
+                    const ativo = String(dias ?? "") === v;
+                    return <Link key={t} href={link({ dias: v || null })} aria-current={ativo ? "true" : undefined}
+                      className={`inline-flex min-h-10 items-center rounded-lg px-4 text-sm font-semibold ${ativo ? "bg-white text-navy shadow-sm" : "text-ink-2 hover:text-navy"}`}>{t}</Link>;
+                  })}
+                </nav>
+              </div>
+              <div className="flex flex-col gap-2">
+                <span className="text-[13px] font-bold tracking-wide text-muted uppercase">Mínimo de respostas por questão</span>
+                <nav aria-label="Mínimo de respostas" className="inline-flex flex-wrap rounded-xl bg-soft p-1">
+                  {MINIMOS.map((m) => {
+                    const ativo = m === min;
+                    return <Link key={m} href={link({ min: m === 5 ? null : String(m) })} aria-current={ativo ? "true" : undefined}
+                      className={`inline-flex min-h-10 min-w-11 items-center justify-center rounded-lg px-3 text-sm font-semibold ${ativo ? "bg-white text-navy shadow-sm" : "text-ink-2 hover:text-navy"}`}>{m}</Link>;
+                  })}
+                </nav>
+              </div>
+            </div>
           </div>
 
           <div className="flex flex-wrap gap-3">
@@ -124,8 +142,12 @@ export default async function QuestoesErros({ searchParams }: { searchParams: Pr
               <h2 className="font-display text-xl font-extrabold">Ranking {bloco ? `· ${bloco}` : ""}</h2>
               <nav aria-label="Ordenar" className="flex flex-wrap items-center gap-2">
                 <span className="text-sm font-semibold">Ordenar por:</span>
-                <Link href={link({ ordem: null })} className={chip(ordem === "taxa")}>% de erro</Link>
-                <Link href={link({ ordem: "alunos" })} className={chip(ordem === "alunos")}>Alunos que erraram</Link>
+                <span className="inline-flex rounded-xl bg-white p-1 ring-1 ring-line">
+                  {([["taxa", "% de erro"], ["alunos", "Alunos que erraram"]] as const).map(([v, t]) => (
+                    <Link key={v} href={link({ ordem: v === "taxa" ? null : v })} aria-current={ordem === v ? "true" : undefined}
+                      className={`inline-flex min-h-10 items-center rounded-lg px-4 text-sm font-semibold ${ordem === v ? "bg-navy text-white" : "text-ink-2 hover:text-navy"}`}>{t}</Link>
+                  ))}
+                </span>
               </nav>
             </div>
             {!d.questoes.length ? (
