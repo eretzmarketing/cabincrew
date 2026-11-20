@@ -10,9 +10,9 @@ import { SLUGS_CURSOS, nomeCurso, siglaCurso } from "@/lib/cursos";
 export const metadata: Metadata = { title: "Usuários" };
 export const dynamic = "force-dynamic";
 
-const POR_PAGINA = 50;
+const TAMANHOS = [20, 50, 100, 500];
 type Pessoa = { id: string; nome: string | null; email: string | null; whatsapp: string | null; escola: string | null; cadastro: string; bloqueado: boolean; compras: number };
-type Busca = { q?: string; escola?: string; curso?: string; sit?: string; de?: string; ate?: string; p?: string; excluido?: string };
+type Busca = { q?: string; escola?: string; curso?: string; sit?: string; de?: string; ate?: string; p?: string; n?: string; excluido?: string };
 
 const CURSOS: Record<string, string> = { "head-hunter": "Com Head Hunter", english: "Com Flight Attendant English", spanish: "Com Flight Attendant Spanish", ambos: "Com HH e English", todos: "Com os três cursos", nenhum: "Sem curso", comprou: "Já comprou algo" };
 const campo = "min-h-11 rounded-xl border border-[#c9cedb] bg-white px-3 text-[15px]";
@@ -20,7 +20,8 @@ const diaSP = (iso: string) => new Date(iso).toLocaleDateString("en-CA", { timeZ
 
 export default async function UsuariosPage({ searchParams }: { searchParams: Promise<Busca> }) {
   const sp = await searchParams;
-  const pagina = Math.max(1, Number(sp.p) || 1);
+  const POR_PAGINA = TAMANHOS.includes(Number(sp.n)) ? Number(sp.n) : 50;
+  const paginaPedida = Math.max(1, Number(sp.p) || 1);
   const { supabase } = await getUser();
   const [{ data: pessoas }, { data: admins }, { data: acs }] = await Promise.all([
     supabase.rpc("admin_publico_campanha"),
@@ -55,12 +56,18 @@ export default async function UsuariosPage({ searchParams }: { searchParams: Pro
     .filter((p) => (!sp.de || diaSP(p.cadastro) >= sp.de) && (!sp.ate || diaSP(p.cadastro) <= sp.ate));
   const total = lista.length;
   const paginas = Math.max(1, Math.ceil(total / POR_PAGINA));
+  const pagina = Math.min(paginaPedida, paginas);
   const pg = lista.slice((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA);
 
   const { data: fotos } = pg.length ? await supabase.from("profiles").select("id, avatar_em").in("id", pg.map((p) => p.id)) : { data: [] };
   const fotoDe = new Map(((fotos ?? []) as { id: string; avatar_em: string | null }[]).map((f) => [f.id, f.avatar_em]));
-  const filtrando = Object.entries(sp).some(([k, v]) => k !== "p" && k !== "excluido" && v);
-  const link = (n: number) => `/admin/usuarios?${new URLSearchParams({ ...Object.fromEntries(Object.entries(sp).filter(([k, v]) => k !== "p" && k !== "excluido" && v)) as Record<string, string>, p: String(n) })}`;
+  const filtrando = Object.entries(sp).some(([k, v]) => !["p", "n", "excluido"].includes(k) && v);
+  const base = Object.fromEntries(Object.entries(sp).filter(([k, v]) => !["p", "n", "excluido"].includes(k) && v)) as Record<string, string>;
+  const link = (pg: number, n = POR_PAGINA) => `/admin/usuarios?${new URLSearchParams({ ...base, ...(n !== 50 ? { n: String(n) } : {}), ...(pg > 1 ? { p: String(pg) } : {}) })}`;
+  // números das páginas: 1 … 4 5 [6] 7 8 … 20
+  const numeros = [...new Set([1, pagina - 2, pagina - 1, pagina, pagina + 1, pagina + 2, paginas])].filter((x) => x >= 1 && x <= paginas).sort((a, b) => a - b);
+  const de = total ? (pagina - 1) * POR_PAGINA + 1 : 0;
+  const ate = Math.min(total, pagina * POR_PAGINA);
 
   return (
     <>
@@ -91,10 +98,22 @@ export default async function UsuariosPage({ searchParams }: { searchParams: Pro
         <label className="flex flex-col gap-1 text-[13px] font-semibold">Cadastro a partir de<input type="date" name="de" defaultValue={sp.de} className={campo} /></label>
         <label className="flex flex-col gap-1 text-[13px] font-semibold">Cadastro até<input type="date" name="ate" defaultValue={sp.ate} className={campo} /></label>
         <div className="flex items-end gap-2">
+          {POR_PAGINA !== 50 && <input type="hidden" name="n" value={POR_PAGINA} />}
           <button className="min-h-11 cursor-pointer rounded-xl bg-navy px-5 font-semibold text-white">Filtrar</button>
           {filtrando && <Link href="/admin/usuarios" className="inline-flex min-h-11 items-center px-2 text-[14px] font-semibold">Limpar</Link>}
         </div>
       </form>
+
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <span className="text-[14px] text-ink-2">{total ? <>Mostrando <strong className="text-navy">{de}–{ate}</strong> de {total}</> : "Nenhum resultado"}</span>
+        <nav aria-label="Quantos por página" className="flex items-center gap-1.5 text-[14px]">
+          <span className="mr-1 font-semibold">Por página:</span>
+          {TAMANHOS.map((n) => (
+            <Link key={n} href={link(1, n)} aria-current={n === POR_PAGINA ? "true" : undefined}
+              className={`inline-flex min-h-10 min-w-11 items-center justify-center rounded-full px-3 font-semibold ${n === POR_PAGINA ? "bg-navy text-white" : "border border-line bg-white text-navy hover:border-navy"}`}>{n}</Link>
+          ))}
+        </nav>
+      </div>
 
       <ul className="flex flex-col divide-y divide-[#eceef3] rounded-2xl border border-line bg-white">
         {!filtrando && pagina === 1 && ((admins ?? []) as { id: string; nome: string | null; apelido: string | null; whatsapp: string | null; escola: string | null; created_at: string; avatar_em: string | null }[]).map((a) => {
@@ -140,9 +159,15 @@ export default async function UsuariosPage({ searchParams }: { searchParams: Pro
       </ul>
 
       {paginas > 1 && (
-        <nav aria-label="Páginas" className="flex items-center justify-center gap-3">
+        <nav aria-label="Páginas" className="flex flex-wrap items-center justify-center gap-1.5">
           {pagina > 1 && <Link href={link(pagina - 1)} className="inline-flex min-h-11 items-center rounded-full border border-line bg-white px-4 font-semibold">← Anterior</Link>}
-          <span className="text-sm text-muted">Página {pagina} de {paginas}</span>
+          {numeros.map((n, i) => (
+            <span key={n} className="flex items-center gap-1.5">
+              {i > 0 && n - numeros[i - 1] > 1 && <span className="px-1 text-muted" aria-hidden="true">…</span>}
+              <Link href={link(n)} aria-current={n === pagina ? "page" : undefined} aria-label={`Página ${n}`}
+                className={`inline-flex min-h-11 min-w-11 items-center justify-center rounded-full px-3 font-semibold ${n === pagina ? "bg-navy text-white" : "border border-line bg-white text-navy hover:border-navy"}`}>{n}</Link>
+            </span>
+          ))}
           {pagina < paginas && <Link href={link(pagina + 1)} className="inline-flex min-h-11 items-center rounded-full border border-line bg-white px-4 font-semibold">Próxima →</Link>}
         </nav>
       )}
