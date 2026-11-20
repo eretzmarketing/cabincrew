@@ -44,6 +44,7 @@ Nunca peça senha do banco, tokens ou chaves no chat. Se o Daniel colar um, avis
   Toda liberação de acesso do aluno fica em `/admin/usuarios/[id]/acessos` (cursos, Questões Plus, IA, reset de módulos).
   Acompanhamento por curso (quem estuda/parou/em risco): `/admin/acompanhamento?curso=…` + RPC `admin_acompanhamento` (SQL 0072);
   `/admin/head-hunter/alunos` redireciona para a aba Head Hunter.
+- Questões que mais erram (SQL 0073): `/admin/questoes/erros` + RPC `admin_questoes_erros` (por bloco, período, alternativa mais marcada).
 - Painel do aluno: `src/app/conta/page.tsx` + `src/lib/painel-aluno.ts`.
 - Questões (SQL 0070): Reportar erro (grátis, `questao_reportes`), Comentários e Favoritas = "Questões Plus"
   (`src/components/AcoesQuestao.tsx`, `src/app/questoes-actions.ts`, `src/lib/plus.ts`). Cobrança: chave `plus_cobrar`

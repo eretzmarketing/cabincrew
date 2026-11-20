@@ -60,7 +60,7 @@ function Kpi({ rotulo, valor, children }: { rotulo: string; valor: React.ReactNo
   );
 }
 
-function Bloco({ titulo, sub, children, className = "" }: { titulo: string; sub?: string; children: React.ReactNode; className?: string }) {
+function Bloco({ titulo, sub, children, className = "" }: { titulo: string; sub?: React.ReactNode; children: React.ReactNode; className?: string }) {
   return (
     <section className={`flex min-w-0 flex-col gap-3 rounded-[20px] border border-line bg-white p-5 md:p-6 ${className}`}>
       <div>
@@ -279,7 +279,7 @@ export default async function AdminAnac({ searchParams }: { searchParams: Promis
         )}
 
         {p.dificeis.length > 0 && (
-          <Bloco titulo="Questões que mais erram" sub="Vale revisar: pode ser um tema difícil ou um gabarito com problema.">
+          <Bloco titulo="Questões que mais erram" sub={<>Vale revisar: pode ser um tema difícil ou um gabarito com problema. <Link href="/admin/questoes/erros" className="font-semibold text-navy underline">Ver painel completo →</Link></>}>
             <ul className="flex flex-col divide-y divide-[#eceef3]">
               {p.dificeis.map((q) => (
                 <li key={q.id} className="flex items-center gap-3 py-2.5">
