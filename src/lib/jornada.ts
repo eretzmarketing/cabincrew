@@ -251,6 +251,8 @@ export function montarJornada(d: DadosJornada) {
   // etapas sem conteúdo publicado ainda ("em breve") não travam a jornada nem contam no percentual
   const comConteudo = etapas.filter((e) => !e.vazia);
   const atual = Math.max(0, etapas.findIndex((e) => !e.vazia && !e.feita));
+  // etapas futuras aparecem zeradas: o que o aluno adiantou só passa a contar quando ele chega nelas
+  etapas.forEach((e, i) => { if (i > atual && !e.feita) e.pct = 0; });
   const todasFeitas = comConteudo.every((e) => e.feita);
   const ingles = avaliarEtapa(ETAPA_INGLES, d, principal);
   const pctGeral = comConteudo.length ? Math.round(comConteudo.reduce((s, e) => s + e.pct, 0) / comConteudo.length) : 0;
