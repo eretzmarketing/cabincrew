@@ -51,3 +51,6 @@ Nunca peça senha do banco, tokens ou chaves no chat. Se o Daniel colar um, avis
   (desligada = grátis para todos); liberação manual em `plus_assinantes` (Admin › Simulados ANAC › Questões Plus ou ficha do aluno).
   Cobrança automática mensal pelo Mercado Pago ainda não existe (origem 'compra' já prevista na tabela).
   Simulado de favoritas (SQL 0071): por bloco, 20 sorteadas das favoritas do bloco, 30 min; libera com 20 favoritas no bloco.
+- Liberação em massa e regras por escola (SQL 0075): botão "🎁 Liberar em massa" em `/admin/usuarios` (marcados ou todos do filtro)
+  e `/admin/usuarios/escolas` (pacote automático no cadastro: trigger `profiles_regra_escola`, só quando a escola é preenchida pela 1ª vez).
+  Lógica em `_liberar_pacote` (nunca diminui acesso existente), `src/app/massa-actions.ts`, `src/components/LiberacaoMassa.tsx`.

@@ -4,6 +4,8 @@ import AcoesAluno from "@/components/AcoesAluno";
 import AvatarAluno from "@/components/AvatarAluno";
 import BotaoWhatsapp from "@/components/BotaoWhatsapp";
 import { Titulo, btnPrimario, btnSecundario } from "@/components/admin-ui";
+import { LiberarEmMassa } from "@/components/LiberacaoMassa";
+import { infoCursos } from "@/lib/cursos-dados";
 import { avatarUrl, getUser } from "@/lib/supabase/server";
 import { SLUGS_CURSOS, nomeCurso, siglaCurso } from "@/lib/cursos";
 
@@ -23,10 +25,11 @@ export default async function UsuariosPage({ searchParams }: { searchParams: Pro
   const POR_PAGINA = TAMANHOS.includes(Number(sp.n)) ? Number(sp.n) : 50;
   const paginaPedida = Math.max(1, Number(sp.p) || 1);
   const { supabase } = await getUser();
-  const [{ data: pessoas }, { data: admins }, { data: acs }] = await Promise.all([
+  const [{ data: pessoas }, { data: admins }, { data: acs }, listaCursos] = await Promise.all([
     supabase.rpc("admin_publico_campanha"),
     supabase.from("profiles").select("id, nome, apelido, whatsapp, escola, created_at, avatar_em").eq("is_admin", true),
     supabase.from("acessos").select("user_id, produto, status, expira_em"),
+    infoCursos(),
   ]);
   const agora = new Date().toISOString();
   const cursos = new Map<string, string[]>();
@@ -76,6 +79,7 @@ export default async function UsuariosPage({ searchParams }: { searchParams: Pro
         <div className="flex flex-wrap gap-2">
           {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- download do CSV, não é página */}
           <a href="/admin/usuarios/csv" className={btnSecundario}>⬇ Exportar (CSV)</a>
+          <Link href="/admin/usuarios/escolas" className={btnSecundario}>🏫 Regras por escola</Link>
           <Link href="/admin/usuarios/adicionar" className={btnPrimario}>+ Adicionar aluno</Link>
         </div>
       </div>
@@ -103,6 +107,8 @@ export default async function UsuariosPage({ searchParams }: { searchParams: Pro
           {filtrando && <Link href="/admin/usuarios" className="inline-flex min-h-11 items-center px-2 text-[14px] font-semibold">Limpar</Link>}
         </div>
       </form>
+
+      <LiberarEmMassa cursos={listaCursos.map((c) => ({ slug: c.slug, nome: c.titulo }))} idsFiltro={lista.map((p) => p.id)} filtrando={filtrando} />
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <span className="text-[14px] text-ink-2">{total ? <>Mostrando <strong className="text-navy">{de}–{ate}</strong> de {total}</> : "Nenhum resultado"}</span>
@@ -137,7 +143,8 @@ export default async function UsuariosPage({ searchParams }: { searchParams: Pro
           const cs = cursos.get(p.id) ?? [];
           return (
             <li key={p.id} className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
-              <Link href={`/admin/usuarios/${p.id}`} className="flex min-w-0 flex-[1_1_260px] items-center gap-3" aria-label={`Ver ficha de ${nome}`}>
+              <input type="checkbox" data-massa value={p.id} aria-label={`Marcar ${nome}`} className="h-5 w-5 shrink-0 cursor-pointer accent-brand-strong" />
+              <Link href={`/admin/usuarios/${p.id}`} className="flex min-w-0 flex-[1_1_230px] items-center gap-3" aria-label={`Ver ficha de ${nome}`}>
                 <AvatarAluno src={avatarUrl(p.id, fotoDe.get(p.id) ?? null)} nome={nome} />
                 <span className="flex min-w-0 flex-col">
                   <span className="truncate font-semibold text-navy">{nome}{p.bloqueado && <span className="ml-2 rounded-full bg-brand-soft px-2 py-0.5 align-middle text-[11px] font-bold text-brand-deep">BANIDO</span>}</span>

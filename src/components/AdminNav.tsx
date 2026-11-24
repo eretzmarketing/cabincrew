@@ -53,6 +53,7 @@ export const GRUPOS: Grupo[] = [
       { href: "/admin/usuarios", label: "Usuários" },
       { href: "/admin/acompanhamento", label: "Acompanhamento" },
       { href: "/admin/usuarios/adicionar", label: "Adicionar aluno" },
+      { href: "/admin/usuarios/escolas", label: "Regras por escola" },
       { href: "/admin/interessados", label: "Lista de interesse" },
       { href: "/admin/contas-excluidas", label: "Contas excluídas" },
     ],
