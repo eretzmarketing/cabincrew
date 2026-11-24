@@ -16,7 +16,7 @@ const TAMANHOS = [20, 50, 100, 500];
 type Pessoa = { id: string; nome: string | null; email: string | null; whatsapp: string | null; escola: string | null; cadastro: string; bloqueado: boolean; compras: number };
 type Busca = { q?: string; escola?: string; curso?: string; sit?: string; de?: string; ate?: string; p?: string; n?: string; excluido?: string };
 
-const CURSOS: Record<string, string> = { "head-hunter": "Com Head Hunter", english: "Com Flight Attendant English", spanish: "Com Flight Attendant Spanish", ambos: "Com HH e English", todos: "Com os três cursos", nenhum: "Sem curso", comprou: "Já comprou algo" };
+const CURSOS: Record<string, string> = { "head-hunter": "Com Head Hunter", english: "Com Flight Attendant English", spanish: "Com Flight Attendant Spanish", ambos: "Com HH e English", todos: "Com os três cursos", nenhum: "Sem curso", comprou: "Já comprou algo", plus: "Com Questões Plus" };
 const campo = "min-h-11 rounded-xl border border-[#c9cedb] bg-white px-3 text-[15px]";
 const diaSP = (iso: string) => new Date(iso).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
 
@@ -25,17 +25,20 @@ export default async function UsuariosPage({ searchParams }: { searchParams: Pro
   const POR_PAGINA = TAMANHOS.includes(Number(sp.n)) ? Number(sp.n) : 50;
   const paginaPedida = Math.max(1, Number(sp.p) || 1);
   const { supabase } = await getUser();
-  const [{ data: pessoas }, { data: admins }, { data: acs }, listaCursos] = await Promise.all([
+  const [{ data: pessoas }, { data: admins }, { data: acs }, listaCursos, { data: plusRows }] = await Promise.all([
     supabase.rpc("admin_publico_campanha"),
     supabase.from("profiles").select("id, nome, apelido, whatsapp, escola, created_at, avatar_em").eq("is_admin", true),
     supabase.from("acessos").select("user_id, produto, status, expira_em"),
     infoCursos(),
+    supabase.from("plus_assinantes").select("user_id, ate"),
   ]);
   const agora = new Date().toISOString();
   const cursos = new Map<string, string[]>();
   for (const a of (acs ?? []) as { user_id: string; produto: string; status: string; expira_em: string | null }[]) {
     if (a.status === "ativo" && (!a.expira_em || a.expira_em > agora)) cursos.set(a.user_id, [...(cursos.get(a.user_id) ?? []), a.produto]);
   }
+  const comPlus = new Map(((plusRows ?? []) as { user_id: string; ate: string | null }[])
+    .filter((x) => !x.ate || x.ate > agora).map((x) => [x.user_id, x.ate]));
   const todos = (pessoas ?? []) as Pessoa[];
   const escolas = [...new Set(todos.map((p) => p.escola).filter(Boolean) as string[])].sort((a, b) => a.localeCompare(b));
   const q = (sp.q ?? "").trim().toLowerCase();
@@ -52,6 +55,7 @@ export default async function UsuariosPage({ searchParams }: { searchParams: Pro
         case "todos": return SLUGS_CURSOS.every((x) => c.includes(x));
         case "nenhum": return c.length === 0;
         case "comprou": return p.compras > 0;
+        case "plus": return comPlus.has(p.id);
         default: return true;
       }
     })
@@ -155,8 +159,13 @@ export default async function UsuariosPage({ searchParams }: { searchParams: Pro
                 <span>desde {new Date(p.cadastro).toLocaleDateString("pt-BR")}</span>
                 {p.whatsapp && <span>{p.whatsapp}</span>}
               </span>
-              <span className="flex w-[96px] gap-1" aria-label="Cursos">
+              <span className="flex w-[124px] flex-wrap gap-1" aria-label="Cursos e recursos">
                 {cs.map((c) => <span key={c} title={nomeCurso(c)} className="rounded-md bg-[#eef1ff] px-1.5 py-0.5 text-[11px] font-bold text-navy">{siglaCurso(c)}</span>)}
+                {comPlus.has(p.id) && (() => {
+                  const ate = comPlus.get(p.id);
+                  const dica = `Questões Plus liberado ${ate ? `até ${new Date(ate).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}` : "sem prazo"}`;
+                  return <span title={dica} aria-label={dica} className="rounded-md bg-[#fff3c4] px-1.5 py-0.5 text-[11px] font-bold text-[#7a5600]">⭐ Plus</span>;
+                })()}
               </span>
               <AcoesAluno aluno={{ id: p.id, nome, email: p.email, whatsapp: p.whatsapp, bloqueado: p.bloqueado }} voltarPara="/admin/usuarios" />
             </li>
