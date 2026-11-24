@@ -10,7 +10,7 @@ export const META = 80; // % para considerar um treino ou simulado "dominado"
 
 export type Companhia = "latam" | "gol" | "azul";
 export const COMPANHIAS: { slug: Companhia; nome: string; resumo: string }[] = [
-  { slug: "latam", nome: "LATAM", resumo: "Prova técnica na JobCoach, testes SHL, dinâmica e entrevista. Inglês ICAO 4 conta muito." },
+  { slug: "latam", nome: "LATAM", resumo: "Testes online na Vora (técnica, português e perfil), dinâmica, entrevista e depois testes SHL. Inglês ou espanhol ICAO 4 conta muito." },
   { slug: "gol", nome: "GOL", resumo: "Dinâmica logo no início, depois testes e entrevistas. Pede inglês e espanhol de conversação." },
   { slug: "azul", nome: "Azul", resumo: "Teste de perfil e fit cultural primeiro, vídeo de apresentação e prova técnica. Pede um segundo idioma." },
 ];
@@ -35,7 +35,7 @@ const ETAPAS: Record<string, EtapaBase> = {
     id: "documentos", titulo: "Documentos e triagem", resumo: "Requisitos, documentos, imagem pessoal, currículo e inscrição.",
     tarefas: [{ tipo: "modulo", ordem: 3 }, { tipo: "modulo", ordem: 4 }],
     dica: {
-      latam: "A LATAM exige experiência comprovada em atendimento ou vendas, passaporte com 2 anos de validade e CIVP (febre amarela).",
+      latam: "LATAM: brasileiro(a) nato(a) ou naturalizado(a), CMA com 1 ano de validade na inscrição e experiência em atendimento ou vendas. Preencha também o formulário Dados Iniciais e use um único e-mail do início ao fim (trocar de e-mail desclassifica). Passaporte com 2 anos de validade a partir da entrevista e CIVP (febre amarela) na admissão. Aprovação na banca ANAC é diferencial.",
       gol: "A GOL pede passaporte com pelo menos 6 meses de validade e CMA de 2ª classe.",
       azul: "A Azul pede curso com sobrevivência na selva e no mar e um segundo idioma intermediário.",
     },
@@ -48,7 +48,6 @@ const ETAPAS: Record<string, EtapaBase> = {
       { tipo: "treino", banco: "tecnico", titulo: "Questões técnicas extras" },
     ],
     dica: {
-      latam: "Na LATAM a prova técnica é online (JobCoach), com câmera e bloqueio de troca de aba, e vale ranking. Faça os simulados no modo Prova real.",
       gol: "A certificação da ANAC é pré-requisito. Revise para chegar seguro(a) nas perguntas técnicas da entrevista.",
       azul: "A Azul aplica prova técnica depois do teste de perfil. Treine até passar de 80% com folga.",
     },
@@ -65,24 +64,58 @@ const ETAPAS: Record<string, EtapaBase> = {
       { tipo: "modulo", ordem: 6 },
     ],
     dica: {
-      latam: "Na LATAM os testes SHL comportamental, psicométrico, dedutivo e de português são eliminatórios.",
       gol: "Na GOL os testes psicológicos vêm depois da dinâmica.",
       azul: "Na Azul o teste de perfil e fit cultural vem logo depois da inscrição. Comece pelo perfil comportamental.",
+    },
+  },
+  vora: {
+    id: "vora", titulo: "Testes online (Vora)", resumo: "Conhecimento técnico, português e perfil comportamental e de valores. Inglês e espanhol mapeiam o seu nível.",
+    tarefas: [
+      { tipo: "treino", banco: "anac", titulo: "Treinos da banca ANAC (conhecimento técnico)" },
+      { tipo: "simulado", origem: "cc-anac-completo", titulo: "Simulado completo da ANAC no modo Prova real", href: "/simulados-anac" },
+      { tipo: "treino", banco: "tecnico", titulo: "Questões técnicas extras" },
+      { tipo: "treino", banco: "portugues", titulo: "Português" },
+      { tipo: "opq", titulo: "Perfil comportamental e de valores coerente" },
+      { tipo: "modulo", ordem: 6 },
+    ],
+    dica: {
+      latam: "Na LATAM, os testes técnico, de português e de competências comportamentais e valores pessoais são eliminatórios e formam um ranking. A prova é monitorada por câmera e microfone e detecta cliques fora da página. Fone de ouvido ou óculos inteligentes podem ser considerados fraude. Teste câmera e microfone antes e faça os simulados no modo Prova real.",
+    },
+  },
+  shl: {
+    id: "shl", titulo: "Testes SHL", resumo: "Avaliação comportamental, psicométrica e de raciocínio dedutivo, depois da entrevista.",
+    tarefas: [
+      { tipo: "treino", banco: "logico", titulo: "Raciocínio lógico e dedutivo" },
+      { tipo: "treino", banco: "numerico", titulo: "Raciocínio numérico" },
+      { tipo: "treino", banco: "verbal", titulo: "Raciocínio verbal" },
+      { tipo: "treino", banco: "sjt", titulo: "Julgamento situacional" },
+    ],
+    dica: {
+      latam: "Na LATAM, a SHL vem depois da entrevista: comportamental, psicométrica e raciocínio dedutivo, todos eliminatórios, com ranking em 1ª e 2ª convocação. Use o mesmo e-mail da inscrição. Treine desde já, porque o convite pode chegar com pouco prazo.",
     },
   },
   dinamica: {
     id: "dinamica", titulo: "Dinâmica de grupo", resumo: "Como se comportar, liderar sem dominar e lidar com situações de cabine em grupo.",
     tarefas: [{ tipo: "modulo", ordem: 7 }, { tipo: "modulo", ordem: 9 }],
-    dica: { gol: "Na GOL a dinâmica é a primeira etapa depois da inscrição. Prepare-se cedo." },
+    dica: {
+      gol: "Na GOL a dinâmica é a primeira etapa depois da inscrição. Prepare-se cedo.",
+      latam: "Na LATAM a dinâmica pode ser presencial ou online, e cada candidato é avaliado individualmente. Em algumas cidades pode haver um Assessment Day, com dinâmica, entrevista, exames e idiomas no mesmo dia.",
+    },
   },
   entrevista: {
     id: "entrevista", titulo: "Entrevistas", resumo: "Entrevista com RH e gestores, comunicação e apresentação pessoal.",
     tarefas: [{ tipo: "modulo", ordem: 8 }, { tipo: "video", titulo: "Vídeo de apresentação" }, { tipo: "modulo", ordem: 10 }],
-    dica: { azul: "A Azul costuma pedir um vídeo de apresentação. Treine falar de você em 1 a 2 minutos." },
+    dica: {
+      azul: "A Azul costuma pedir um vídeo de apresentação. Treine falar de você em 1 a 2 minutos.",
+      latam: "Na LATAM a entrevista com RH e gestor de tripulação é presencial, numa base da companhia que você escolhe, e só com convocação nominal. Se não puder ir, avise antes pelo Fale Conosco: a segunda chamada depende de justificativa prévia.",
+    },
   },
   final: {
     id: "final", titulo: "Reta final e admissão", resumo: "Revisão geral, exames e o que vem depois da aprovação.",
     tarefas: [{ tipo: "modulo", ordem: 11 }, { tipo: "modulo", ordem: 12 }],
+    dica: {
+      latam: "Na LATAM: documentos pela plataforma Unico People, exames toxicológico e admissional, e proposta por e-mail com prazo para aceitar. O treinamento dura cerca de 80 dias, quase todo presencial em São Paulo (moradia por sua conta). Só peça demissão de outro emprego depois de receber a proposta.",
+    },
   },
 };
 
@@ -90,14 +123,14 @@ export const ETAPA_INGLES: EtapaBase = {
   id: "ingles", titulo: "Inglês (em paralelo)", resumo: "O idioma leva tempo: treine um pouco todo dia, desde o começo.",
   tarefas: [{ tipo: "treino", banco: "ingles", titulo: "Treinos de inglês" }],
   dica: {
-    latam: "Na LATAM, 50% das vagas vão para quem tem inglês ICAO nível 4 ou mais.",
+    latam: "Na LATAM, 50% das vagas vão para quem tira ICAO 4 ou mais em inglês e/ou espanhol. Os testes de idioma na Vora não eliminam: servem para chamar os melhores para a avaliação ICAO.",
     gol: "A GOL pede conversação em inglês e espanhol.",
     azul: "A Azul pede inglês, espanhol, francês ou Libras em nível intermediário.",
   },
 };
 
 const ORDEM: Record<Companhia, string[]> = {
-  latam: ["checkin", "documentos", "tecnica", "testes", "dinamica", "entrevista", "final"],
+  latam: ["checkin", "documentos", "vora", "dinamica", "entrevista", "shl", "final"],
   gol: ["checkin", "documentos", "dinamica", "testes", "tecnica", "entrevista", "final"],
   azul: ["checkin", "documentos", "testes", "tecnica", "dinamica", "entrevista", "final"],
 };

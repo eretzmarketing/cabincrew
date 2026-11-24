@@ -79,7 +79,7 @@ export default function Prova({
     return () => clearInterval(t);
   }, [prazo]);
 
-  // Prova real: registra cada vez que o aluno sai da aba (como na JobCoach)
+  // Prova real: registra cada vez que o aluno sai da aba (como na Vora, da LATAM)
   useEffect(() => {
     if (!provaReal) return;
     const sair = () => {
@@ -194,7 +194,7 @@ export default function Prova({
           <div role="status" className={`flex flex-wrap items-center justify-between gap-3 rounded-2xl px-4 py-3 text-[14px] ${saidas ? "bg-brand-soft text-brand-deep" : "bg-navy text-white"}`}>
             <span>
               {saidas
-                ? <><strong>Você saiu da prova {saidas} {saidas === 1 ? "vez" : "vezes"}.</strong> Na prova real (JobCoach) a troca de aba é bloqueada e pode eliminar.</>
+                ? <><strong>Você saiu da prova {saidas} {saidas === 1 ? "vez" : "vezes"}.</strong> Nas provas online das companhias (como a Vora, da LATAM) sair da página é detectado e pode eliminar.</>
                 : <><strong>Modo Prova real:</strong> sem consulta e sem sair desta aba, como na prova da companhia.</>}
             </span>
             {!telaCheia && (
