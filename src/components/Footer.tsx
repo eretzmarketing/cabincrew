@@ -34,6 +34,7 @@ export default async function Footer() {
               <Link href="/termos" className="inline-flex min-h-9 items-center hover:text-white">Termos de Uso</Link>
               <Link href="/privacidade" className="inline-flex min-h-9 items-center hover:text-white">Privacidade</Link>
               <Link href="/reembolso" className="inline-flex min-h-9 items-center hover:text-white">Reembolso</Link>
+              <Link href="/ajuda" className="inline-flex min-h-9 items-center hover:text-white">Central de ajuda</Link>
               <Link href="/contato" className="inline-flex min-h-9 items-center hover:text-white">Contato</Link>
             </div>
           </nav>

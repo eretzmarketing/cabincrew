@@ -24,6 +24,7 @@ export default async function SuportePage({ searchParams }: { searchParams: Prom
         <div className="flex flex-col gap-1">
           <h1 className="font-display text-[32px] font-extrabold">Suporte</h1>
           <p className="text-[16px] text-ink-2">Abra um chamado e acompanhe a resposta por aqui. Avisamos no seu WhatsApp{profile?.whatsapp ? "" : " (cadastre o número em Minha conta)"} quando respondermos.</p>
+          <p className="text-[15px] text-ink-2">💡 Dúvida rápida? Veja antes a <Link href="/ajuda" className="font-semibold text-navy underline underline-offset-4">Central de ajuda</Link>.</p>
         </div>
         <nav aria-label="Suporte" className="flex gap-1 rounded-full bg-[#e9ebf1] p-1">
           <Link href="/conta/suporte?aba=novo" aria-current={aba === "novo" ? "page" : undefined} className={tab(aba === "novo")}>＋ Novo chamado</Link>
