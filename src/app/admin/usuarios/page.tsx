@@ -14,9 +14,11 @@ export const dynamic = "force-dynamic";
 
 const TAMANHOS = [20, 50, 100, 500];
 type Pessoa = { id: string; nome: string | null; email: string | null; whatsapp: string | null; escola: string | null; cadastro: string; bloqueado: boolean; compras: number };
-type Busca = { q?: string; escola?: string; curso?: string; sit?: string; de?: string; ate?: string; p?: string; n?: string; excluido?: string };
+type Busca = { q?: string; escola?: string; curso?: string; pag?: string; sit?: string; de?: string; ate?: string; p?: string; n?: string; excluido?: string };
 
 const CURSOS: Record<string, string> = { "head-hunter": "Com Head Hunter", english: "Com Flight Attendant English", spanish: "Com Flight Attendant Spanish", ambos: "Com HH e English", todos: "Com os três cursos", nenhum: "Sem curso", comprou: "Já comprou algo", plus: "Com Questões Plus" };
+const PAGAMENTO: Record<string, string> = { pago: "Pagos", cortesia: "Cortesia (sem pagamento)", reembolsado: "Reembolsados", sem: "Sem curso" };
+const brl = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const campo = "min-h-11 rounded-xl border border-[#c9cedb] bg-white px-3 text-[15px]";
 const diaSP = (iso: string) => new Date(iso).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
 
@@ -25,12 +27,13 @@ export default async function UsuariosPage({ searchParams }: { searchParams: Pro
   const POR_PAGINA = TAMANHOS.includes(Number(sp.n)) ? Number(sp.n) : 50;
   const paginaPedida = Math.max(1, Number(sp.p) || 1);
   const { supabase } = await getUser();
-  const [{ data: pessoas }, { data: admins }, { data: acs }, listaCursos, { data: plusRows }] = await Promise.all([
+  const [{ data: pessoas }, { data: admins }, { data: acs }, listaCursos, { data: plusRows }, { data: comprasRows }] = await Promise.all([
     supabase.rpc("admin_publico_campanha"),
     supabase.from("profiles").select("id, nome, apelido, whatsapp, escola, created_at, avatar_em").eq("is_admin", true),
     supabase.from("acessos").select("user_id, produto, status, expira_em"),
     infoCursos(),
     supabase.from("plus_assinantes").select("user_id, ate"),
+    supabase.from("compras").select("user_id, email, valor, status"),
   ]);
   const agora = new Date().toISOString();
   const cursos = new Map<string, string[]>();
@@ -40,6 +43,21 @@ export default async function UsuariosPage({ searchParams }: { searchParams: Pro
   const comPlus = new Map(((plusRows ?? []) as { user_id: string; ate: string | null }[])
     .filter((x) => !x.ate || x.ate > agora).map((x) => [x.user_id, x.ate]));
   const todos = (pessoas ?? []) as Pessoa[];
+  // pagamento: soma do que cada aluno pagou (compra ligada à conta ou ao mesmo e-mail)
+  const idPorEmail = new Map(todos.filter((p) => p.email).map((p) => [p.email!.trim().toLowerCase(), p.id]));
+  const pago = new Map<string, { total: number; n: number }>();
+  const reembolsou = new Set<string>();
+  for (const c of (comprasRows ?? []) as { user_id: string | null; email: string | null; valor: number; status: string }[]) {
+    const id = c.user_id ?? idPorEmail.get((c.email ?? "").trim().toLowerCase());
+    if (!id) continue;
+    if (c.status === "reembolsada") reembolsou.add(id);
+    else if (c.status === "aprovada" && Number(c.valor) > 0) {
+      const a = pago.get(id) ?? { total: 0, n: 0 };
+      pago.set(id, { total: a.total + Number(c.valor), n: a.n + 1 });
+    }
+  }
+  const tipoPagamento = (id: string) =>
+    pago.has(id) ? "pago" : (cursos.get(id)?.length ?? 0) > 0 ? "cortesia" : reembolsou.has(id) ? "reembolsado" : "sem";
   const escolas = [...new Set(todos.map((p) => p.escola).filter(Boolean) as string[])].sort((a, b) => a.localeCompare(b));
   const q = (sp.q ?? "").trim().toLowerCase();
   const qDig = q.replace(/\D/g, "");
@@ -59,6 +77,7 @@ export default async function UsuariosPage({ searchParams }: { searchParams: Pro
         default: return true;
       }
     })
+    .filter((p) => !sp.pag || !PAGAMENTO[sp.pag] || tipoPagamento(p.id) === sp.pag)
     .filter((p) => (sp.sit === "banido" ? p.bloqueado : sp.sit === "ativo" ? !p.bloqueado : true))
     .filter((p) => (!sp.de || diaSP(p.cadastro) >= sp.de) && (!sp.ate || diaSP(p.cadastro) <= sp.ate));
   const total = lista.length;
@@ -90,7 +109,7 @@ export default async function UsuariosPage({ searchParams }: { searchParams: Pro
 
       {sp.excluido && <p role="status" className="rounded-2xl bg-[#e5f6ec] px-5 py-4 font-semibold text-[#0f6b3a]">Conta de {sp.excluido} excluída. O registro ficou em <Link href="/admin/contas-excluidas" className="underline">Contas excluídas</Link>.</p>}
 
-      <form className="grid gap-3 rounded-2xl border border-line bg-white p-4 sm:grid-cols-2 lg:grid-cols-4" role="search">
+      <form className="grid gap-3 rounded-2xl border border-line bg-white p-4 sm:grid-cols-2 lg:grid-cols-5" role="search">
         <label className="flex flex-col gap-1 text-[13px] font-semibold sm:col-span-2">Buscar
           <input name="q" defaultValue={sp.q} placeholder="Nome, e-mail, telefone ou escola" className={campo} />
         </label>
@@ -99,6 +118,9 @@ export default async function UsuariosPage({ searchParams }: { searchParams: Pro
         </label>
         <label className="flex flex-col gap-1 text-[13px] font-semibold">Curso
           <select name="curso" defaultValue={sp.curso ?? ""} className={campo}><option value="">Todos</option>{Object.entries(CURSOS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select>
+        </label>
+        <label className="flex flex-col gap-1 text-[13px] font-semibold">Pagamento
+          <select name="pag" defaultValue={sp.pag ?? ""} className={campo}><option value="">Todos</option>{Object.entries(PAGAMENTO).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select>
         </label>
         <label className="flex flex-col gap-1 text-[13px] font-semibold">Situação
           <select name="sit" defaultValue={sp.sit ?? ""} className={campo}><option value="">Todas</option><option value="ativo">Ativos</option><option value="banido">Banidos</option></select>
@@ -159,8 +181,19 @@ export default async function UsuariosPage({ searchParams }: { searchParams: Pro
                 <span>desde {new Date(p.cadastro).toLocaleDateString("pt-BR")}</span>
                 {p.whatsapp && <span>{p.whatsapp}</span>}
               </span>
-              <span className="flex w-[124px] flex-wrap gap-1" aria-label="Cursos e recursos">
+              <span className="flex w-[150px] flex-wrap items-center gap-1" aria-label="Cursos e recursos">
                 {cs.map((c) => <span key={c} title={nomeCurso(c)} className="rounded-md bg-[#eef1ff] px-1.5 py-0.5 text-[11px] font-bold text-navy">{siglaCurso(c)}</span>)}
+                {(() => {
+                  const t = tipoPagamento(p.id);
+                  if (t === "pago") {
+                    const v = pago.get(p.id)!;
+                    const dica = `Pagou ${brl(v.total)} (${v.n} ${v.n === 1 ? "compra" : "compras"})`;
+                    return <span title={dica} aria-label={dica} className="grid h-[22px] w-[22px] place-items-center rounded-full bg-[#e5f6ec] text-[13px] font-extrabold text-[#0f6b3a]">$</span>;
+                  }
+                  if (t === "cortesia") return <span title="Cortesia: acesso liberado sem pagamento" aria-label="Cortesia: acesso liberado sem pagamento" className="grid h-[22px] w-[22px] place-items-center rounded-full bg-soft text-[12px]">🎁</span>;
+                  if (t === "reembolsado") return <span title="Reembolsado" aria-label="Reembolsado" className="grid h-[22px] w-[22px] place-items-center rounded-full bg-brand-soft text-[12px] font-bold text-brand-deep">↩</span>;
+                  return null;
+                })()}
                 {comPlus.has(p.id) && (() => {
                   const ate = comPlus.get(p.id);
                   const dica = `Questões Plus liberado ${ate ? `até ${new Date(ate).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}` : "sem prazo"}`;
