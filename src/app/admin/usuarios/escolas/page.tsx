@@ -4,7 +4,7 @@ import { alterarRegraEscola } from "@/app/massa-actions";
 import { Card, Titulo } from "@/components/admin-ui";
 import { AplicarRegra, EditarRegra, RegraEscolaForm, type Pacote } from "@/components/LiberacaoMassa";
 import { infoCursos } from "@/lib/cursos-dados";
-import { ESCOLAS } from "@/lib/escolas";
+import { listaEscolas } from "@/lib/escolas-dados";
 import { getUser } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Regras por escola" };
@@ -15,10 +15,11 @@ const prazo = (d: number | null) => (d == null ? "sem prazo" : d % 365 === 0 ? `
 
 export default async function RegrasEscolaPage() {
   const { supabase } = await getUser();
-  const [{ data: regras, error }, { data: pessoas }, cursos] = await Promise.all([
+  const [{ data: regras, error }, { data: pessoas }, cursos, ESCOLAS] = await Promise.all([
     supabase.from("escola_regras").select("*").order("escola"),
     supabase.rpc("admin_publico_campanha"),
     infoCursos(),
+    listaEscolas(),
   ]);
   const nomes = Object.fromEntries(cursos.map((c) => [c.slug, c.titulo]));
   const lista = cursos.map((c) => ({ slug: c.slug, nome: c.titulo }));

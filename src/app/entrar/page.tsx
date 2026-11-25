@@ -1,3 +1,4 @@
+import { listaEscolas } from "@/lib/escolas-dados";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -67,7 +68,7 @@ export default async function EntrarPage({
                 <Link href={qs("entrar")} className={tab(aba === "entrar")} aria-current={aba === "entrar" ? "page" : undefined}>Entrar</Link>
               </nav>}
               {erro && <p role="alert" className="rounded-xl bg-brand-soft px-4 py-3 text-[15px] text-brand-deep">O link expirou ou já foi usado. Peça um novo.</p>}
-              {aba === "cadastro" ? <CadastroForm next={destino} /> : <EntrarForm next={destino} esqueciHref={qs("esqueci")} />}
+              {aba === "cadastro" ? <CadastroForm next={destino} escolas={await listaEscolas()} /> : <EntrarForm next={destino} esqueciHref={qs("esqueci")} />}
             </>
           )}
         </div>

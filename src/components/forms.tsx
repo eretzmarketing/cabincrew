@@ -16,7 +16,7 @@ import {
   type FormState,
 } from "@/app/actions";
 import { FASES } from "@/lib/forum";
-import { ESCOLAS, ESCOLA_OUTRA } from "@/lib/escolas";
+import { ESCOLA_OUTRA } from "@/lib/escolas";
 
 const input =
   "min-h-12 w-full rounded-xl border border-[#c9cedb] bg-white px-3.5 text-[15px] text-navy placeholder:text-muted";
@@ -64,8 +64,8 @@ export function ListaEsperaForm() {
 }
 
 /* ---------- Escola: lista + "não está na lista" ---------- */
-function CampoEscola({ inicial = "" }: { inicial?: string }) {
-  const naLista = !inicial || ESCOLAS.includes(inicial);
+function CampoEscola({ inicial = "", escolas }: { inicial?: string; escolas: string[] }) {
+  const naLista = !inicial || escolas.includes(inicial);
   const [sel, setSel] = useState(naLista ? inicial : "__outra");
   return (
     <div className="flex flex-col gap-3">
@@ -74,7 +74,7 @@ function CampoEscola({ inicial = "" }: { inicial?: string }) {
         <select name="escola" required value={sel} onChange={(e) => setSel(e.target.value)} className={input}>
           <option value="" disabled>Selecione sua escola</option>
           <option value="__outra">{ESCOLA_OUTRA}</option>
-          {ESCOLAS.map((e) => <option key={e} value={e}>{e}</option>)}
+          {escolas.map((e) => <option key={e} value={e}>{e}</option>)}
         </select>
       </label>
       {sel === "__outra" && (
@@ -89,7 +89,7 @@ function CampoEscola({ inicial = "" }: { inicial?: string }) {
 
 /** Formata enquanto digita: (11) 98765-4321 */
 /* ---------- Cadastro ---------- */
-export function CadastroForm({ next }: { next: string }) {
+export function CadastroForm({ next, escolas }: { next: string; escolas: string[] }) {
   const [state, action] = useActionState(cadastrar, undefined);
   return (
     <form action={action} className="flex flex-col gap-4">
@@ -103,7 +103,7 @@ export function CadastroForm({ next }: { next: string }) {
         <input name="email" type="email" required autoComplete="email" placeholder="voce@email.com" className={input} />
       </label>
       <CampoTelefone />
-      <CampoEscola />
+      <CampoEscola escolas={escolas} />
       <label className={label}>
         Crie uma senha
         <input name="senha" type="password" required minLength={8} autoComplete="new-password" placeholder="Mínimo de 8 caracteres" className={input} />
@@ -170,7 +170,7 @@ export function NovaSenhaForm() {
 }
 
 /* ---------- Meus dados ---------- */
-export function PerfilForm({ p }: { p: { apelido: string; nome: string | null; whatsapp: string | null; escola: string | null } }) {
+export function PerfilForm({ p, escolas }: { p: { apelido: string; nome: string | null; whatsapp: string | null; escola: string | null }; escolas: string[] }) {
   const [state, action] = useActionState(salvarPerfil, undefined);
   return (
     <form action={action} className="flex flex-col gap-4">
@@ -179,7 +179,7 @@ export function PerfilForm({ p }: { p: { apelido: string; nome: string | null; w
         <input name="nome" required maxLength={80} defaultValue={p.nome ?? ""} className={input} />
       </label>
       <CampoTelefone inicial={p.whatsapp} />
-      <CampoEscola inicial={p.escola ?? ""} />
+      <CampoEscola inicial={p.escola ?? ""} escolas={escolas} />
       <Aviso state={state} />
       <Enviar className="self-start">Salvar</Enviar>
     </form>

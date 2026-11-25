@@ -55,3 +55,6 @@ Nunca peça senha do banco, tokens ou chaves no chat. Se o Daniel colar um, avis
 - Liberação em massa e regras por escola (SQL 0075): botão "🎁 Liberar em massa" em `/admin/usuarios` (marcados ou todos do filtro)
   e `/admin/usuarios/escolas` (pacote automático no cadastro: trigger `profiles_regra_escola`, só quando a escola é preenchida pela 1ª vez).
   Lógica em `_liberar_pacote` (nunca diminui acesso existente), `src/app/massa-actions.ts`, `src/components/LiberacaoMassa.tsx`.
+- Escolas de aviação (SQL 0076): tabela `escolas` editável em Configurações › Escolas de aviação (`/admin/configuracoes/escolas`,
+  colar várias, renomear com correção nos alunos via RPC `admin_renomear_escola`, excluir várias). O cadastro e Minha conta
+  usam `listaEscolas()` (`src/lib/escolas-dados.ts`); `src/lib/escolas.ts` é só o reserva se a tabela não existir.

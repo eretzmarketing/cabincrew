@@ -1,3 +1,4 @@
+import { listaEscolas } from "@/lib/escolas-dados";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -250,7 +251,7 @@ export default async function ContaPage({ searchParams }: { searchParams: Promis
                 <h3 className="font-display text-xl font-bold">Dados pessoais</h3>
                 <p className="text-[15px] text-ink-2">E-mail: <strong className="text-navy">{user.email}</strong></p>
               </div>
-              <PerfilForm p={profile} />
+              <PerfilForm p={profile} escolas={await listaEscolas()} />
             </section>
             <section className="flex flex-col gap-4 rounded-[20px] border border-line bg-white p-6">
               <h3 className="font-display text-xl font-bold">Trocar senha</h3>

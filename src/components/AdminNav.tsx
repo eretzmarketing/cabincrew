@@ -83,6 +83,7 @@ export const GRUPOS: Grupo[] = [
     id: "config", label: "Configurações",
     itens: [
       { href: "/admin/configuracoes", label: "Geral" },
+      { href: "/admin/configuracoes/escolas", label: "Escolas de aviação" },
       { href: "/admin/whatsapp", label: "WhatsApp" },
       { href: "/admin/pagamentos", label: "Pagamentos" },
       { href: "/admin/envios", label: "Envios (SuperFrete)" },
