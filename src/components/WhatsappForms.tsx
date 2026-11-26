@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useRef, useState, useTransition } from "react";
-import { criarAvisoPersonalizado, enviarWhatsappManual, reenviarWhatsapp, salvarConexaoWhatsapp, salvarModeloWhatsapp } from "@/app/whatsapp-actions";
+import { criarAvisoPersonalizado, enviarWhatsappManual, reenviarPorCanal, reenviarWhatsapp, salvarConexaoWhatsapp, salvarModeloWhatsapp } from "@/app/whatsapp-actions";
 
 const campo = "w-full rounded-xl border border-[#c9cedb] bg-white px-4 py-3 text-[15px] leading-relaxed outline-none focus:border-navy";
 const btn = "inline-flex min-h-11 cursor-pointer items-center justify-center rounded-full bg-navy px-5 font-semibold text-white hover:bg-navy-deep disabled:opacity-50";
@@ -228,6 +228,61 @@ export function AcoesEnvio({ id, nome, telefone, texto }: { id: number; nome: st
             <button type="button" disabled={pend} onClick={() => iniciar(async () => setRes(await reenviarWhatsapp(id)))}
               className="inline-flex min-h-11 cursor-pointer items-center rounded-full bg-[#25d366] px-5 font-semibold text-[#0b3d20] hover:brightness-95 disabled:opacity-50">
               {pend ? "Enviando…" : "↻ Reenviar agora"}
+            </button>
+          )}
+        </div>
+      </Janela>
+    </div>
+  );
+}
+
+/** Histórico unificado: ver a mensagem e reenviar por WhatsApp ou por SMS (texto editável). */
+export function AcoesHistorico({ canal, nome, telefone, texto, evento, userId, origem, smsLigado, whatsLigado }: {
+  canal: "whatsapp" | "sms"; nome: string; telefone: string | null; texto: string | null; evento: string; userId: string | null; origem: string; smsLigado: boolean; whatsLigado: boolean;
+}) {
+  const limpo = (texto ?? "").replace(/^\[SMS\] /, "").replace(/\n\n\[\+ SMS enviado\]$/, "");
+  const [ver, setVer] = useState(false);
+  const [via, setVia] = useState<"whatsapp" | "sms" | null>(null);
+  const [msg, setMsg] = useState("");
+  const [res, setRes] = useState<{ msg?: string; erro?: string }>({});
+  const [pend, iniciar] = useTransition();
+  const abrir = (c: "whatsapp" | "sms") => {
+    setRes({});
+    setMsg(c === "sms" && canal === "whatsapp" ? semEmoji(limpo).slice(0, 480) : limpo);
+    setVia(c);
+  };
+  const c = contarSms(msg);
+  const botao = "inline-flex min-h-10 cursor-pointer items-center gap-1.5 rounded-full border-2 px-3.5 text-[13px] font-bold disabled:cursor-not-allowed disabled:opacity-40";
+  return (
+    <div className="flex flex-wrap items-center justify-end gap-2">
+      <button type="button" className={icone} onClick={() => setVer(true)} disabled={!texto} aria-label={`Ver a mensagem enviada para ${nome}`} title="Ver mensagem">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" /><circle cx="12" cy="12" r="3" /></svg>
+      </button>
+      <button type="button" onClick={() => abrir("whatsapp")} disabled={!telefone || !texto || !whatsLigado} title={whatsLigado ? "Reenviar pelo WhatsApp" : "WhatsApp não conectado"}
+        className={`${botao} border-[#25d366] text-[#0b6b34] hover:bg-[#e9fbef]`}>↻ WhatsApp</button>
+      <button type="button" onClick={() => abrir("sms")} disabled={!telefone || !texto || !smsLigado} title={smsLigado ? "Reenviar por SMS" : "SMS não conectado"}
+        className={`${botao} border-[#4f6bed] text-[#2b3fa8] hover:bg-[#eef1ff]`}>↻ SMS</button>
+      <Janela aberta={ver} fechar={() => setVer(false)} titulo={`Mensagem para ${nome}`}>
+        <span className="text-[14px] text-muted">{telefone} · {canal === "sms" ? "SMS" : "WhatsApp"}</span>
+        <div className="rounded-2xl bg-[#efeae2] p-4"><div className={bolha}>{texto}</div></div>
+      </Janela>
+      <Janela aberta={via !== null} fechar={() => setVia(null)} titulo={via === "sms" ? "Reenviar por SMS" : "Reenviar pelo WhatsApp"}>
+        <p className="text-[15px] text-ink-2">Para <strong className="text-navy">{nome}</strong> ({telefone}). Você pode ajustar o texto antes de enviar.</p>
+        <textarea value={msg} onChange={(e) => setMsg(e.target.value)} rows={via === "sms" ? 4 : 7} maxLength={via === "sms" ? 480 : 3000} aria-label="Texto" className={campo} />
+        {via === "sms" && (
+          <p className={`text-[13px] ${c.partes > 1 ? "font-semibold text-[#7a5a00]" : "text-muted"}`}>
+            {c.n} caracteres · {c.partes <= 1 ? "1 SMS" : `${c.partes} SMS`}{!c.simples && " · com acento ou emoji o limite cai para 70"}
+            {!c.simples && <button type="button" onClick={() => setMsg(tirarAcentos(msg))} className="ml-2 cursor-pointer font-semibold text-navy underline underline-offset-4">Tirar acentos</button>}
+          </p>
+        )}
+        {res.erro && <p role="alert" className="rounded-xl bg-brand-soft px-4 py-2.5 text-[14px] text-brand-deep">{res.erro}</p>}
+        {res.msg && <p role="status" className="rounded-xl bg-[#e5f6ec] px-4 py-2.5 text-[14px] text-[#0f6b3a]">{res.msg}</p>}
+        <div className="flex flex-wrap justify-end gap-2">
+          <button type="button" onClick={() => setVia(null)} className="inline-flex min-h-11 cursor-pointer items-center rounded-full border-2 border-line px-5 font-semibold text-navy">{res.msg ? "Fechar" : "Cancelar"}</button>
+          {!res.msg && via && (
+            <button type="button" disabled={pend || !msg.trim()} onClick={() => iniciar(async () => setRes(await reenviarPorCanal({ canal: via, telefone: telefone ?? "", texto: msg, evento, userId, origem })))}
+              className={`inline-flex min-h-11 cursor-pointer items-center rounded-full px-5 font-semibold disabled:opacity-50 ${via === "sms" ? "bg-[#4f6bed] text-white" : "bg-[#25d366] text-[#0b3d20]"}`}>
+              {pend ? "Enviando…" : via === "sms" ? "Enviar SMS" : "Enviar WhatsApp"}
             </button>
           )}
         </div>

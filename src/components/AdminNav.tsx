@@ -85,6 +85,7 @@ export const GRUPOS: Grupo[] = [
       { href: "/admin/configuracoes", label: "Geral" },
       { href: "/admin/configuracoes/escolas", label: "Escolas de aviação" },
       { href: "/admin/whatsapp", label: "WhatsApp e SMS" },
+      { href: "/admin/whatsapp/historico", label: "Histórico de envios" },
       { href: "/admin/pagamentos", label: "Pagamentos" },
       { href: "/admin/envios", label: "Envios (SuperFrete)" },
       { href: "/admin/ia", label: "Inteligência artificial" },

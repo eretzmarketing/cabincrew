@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Card, Numero, Titulo } from "@/components/admin-ui";
 import { excluirAvisoPersonalizado } from "@/app/whatsapp-actions";
-import { AcoesEnvio, ConexaoWhatsappForm, EnviarWhatsappForm, ModeloWhatsappForm, NovoAvisoForm } from "@/components/WhatsappForms";
+import { ConexaoWhatsappForm, EnviarWhatsappForm, ModeloWhatsappForm, NovoAvisoForm } from "@/components/WhatsappForms";
 import { SmsForm, SmsTeste } from "@/components/SmsForm";
 import { configSMS } from "@/lib/sms";
 import { getUser } from "@/lib/supabase/server";
@@ -16,12 +16,6 @@ type Sms = { id: number; evento: string; telefone: string; texto: string; status
 const ROTULO_CANAL: Record<string, string> = { whatsapp: "WhatsApp", sms: "SMS", ambos: "WhatsApp + SMS", reserva: "WhatsApp (SMS se falhar)" };
 type Envio = { id: number; user_id: string | null; evento: string; ref: string; telefone: string | null; texto: string | null; status: string; erro: string | null; created_at: string; profiles: { nome: string | null; apelido: string | null } | null };
 
-const STATUS: Record<string, { rotulo: string; cor: string }> = {
-  enviada: { rotulo: "Enviada", cor: "bg-[#e5f6ec] text-[#0f6b3a]" },
-  enviando: { rotulo: "Enviando", cor: "bg-[#eceef3] text-ink-2" },
-  erro: { rotulo: "Erro", cor: "bg-brand-soft text-brand-deep" },
-  sem_whatsapp: { rotulo: "Sem WhatsApp", cor: "bg-[#fff8e6] text-[#7a5a00]" },
-};
 
 export default async function WhatsappAdminPage() {
   const { supabase } = await getUser();
@@ -47,19 +41,6 @@ export default async function WhatsappAdminPage() {
   const personalizados = todos.filter((m) => m.personalizado);
   const envios = (envs.data ?? []) as unknown as Envio[];
 
-  // nome de quem não é aluno (lista Em breve, conta excluída), pelo telefone
-  const semAluno = [...new Set(envios.filter((e) => !e.profiles && e.telefone).map((e) => e.telefone!))];
-  const nomes = new Map<string, string>();
-  if (semAluno.length) {
-    const [i, c] = await Promise.all([
-      supabase.from("interessados").select("nome, telefone").in("telefone", semAluno),
-      supabase.from("contas_excluidas").select("nome, whatsapp").in("whatsapp", semAluno),
-    ]);
-    for (const x of c.data ?? []) if (x.nome) nomes.set(x.whatsapp as string, x.nome as string);
-    for (const x of i.data ?? []) nomes.set(x.telefone as string, x.nome as string);
-  }
-  const nomeDe = (e: Envio) => e.profiles?.nome || e.profiles?.apelido || (e.telefone && nomes.get(e.telefone)) || (e.evento === "manual" ? "Mensagem avulsa" : "—");
-  const titulo = new Map(todos.map((m) => [m.evento, m.titulo]));
   const limite = new Date().getTime() - 86400000;
   const hoje = envios.filter((e) => Date.parse(e.created_at) > limite);
   const con = conexaoWhatsapp();
@@ -154,59 +135,11 @@ export default async function WhatsappAdminPage() {
         </div>
       </section>
 
-      <section className="flex flex-col gap-3">
-        <h2 className="font-display text-2xl font-extrabold">Histórico do WhatsApp</h2>
-        <p className="text-[14px] text-muted">Avisos que saíram só por SMS aparecem aqui com o texto começando por [SMS].</p>
-        <div className="relative overflow-x-auto rounded-2xl border border-line bg-white">
-          <table className="w-full min-w-[720px] text-left text-[14px]">
-            <thead className="border-b border-line text-[13px] text-muted">
-              <tr><th className="p-3 font-semibold">Nome</th><th className="p-3 font-semibold">Telefone</th><th className="p-3 font-semibold">Tipo de aviso</th><th className="p-3 font-semibold">Status</th><th className="p-3"><span className="sr-only">Ações</span></th></tr>
-            </thead>
-            <tbody>
-              {envios.map((e) => {
-                const nome = nomeDe(e);
-                return (
-                  <tr key={e.id} className="border-b border-[#eceef3] last:border-0">
-                    <td className="p-3">{e.user_id && e.profiles ? <Link href={`/admin/usuarios/${e.user_id}`} className="font-semibold text-navy underline-offset-4 hover:underline">{nome}</Link> : <span className="font-semibold">{nome}</span>}</td>
-                    <td className="p-3 whitespace-nowrap">{e.telefone ?? "—"}</td>
-                    <td className="p-3">
-                      {e.evento === "manual" ? "Mensagem avulsa" : titulo.get(e.evento) ?? "Aviso excluído"}
-                      {e.ref?.startsWith("reenvio-") && <span className="ml-2 rounded-full bg-[#eceef3] px-2 py-0.5 text-[12px] font-semibold text-ink-2">reenvio</span>}
-                      <span className="block text-[12px] text-muted">{new Date(e.created_at).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" })}</span>
-                    </td>
-                    <td className="p-3"><span className={`inline-block rounded-full px-2.5 py-0.5 text-[13px] font-semibold ${STATUS[e.status]?.cor ?? ""}`}>{STATUS[e.status]?.rotulo ?? e.status}</span>{e.erro && <span className="block pt-1 text-[12px] text-muted">{e.erro}</span>}</td>
-                    <td className="p-3"><AcoesEnvio id={e.id} nome={nome} telefone={e.telefone} texto={e.texto} /></td>
-                  </tr>
-                );
-              })}
-              {!envios.length && <tr><td colSpan={5} className="p-6 text-center text-ink-2">Nenhuma mensagem enviada ainda.</td></tr>}
-            </tbody>
-          </table>
-        </div>
-      </section>
-      {temSms && (
-        <section className="flex flex-col gap-3">
-          <h2 className="font-display text-2xl font-extrabold">Histórico de SMS</h2>
-          <div className="relative overflow-x-auto rounded-2xl border border-line bg-white">
-            <table className="w-full min-w-[640px] text-left text-[14px]">
-              <thead className="border-b border-line text-[13px] text-muted">
-                <tr><th className="p-3 font-semibold">Telefone</th><th className="p-3 font-semibold">Aviso</th><th className="p-3 font-semibold">Texto</th><th className="p-3 font-semibold">Status</th></tr>
-              </thead>
-              <tbody>
-                {smsLista.map((e) => (
-                  <tr key={e.id} className="border-b border-[#eceef3] align-top last:border-0">
-                    <td className="p-3 whitespace-nowrap">{e.telefone}</td>
-                    <td className="p-3">{titulo.get(e.evento) ?? (e.evento === "teste-admin" ? "Teste" : e.evento)}<span className="block text-[12px] text-muted">{new Date(e.created_at).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" })}</span></td>
-                    <td className="max-w-[360px] p-3 text-ink-2">{e.texto}</td>
-                    <td className="p-3"><span className={`inline-block rounded-full px-2.5 py-0.5 text-[13px] font-semibold ${STATUS[e.status]?.cor ?? ""}`}>{STATUS[e.status]?.rotulo ?? e.status}</span>{e.erro && <span className="block pt-1 text-[12px] text-muted">{e.erro}</span>}</td>
-                  </tr>
-                ))}
-                {!smsLista.length && <tr><td colSpan={4} className="p-6 text-center text-ink-2">Nenhum SMS enviado ainda.</td></tr>}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      )}
+      <Card>
+        <h2 className="font-display text-xl font-extrabold">Histórico de envios</h2>
+        <p className="text-[15px] text-ink-2">Veja tudo o que foi enviado por WhatsApp e SMS, filtre as falhas e reenvie pelo outro canal com um clique.</p>
+        <div><Link href="/admin/whatsapp/historico" className="inline-flex min-h-11 items-center rounded-full bg-navy px-5 font-semibold text-white hover:bg-navy-deep">Abrir o histórico →</Link></div>
+      </Card>
     </>
   );
 }

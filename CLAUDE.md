@@ -63,3 +63,4 @@ Nunca peça senha do banco, tokens ou chaves no chat. Se o Daniel colar um, avis
 - Avisos automáticos (SQL 0077): cada `whatsapp_modelos` tem `canal` (whatsapp | sms | ambos | reserva) e `texto_sms`.
   Todo aviso de modelo passa por `enviarAviso()` em `src/lib/whatsapp.ts` (histórico de SMS em `sms_envios`, RPC `sms_registrar`).
   Campanhas, mensagens avulsas e avisos da equipe continuam só no WhatsApp.
+  Histórico unificado com reenvio por WhatsApp ou SMS: `/admin/whatsapp/historico` (ação `reenviarPorCanal`).

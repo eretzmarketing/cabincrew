@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getUser } from "@/lib/supabase/server";
 import { chmod, unlink, writeFile } from "node:fs/promises";
+import { enviarSMS, numeroSMS, smsConfigurado } from "@/lib/sms";
 import { ARQUIVO_CONEXAO, GATILHOS, conexaoWhatsapp, enviarWhatsapp, preencher, testarConexao, urlPublicaMidia } from "@/lib/whatsapp";
 
 type Estado = { ok?: boolean; msg?: string; erro?: string };
@@ -160,4 +161,32 @@ export async function enviarMensagemAvulsa(d: { telefone: string; userId?: strin
   });
   revalidatePath("/admin/whatsapp");
   return r.ok ? { ok: true, msg: "Mensagem enviada ✓" } : { erro: `Não foi enviada: ${r.erro}` };
+}
+
+/** Admin: reenvia uma mensagem do histórico pelo canal escolhido (WhatsApp ou SMS), com texto editável. */
+export async function reenviarPorCanal(dados: { canal: "whatsapp" | "sms"; telefone: string; texto: string; evento: string; userId: string | null; origem: string }): Promise<Estado> {
+  const { supabase } = await admin();
+  const texto = dados.texto.trim();
+  const evento = /^[a-z0-9_-]{2,60}$/.test(dados.evento) ? dados.evento : "manual";
+  const userId = dados.userId && /^[0-9a-f-]{36}$/i.test(dados.userId) ? dados.userId : null;
+  if (!dados.telefone) return { erro: "Sem telefone para reenviar." };
+  if (texto.length < 2) return { erro: "Escreva a mensagem." };
+  if (dados.canal === "sms") {
+    if (!smsConfigurado()) return { erro: "O SMS não está conectado ou está desligado (Configurações › WhatsApp e SMS)." };
+    if (!numeroSMS(dados.telefone)) return { erro: "SMS só vai para celulares do Brasil." };
+    if (texto.length > 480) return { erro: "O SMS pode ter no máximo 480 caracteres." };
+    const r = await enviarSMS(dados.telefone, texto, `reenvio-${evento}`);
+    await supabase.rpc("sms_registrar", { p_evento: evento, p_telefone: dados.telefone, p_texto: texto, p_status: r.ok ? "enviada" : "erro", p_erro: r.ok ? null : r.erro });
+    revalidatePath("/admin/whatsapp/historico");
+    return r.ok ? { ok: true, msg: "SMS enviado ✓" } : { erro: `SMS não enviado: ${r.erro}` };
+  }
+  if (!conexaoWhatsapp()) return { erro: "O WhatsApp não está conectado." };
+  if (texto.length > 3000) return { erro: "Mensagem longa demais." };
+  const r = await enviarWhatsapp(dados.telefone, texto);
+  await supabase.from("whatsapp_envios").insert({
+    user_id: userId, evento, ref: `reenvio-${dados.origem}-${Date.now()}`.slice(0, 120),
+    telefone: dados.telefone, texto, status: r.ok ? "enviada" : r.status, erro: r.ok ? null : r.erro,
+  });
+  revalidatePath("/admin/whatsapp/historico");
+  return r.ok ? { ok: true, msg: "WhatsApp enviado ✓" } : { erro: `WhatsApp não enviado: ${r.erro}` };
 }
