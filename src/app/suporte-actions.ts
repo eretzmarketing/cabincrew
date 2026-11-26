@@ -12,7 +12,7 @@ import {
   ARQUIVO_SUPORTE, DEPARTAMENTOS, EMAIL_PADRAO, SITE, avisarEquipe, configSuporte, enviarEmail, salvarAnexos, testarSmtp,
 } from "@/lib/suporte";
 import { getUser } from "@/lib/supabase/server";
-import { enviarWhatsapp, preencher, whatsappConfigurado } from "@/lib/whatsapp";
+import { avisosLigados, enviarAviso, enviarWhatsapp, preencher } from "@/lib/whatsapp";
 import { normalizarTelefone } from "@/lib/telefone";
 
 type Estado = { ok?: boolean; msg?: string; erro?: string };
@@ -110,14 +110,14 @@ export async function responderChamado(_: Estado, form: FormData): Promise<Estad
   const daEquipe = profile.is_admin && t.user_id !== user.id;
   if (daEquipe) {
     if (form.get("fechar") === "on") await supabase.rpc("ticket_status", { p_ticket: ticket, p_status: "fechado" });
-    if (whatsappConfigurado()) {
+    if (avisosLigados()) {
       after(async () => {
         const { data } = await supabase.rpc("ticket_whatsapp_reservar", { p_mensagem: msgId });
         const r = ((data ?? []) as { envio_id: number; telefone: string; nome: string; texto: string; assunto: string; chamado: number }[])[0];
         if (!r) return;
-        const msg = preencher(r.texto, { nome: r.nome, assunto: r.assunto, chamado: r.chamado });
-        const res = await enviarWhatsapp(r.telefone, msg);
-        await supabase.rpc("ticket_whatsapp_resultado", { p_id: r.envio_id, p_status: res.ok ? "enviada" : res.status, p_texto: msg, p_erro: res.ok ? null : res.erro });
+        const vars = { nome: r.nome, assunto: r.assunto, chamado: r.chamado };
+        const res = await enviarAviso(supabase, "ticket_respondido", r.telefone, preencher(r.texto, vars), vars);
+        await supabase.rpc("ticket_whatsapp_resultado", { p_id: r.envio_id, p_status: res.ok ? "enviada" : res.status, p_texto: res.texto, p_erro: res.ok ? null : res.erro });
       });
     }
   } else {
@@ -130,7 +130,7 @@ export async function responderChamado(_: Estado, form: FormData): Promise<Estad
   revalidatePath(`/conta/suporte/${ticket}`);
   revalidatePath(`/admin/suporte/${ticket}`);
   revalidatePath("/admin/suporte");
-  return { ok: true, msg: daEquipe ? (whatsappConfigurado() ? "Resposta enviada. O aluno vai receber o aviso no WhatsApp." : "Resposta enviada.") : "Mensagem enviada. Avisaremos no WhatsApp quando respondermos." };
+  return { ok: true, msg: daEquipe ? (avisosLigados() ? "Resposta enviada. O aluno vai receber o aviso." : "Resposta enviada.") : "Mensagem enviada. Avisaremos no WhatsApp quando respondermos." };
 }
 
 /* ------------------------------------------------------------------ admin */

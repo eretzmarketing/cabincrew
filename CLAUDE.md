@@ -58,5 +58,8 @@ Nunca peça senha do banco, tokens ou chaves no chat. Se o Daniel colar um, avis
 - Escolas de aviação (SQL 0076): tabela `escolas` editável em Configurações › Escolas de aviação (`/admin/configuracoes/escolas`,
   colar várias, renomear com correção nos alunos via RPC `admin_renomear_escola`, excluir várias). O cadastro e Minha conta
   usam `listaEscolas()` (`src/lib/escolas-dados.ts`); `src/lib/escolas.ts` é só o reserva se a tabela não existir.
-- SMS (smsmais): token em `~/.cabincrew-sms.json` (Admin › Configurações › SMS, `/admin/sms`), envio em `src/lib/sms.ts`
+- SMS (smsmais): token em `~/.cabincrew-sms.json` (Configurações › WhatsApp e SMS, `/admin/whatsapp#sms`), envio em `src/lib/sms.ts`
   (`enviarSMS`, POST https://smsmais.com/api/enviar_sms.php; 403 = opt-out, `held_no_balance` = sem saldo). Evite emoji no texto (vira UCS-2, 70 caracteres).
+- Avisos automáticos (SQL 0077): cada `whatsapp_modelos` tem `canal` (whatsapp | sms | ambos | reserva) e `texto_sms`.
+  Todo aviso de modelo passa por `enviarAviso()` em `src/lib/whatsapp.ts` (histórico de SMS em `sms_envios`, RPC `sms_registrar`).
+  Campanhas, mensagens avulsas e avisos da equipe continuam só no WhatsApp.

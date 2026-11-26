@@ -93,7 +93,7 @@ export function LiberarEmMassa({ cursos, idsFiltro, filtrando }: { cursos: Curso
           <fieldset className="flex flex-wrap gap-2">
             <legend className="mb-2 text-[14px] font-bold">Para quem</legend>
             {([["marcados", `Só os marcados (${marcados.length})`], ["filtro", `Todos ${filtrando ? "do filtro atual" : "os cadastrados"} (${idsFiltro.length})`]] as const).map(([v, l]) => (
-              <label key={v} className={`inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full border-2 px-4 text-[14px] font-semibold ${alvo === v ? "border-navy bg-[#eef1ff] text-navy" : "border-line text-ink-2"}`}>
+              <label key={v} className={`relative inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full border-2 px-4 text-[14px] font-semibold ${alvo === v ? "border-navy bg-[#eef1ff] text-navy" : "border-line text-ink-2"}`}>
                 <input type="radio" name="alvo" value={v} checked={alvo === v} onChange={() => { setAlvo(v); setConfirmar(false); }} className="sr-only" />{l}
               </label>
             ))}

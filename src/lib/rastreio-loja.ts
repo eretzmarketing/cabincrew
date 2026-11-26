@@ -5,7 +5,7 @@
  */
 import { anonimo, configMP, SITE } from "@/lib/mercadopago";
 import { configSuperfrete, infoEtiqueta } from "@/lib/superfrete";
-import { enviarWhatsapp, preencher } from "@/lib/whatsapp";
+import { enviarAviso, preencher } from "@/lib/whatsapp";
 import { enderecoEmLinha, linkRastreio, transportadora, type Endereco } from "@/lib/loja";
 
 export type ResumoRastreio = { conferidos: number; enviados: number; entregues: number; erros: string[]; aviso?: string };
@@ -38,13 +38,13 @@ export async function atualizarEntregas(): Promise<ResumoRastreio> {
       if (r.evento === "loja_enviado") resumo.enviados++;
       if (r.evento === "loja_entregue") resumo.entregues++;
       if (r.envio_id && r.telefone && r.texto) {
-        const texto = preencher(r.texto, {
+        const vars = {
           nome: r.nome ?? "", pedido: p.id, produto: `${r.quantidade > 1 ? `${r.quantidade}× ` : ""}${r.produto_nome}`,
           rastreio: r.rastreio ?? "", link_rastreio: r.rastreio ? linkRastreio(r.rastreio, r.etiqueta_servico) : `${SITE}/conta/pedidos`,
           transportadora: transportadora(r.etiqueta_servico), endereco: enderecoEmLinha(r.endereco),
-        });
-        const w = await enviarWhatsapp(r.telefone, texto);
-        await supabase.rpc("loja_whatsapp_resultado", { p_chave: mp.chave, p_id: r.envio_id, p_status: w.ok ? "enviada" : w.status, p_texto: texto, p_erro: w.ok ? null : w.erro });
+        };
+        const w = await enviarAviso(supabase, r.evento ?? "loja_enviado", r.telefone, preencher(r.texto, vars), vars, { chave: mp.chave });
+        await supabase.rpc("loja_whatsapp_resultado", { p_chave: mp.chave, p_id: r.envio_id, p_status: w.ok ? "enviada" : w.status, p_texto: w.texto, p_erro: w.ok ? null : w.erro });
       }
     } catch (e) {
       resumo.erros.push(`Pedido nº ${p.id}: ${(e as Error).message}`);

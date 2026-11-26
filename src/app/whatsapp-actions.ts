@@ -21,6 +21,15 @@ export async function salvarModeloWhatsapp(_: Estado, form: FormData): Promise<E
   if (!/^[a-z0-9_]{3,40}$/.test(evento)) return { erro: "Modelo inválido." };
   if (texto.length < 5 || texto.length > 3000) return { erro: "Escreva a mensagem (até 3.000 caracteres)." };
   const dados: Record<string, unknown> = { texto, ativo: form.get("ativo") === "on", updated_at: new Date().toISOString() };
+  if (form.has("canal")) {
+    const canal = String(form.get("canal"));
+    const textoSms = String(form.get("texto_sms") ?? "").trim();
+    if (!["whatsapp", "sms", "ambos", "reserva"].includes(canal)) return { erro: "Escolha por onde o aviso é enviado." };
+    if (canal !== "whatsapp" && textoSms.length < 5) return { erro: "Escreva o texto do SMS (ou escolha só WhatsApp)." };
+    if (textoSms.length > 480) return { erro: "O SMS pode ter no máximo 480 caracteres (3 SMS)." };
+    dados.canal = canal;
+    dados.texto_sms = textoSms || null;
+  }
   const titulo = String(form.get("titulo") ?? "").trim();
   const gatilho = String(form.get("gatilho") ?? "");
   if (titulo) {
@@ -33,7 +42,7 @@ export async function salvarModeloWhatsapp(_: Estado, form: FormData): Promise<E
     dados.quando = GATILHOS[gatilho] + ".";
   }
   const { error } = await supabase.from("whatsapp_modelos").update(dados).eq("evento", evento);
-  if (error) return { erro: "Não foi possível salvar." };
+  if (error) return { erro: error.message.includes("canal") || error.message.includes("texto_sms") ? "Falta rodar o SQL 0077_avisos_sms.sql no Supabase." : "Não foi possível salvar." };
   revalidatePath("/admin/whatsapp");
   return { ok: true, msg: "Salvo." };
 }

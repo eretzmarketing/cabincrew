@@ -3,7 +3,7 @@ import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import { readFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { enviarWhatsapp, preencher } from "@/lib/whatsapp";
+import { enviarAviso, preencher } from "@/lib/whatsapp";
 import { enderecoEmLinha, lerReferenciaLoja, type Endereco } from "@/lib/loja";
 
 /**
@@ -122,10 +122,10 @@ export async function avisarCompra(r: AvisoCompra | undefined, produto: string, 
   if (!r?.envio_id || !r.telefone || !r.texto) return;
   const supabase = anonimo();
   const { data: prod } = await supabase.from("produtos").select("nome, endereco").eq("slug", produto).maybeSingle();
-  const texto = preencher(r.texto, { nome: r.nome ?? "", produto: prod?.nome ?? "Head Hunter", endereco: `${SITE}${prod?.endereco ?? "/head-hunter"}`, valor, forma });
-  const res = await enviarWhatsapp(r.telefone, texto);
+  const vars = { nome: r.nome ?? "", produto: prod?.nome ?? "Head Hunter", endereco: `${SITE}${prod?.endereco ?? "/head-hunter"}`, valor, forma };
   const chave = configMP()?.chave;
-  if (chave) await supabase.rpc("mp_whatsapp_resultado", { p_chave: chave, p_id: r.envio_id, p_status: res.ok ? "enviada" : res.status, p_texto: texto, p_erro: res.ok ? null : res.erro });
+  const res = await enviarAviso(supabase, "compra_aprovada", r.telefone, preencher(r.texto, vars), vars, { chave });
+  if (chave) await supabase.rpc("mp_whatsapp_resultado", { p_chave: chave, p_id: r.envio_id, p_status: res.ok ? "enviada" : res.status, p_texto: res.texto, p_erro: res.ok ? null : res.erro });
 }
 
 /** Confere a assinatura do aviso (webhook) do Mercado Pago. Sem assinatura configurada, devolve null (não verificado). */
@@ -161,12 +161,12 @@ async function registrarPagamentoLoja(pg: Pagamento): Promise<{ situacao: string
   if (r?.envio_id && r.telefone && r.texto) {
     const { data: ped } = await supabase.rpc("loja_resumo_pedido", { p_chave: cfg.chave, p_pedido: ref.pedido });
     const p = ((ped ?? []) as { produto_nome: string; quantidade: number; endereco: Endereco }[])[0];
-    const texto = preencher(r.texto, {
+    const vars = {
       nome: r.nome ?? "", pedido: ref.pedido, produto: p ? `${p.quantidade > 1 ? `${p.quantidade}× ` : ""}${p.produto_nome}` : "sua apostila",
       endereco: p ? enderecoEmLinha(p.endereco) : "", valor: reais(pg.transaction_amount), forma: FORMA[metodo] ?? metodo,
-    });
-    const res = await enviarWhatsapp(r.telefone, texto);
-    await supabase.rpc("loja_whatsapp_resultado", { p_chave: cfg.chave, p_id: r.envio_id, p_status: res.ok ? "enviada" : res.status, p_texto: texto, p_erro: res.ok ? null : res.erro });
+    };
+    const res = await enviarAviso(supabase, "loja_pago", r.telefone, preencher(r.texto, vars), vars, { chave: cfg.chave });
+    await supabase.rpc("loja_whatsapp_resultado", { p_chave: cfg.chave, p_id: r.envio_id, p_status: res.ok ? "enviada" : res.status, p_texto: res.texto, p_erro: res.ok ? null : res.erro });
   }
   return { situacao: r?.situacao ?? "pendente" };
 }

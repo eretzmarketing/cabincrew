@@ -335,7 +335,7 @@ export async function excluirMinhaConta(_: FormState, form: FormData): Promise<F
   }
   await supabase.auth.signOut().catch(() => {});
   const reserva = ((data ?? []) as { envio_id: number; telefone: string; nome: string; texto: string }[])[0];
-  after(() => enviarReservaPublica(supabase, reserva));
+  after(() => enviarReservaPublica(supabase, "conta_excluida", reserva));
   revalidatePath("/", "layout");
   redirect("/entrar?conta=excluida");
 }

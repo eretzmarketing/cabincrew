@@ -7,7 +7,7 @@ import { redirect } from "next/navigation";
 import { FORMAS } from "@/lib/compras";
 import { normalizarTelefone } from "@/lib/telefone";
 import { SITE } from "@/lib/mercadopago";
-import { enviarWhatsapp, preencher } from "@/lib/whatsapp";
+import { enviarAviso, preencher } from "@/lib/whatsapp";
 import { ARQUIVO_MP, configMP, hashChave, testarTokenMP } from "@/lib/mercadopago";
 import { getUser } from "@/lib/supabase/server";
 import { infoCursos } from "@/lib/cursos-dados";
@@ -222,15 +222,15 @@ export async function adicionarAoCurso(_: Estado, form: FormData): Promise<Estad
   if (form.get("avisar") === "on" && whatsapp) {
     const { data: m } = await supabase.from("whatsapp_modelos").select("texto, ativo").eq("evento", "acesso_liberado").maybeSingle();
     if (m?.ativo) {
-      const texto = preencher(m.texto, {
+      const vars = {
         nome: nome.split(" ")[0],
         produto: prod.nome as string,
         passo: aluno ? "É só entrar com o seu e-mail e começar pelo check-in:" : `Crie a sua conta com o e-mail ${email} e o acesso aparece na hora:`,
         endereco: aluno ? `${SITE}${prod.endereco ?? "/head-hunter"}` : `${SITE}/entrar`,
-      });
-      const r = await enviarWhatsapp(whatsapp, texto);
-      await supabase.from("whatsapp_envios").insert({ user_id: aluno?.id ?? null, evento: "acesso_liberado", ref: `${email}-${Date.now()}`, telefone: whatsapp, texto, status: r.ok ? "enviada" : r.status, erro: r.ok ? null : r.erro });
-      avisado = r.ok ? " Aviso enviado no WhatsApp ✓" : ` (WhatsApp não enviado: ${r.erro})`;
+      };
+      const r = await enviarAviso(supabase, "acesso_liberado", whatsapp, preencher(m.texto, vars), vars);
+      await supabase.from("whatsapp_envios").insert({ user_id: aluno?.id ?? null, evento: "acesso_liberado", ref: `${email}-${Date.now()}`, telefone: whatsapp, texto: r.texto, status: r.ok ? "enviada" : r.status, erro: r.ok ? null : r.erro });
+      avisado = r.ok ? " Aviso enviado ✓" : ` (aviso não enviado: ${r.erro})`;
     }
   }
   revalidatePath("/admin/acompanhamento");

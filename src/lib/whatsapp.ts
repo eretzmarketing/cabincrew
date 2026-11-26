@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { after } from "next/server";
+import { enviarSMS, smsConfigurado } from "@/lib/sms";
 
 /**
  * WhatsApp pelo Wawp (https://api.wawp.net). O ID da instância e o token ficam só no servidor:
@@ -86,6 +87,46 @@ export function preencher(texto: string, vars: Record<string, string | number | 
  * Aviso automático para o aluno logado (boas-vindas, módulo concluído…).
  * Roda depois da resposta (não atrasa a página), uma única vez por evento/ref, e só se o aluno não desligou os avisos.
  */
+/** Algum canal de aviso (WhatsApp ou SMS) está ligado. */
+export const avisosLigados = () => whatsappConfigurado() || smsConfigurado();
+
+type Vars = Record<string, string | number | undefined>;
+export type ResultadoAviso = ResultadoEnvio & { texto: string };
+
+/**
+ * Envia um aviso automático pelo canal escolhido no painel (WhatsApp, SMS, os dois, ou SMS só se o WhatsApp falhar).
+ * `textoWhats` já vem preenchido; o texto do SMS é o do modelo, preenchido com `vars`.
+ * Devolve o resultado para o histórico (o texto anotado começa com [SMS] quando foi só por SMS).
+ */
+export async function enviarAviso(supabase: SupabaseClient, evento: string, telefone: string, textoWhats: string, vars: Vars = {}, opts: { chave?: string; imagemUrl?: string | null } = {}): Promise<ResultadoAviso> {
+  let canal = "whatsapp";
+  let modeloSms = "";
+  const { data } = await supabase.rpc("aviso_canal", { p_evento: evento });
+  const c = ((data ?? []) as { canal: string; texto_sms: string | null }[])[0];
+  if (c) { canal = c.canal; modeloSms = c.texto_sms ?? ""; }
+
+  const porSms = async (): Promise<ResultadoAviso> => {
+    const t = preencher(modeloSms, vars);
+    if (!t) return { ok: false, status: "erro", erro: "SMS: o aviso não tem texto de SMS.", texto: "" };
+    if (!smsConfigurado()) return { ok: false, status: "erro", erro: "SMS: envio desligado ou não configurado.", texto: t };
+    const r = await enviarSMS(telefone, t, evento);
+    await supabase.rpc("sms_registrar", { p_evento: evento, p_telefone: telefone, p_texto: t, p_status: r.ok ? "enviada" : "erro", p_erro: r.ok ? null : r.erro, p_chave: opts.chave ?? null });
+    return r.ok ? { ok: true, texto: t } : { ok: false, status: "erro", erro: `SMS: ${r.erro}`, texto: t };
+  };
+  const porWhats = async (): Promise<ResultadoAviso> => {
+    if (!whatsappConfigurado()) return { ok: false, status: "erro", erro: "WhatsApp não conectado.", texto: textoWhats };
+    return { ...(await enviarWhatsapp(telefone, textoWhats, opts.imagemUrl)), texto: textoWhats };
+  };
+
+  if (canal === "sms") { const s = await porSms(); return { ...s, texto: `[SMS] ${s.texto}` }; }
+  const w = await porWhats();
+  if (canal === "whatsapp" || (canal === "reserva" && w.ok)) return w;
+  const s = await porSms();
+  if (w.ok) return { ok: true, texto: s.ok ? `${textoWhats}\n\n[+ SMS enviado]` : textoWhats };
+  if (s.ok) return { ok: true, texto: `[SMS] ${s.texto}` };
+  return { ok: false, status: w.ok ? "erro" : w.status, erro: `${w.ok ? "" : w.erro} · ${s.ok ? "" : s.erro}`, texto: textoWhats };
+}
+
 /** Momentos em que um aviso pode disparar (os avisos personalizados escolhem um destes). */
 export const GATILHOS: Record<string, string> = {
   interessado: "Quando alguém entra na lista da página Em breve",
@@ -106,15 +147,15 @@ async function comPersonalizados(supabase: SupabaseClient, evento: string) {
 }
 
 export function avisarAluno(supabase: SupabaseClient, evento: string, vars: Record<string, string | number | undefined> = {}, ref = "") {
-  if (!whatsappConfigurado()) return;
+  if (!avisosLigados()) return;
   after(async () => {
     for (const ev of await comPersonalizados(supabase, evento)) {
       const { data } = await supabase.rpc("whatsapp_reservar", { p_evento: ev, p_ref: ref });
       const r = ((data ?? []) as { envio_id: number; telefone: string; nome: string; texto: string }[])[0];
       if (!r) continue;
       const texto = preencher(r.texto, { ...vars, nome: r.nome });
-      const res = await enviarWhatsapp(r.telefone, texto);
-      await supabase.rpc("whatsapp_resultado", { p_id: r.envio_id, p_status: res.ok ? "enviada" : res.status, p_texto: texto, p_erro: res.ok ? null : res.erro });
+      const res = await enviarAviso(supabase, ev, r.telefone, texto, { ...vars, nome: r.nome });
+      await supabase.rpc("whatsapp_resultado", { p_id: r.envio_id, p_status: res.ok ? "enviada" : res.status, p_texto: res.texto, p_erro: res.ok ? null : res.erro });
     }
   });
 }
@@ -122,20 +163,20 @@ export function avisarAluno(supabase: SupabaseClient, evento: string, vars: Reco
 type Reserva = { envio_id: number; telefone: string; nome: string; texto: string };
 
 /** Envia uma mensagem já reservada no banco para quem não tem login (lista Em breve, conta excluída). */
-export async function enviarReservaPublica(supabase: SupabaseClient, r: Reserva | undefined, vars: Record<string, string | number | undefined> = {}) {
-  if (!r || !whatsappConfigurado()) return;
+export async function enviarReservaPublica(supabase: SupabaseClient, evento: string, r: Reserva | undefined, vars: Record<string, string | number | undefined> = {}) {
+  if (!r || !avisosLigados()) return;
   const texto = preencher(r.texto, { ...vars, nome: r.nome });
-  const res = await enviarWhatsapp(r.telefone, texto);
-  await supabase.rpc("whatsapp_resultado_publico", { p_id: r.envio_id, p_status: res.ok ? "enviada" : res.status, p_texto: texto, p_erro: res.ok ? null : res.erro });
+  const res = await enviarAviso(supabase, evento, r.telefone, texto, { ...vars, nome: r.nome });
+  await supabase.rpc("whatsapp_resultado_publico", { p_id: r.envio_id, p_status: res.ok ? "enviada" : res.status, p_texto: res.texto, p_erro: res.ok ? null : res.erro });
 }
 
 /** Confirmação no WhatsApp para quem entrou na lista da página Em breve (uma vez por telefone). */
 export function avisarInteressado(supabase: SupabaseClient, telefone: string) {
-  if (!whatsappConfigurado()) return;
+  if (!avisosLigados()) return;
   after(async () => {
     for (const ev of await comPersonalizados(supabase, "interessado")) {
       const { data } = await supabase.rpc("whatsapp_reservar_interessado", ev === "interessado" ? { p_telefone: telefone } : { p_telefone: telefone, p_evento: ev });
-      await enviarReservaPublica(supabase, ((data ?? []) as Reserva[])[0]);
+      await enviarReservaPublica(supabase, ev, ((data ?? []) as Reserva[])[0]);
     }
   });
 }

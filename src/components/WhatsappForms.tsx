@@ -58,16 +58,69 @@ export function NovoAvisoForm({ gatilhos }: { gatilhos: Gatilhos }) {
   );
 }
 
-export function ModeloWhatsappForm({ evento, texto, ativo, personalizado, titulo, gatilho, gatilhos }: {
+const CANAIS: [string, string][] = [["whatsapp", "WhatsApp"], ["sms", "SMS"], ["ambos", "Os dois"], ["reserva", "WhatsApp; se falhar, SMS"]];
+const GSM = /^[@£$¥èéùìòÇ\nØø\rÅåΔ_ΦΓΛΩΠΨΣΘΞÆæßÉ !"#¤%&'()*+,\-./0-9:;<=>?¡A-ZÄÖÑÜ§¿a-zäöñüà^{}\\[~\]|€]*$/;
+
+/** Quantos SMS a mensagem gasta: 160 caracteres sem acento/emoji (153 por parte se passar), 70 com (67 por parte). */
+export function contarSms(t: string) {
+  const simples = GSM.test(t);
+  const n = [...t].length;
+  const um = simples ? 160 : 70, parte = simples ? 153 : 67;
+  return { n, simples, partes: n === 0 ? 0 : n <= um ? 1 : Math.ceil(n / parte), limite: um };
+}
+const semEmoji = (t: string) => t.replace(/[\p{Extended_Pictographic}\u{FE0F}\u{200D}]/gu, "").replace(/\*([^*]+)\*/g, "$1")
+  .split("\n").map((l) => l.replace(/ {2,}/g, " ").trim()).join("\n").replace(/\n{3,}/g, "\n\n").trim();
+const tirarAcentos = (t: string) => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+function CamposSms({ evento, canalInicial, textoSms, textoWhats }: { evento: string; canalInicial: string; textoSms: string; textoWhats: () => string }) {
+  const [canal, setCanal] = useState(canalInicial);
+  const [sms, setSms] = useState(textoSms);
+  const c = contarSms(sms);
+  return (
+    <>
+      <fieldset className="flex flex-col gap-2">
+        <legend className="mb-1 text-[14px] font-semibold">Enviar por</legend>
+        <div className="flex flex-wrap gap-2">
+          {CANAIS.map(([v, r]) => (
+            <label key={v} className={`relative inline-flex min-h-10 cursor-pointer items-center rounded-full border-2 px-4 text-[14px] font-semibold ${canal === v ? "border-navy bg-[#eef1ff] text-navy" : "border-line text-ink-2"}`}>
+              <input type="radio" name="canal" value={v} checked={canal === v} onChange={() => setCanal(v)} className="sr-only" />{r}
+            </label>
+          ))}
+        </div>
+      </fieldset>
+      {canal !== "whatsapp" && (
+        <div className="flex flex-col gap-1.5 rounded-xl bg-soft p-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <label htmlFor={`sms-${evento}`} className="text-[14px] font-semibold">Texto do SMS</label>
+            <span className="flex flex-wrap gap-3">
+              <button type="button" onClick={() => setSms(semEmoji(textoWhats()).slice(0, 480))} className="min-h-9 cursor-pointer text-[13px] font-semibold text-navy underline underline-offset-4">Copiar do WhatsApp (sem emojis)</button>
+              {!c.simples && <button type="button" onClick={() => setSms(tirarAcentos(sms))} className="min-h-9 cursor-pointer text-[13px] font-semibold text-navy underline underline-offset-4">Tirar acentos</button>}
+            </span>
+          </div>
+          <textarea id={`sms-${evento}`} name="texto_sms" value={sms} onChange={(e) => setSms(e.target.value)} rows={3} maxLength={480} placeholder="Curto e direto. Ex.: Cabin Crew: {nome}, seu acesso foi liberado! Entre em {link}" className={campo} />
+          <p className={`text-[13px] ${c.partes > 1 ? "font-semibold text-[#7a5a00]" : "text-muted"}`}>
+            {c.n} caracteres · {c.partes <= 1 ? "1 SMS" : `${c.partes} SMS por envio`}{!c.simples && " · com acento ou emoji o limite cai para 70"}. As variáveis, como {"{nome}"}, aumentam o tamanho.
+          </p>
+        </div>
+      )}
+      {canal === "whatsapp" && <input type="hidden" name="texto_sms" value={sms} />}
+    </>
+  );
+}
+
+export function ModeloWhatsappForm({ evento, texto, ativo, personalizado, titulo, gatilho, gatilhos, canal, textoSms, comSms }: {
   evento: string; texto: string; ativo: boolean; personalizado?: boolean; titulo?: string; gatilho?: string | null; gatilhos?: Gatilhos;
+  canal?: string; textoSms?: string | null; comSms?: boolean;
 }) {
   const [s, acao, pend] = useActionState(salvarModeloWhatsapp, {});
+  const ref = useRef<HTMLTextAreaElement>(null);
   return (
     <form action={acao} className="flex flex-col gap-3">
       <input type="hidden" name="evento" value={evento} />
       {personalizado && gatilhos && <CamposPersonalizado id={evento} titulo={titulo} gatilho={gatilho ?? undefined} gatilhos={gatilhos} />}
-      <label className="sr-only" htmlFor={`t-${evento}`}>Texto da mensagem</label>
-      <textarea id={`t-${evento}`} name="texto" defaultValue={texto} rows={7} maxLength={3000} className={campo} />
+      {comSms && <CamposSms evento={evento} canalInicial={canal ?? "whatsapp"} textoSms={textoSms ?? ""} textoWhats={() => ref.current?.value ?? texto} />}
+      <label className={comSms ? "text-[14px] font-semibold" : "sr-only"} htmlFor={`t-${evento}`}>Texto do WhatsApp</label>
+      <textarea ref={ref} id={`t-${evento}`} name="texto" defaultValue={texto} rows={7} maxLength={3000} className={campo} />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <label className="flex min-h-11 cursor-pointer items-center gap-2 text-[15px] font-semibold">
           <input type="checkbox" name="ativo" defaultChecked={ativo} className="h-5 w-5 accent-[#c8102e]" /> Enviar automaticamente

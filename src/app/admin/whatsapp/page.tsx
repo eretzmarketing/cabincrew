@@ -3,13 +3,17 @@ import Link from "next/link";
 import { Card, Numero, Titulo } from "@/components/admin-ui";
 import { excluirAvisoPersonalizado } from "@/app/whatsapp-actions";
 import { AcoesEnvio, ConexaoWhatsappForm, EnviarWhatsappForm, ModeloWhatsappForm, NovoAvisoForm } from "@/components/WhatsappForms";
+import { SmsForm, SmsTeste } from "@/components/SmsForm";
+import { configSMS } from "@/lib/sms";
 import { getUser } from "@/lib/supabase/server";
 import { GATILHOS, conexaoWhatsapp } from "@/lib/whatsapp";
 
-export const metadata: Metadata = { title: "WhatsApp" };
+export const metadata: Metadata = { title: "WhatsApp e SMS" };
 export const dynamic = "force-dynamic";
 
-type Modelo = { evento: string; titulo: string; quando: string; texto: string; ativo: boolean; gatilho?: string | null; personalizado?: boolean };
+type Modelo = { evento: string; titulo: string; quando: string; texto: string; ativo: boolean; gatilho?: string | null; personalizado?: boolean; canal?: string; texto_sms?: string | null };
+type Sms = { id: number; evento: string; telefone: string; texto: string; status: string; erro: string | null; created_at: string };
+const ROTULO_CANAL: Record<string, string> = { whatsapp: "WhatsApp", sms: "SMS", ambos: "WhatsApp + SMS", reserva: "WhatsApp (SMS se falhar)" };
 type Envio = { id: number; user_id: string | null; evento: string; ref: string; telefone: string | null; texto: string | null; status: string; erro: string | null; created_at: string; profiles: { nome: string | null; apelido: string | null } | null };
 
 const STATUS: Record<string, { rotulo: string; cor: string }> = {
@@ -21,10 +25,16 @@ const STATUS: Record<string, { rotulo: string; cor: string }> = {
 
 export default async function WhatsappAdminPage() {
   const { supabase } = await getUser();
-  const [mods0, envs] = await Promise.all([
-    supabase.from("whatsapp_modelos").select("evento, titulo, quando, texto, ativo, gatilho, personalizado, created_at").order("created_at"),
+  const [modsSms, envs, smsQ] = await Promise.all([
+    supabase.from("whatsapp_modelos").select("evento, titulo, quando, texto, ativo, gatilho, personalizado, created_at, canal, texto_sms").order("created_at"),
     supabase.from("whatsapp_envios").select("id, user_id, evento, ref, telefone, texto, status, erro, created_at, profiles(nome, apelido)").order("created_at", { ascending: false }).limit(200),
+    supabase.from("sms_envios").select("id, evento, telefone, texto, status, erro, created_at").order("created_at", { ascending: false }).limit(100),
   ]);
+  const temSms = !modsSms.error;
+  // antes do SQL 0077 as colunas de SMS não existem
+  const mods0 = temSms ? modsSms : await supabase.from("whatsapp_modelos").select("evento, titulo, quando, texto, ativo, gatilho, personalizado, created_at").order("created_at");
+  const smsLista = (smsQ.data ?? []) as Sms[];
+  const smsCfg = configSMS();
   // antes do SQL 0041 as colunas novas não existem: carrega do jeito antigo
   const mods = mods0.error ? await supabase.from("whatsapp_modelos").select("evento, titulo, quando, texto, ativo").order("evento") : mods0;
   const temPersonalizados = !mods0.error;
@@ -57,7 +67,7 @@ export default async function WhatsappAdminPage() {
 
   return (
     <>
-      <Titulo sub="O WhatsApp é o canal oficial de avisos da Cabin Crew: confirmação da lista Em breve, boas-vindas, parabéns por concluir módulos e cursos e confirmação de conta excluída. Cada aviso é enviado uma única vez para cada pessoa.">WhatsApp</Titulo>
+      <Titulo sub="Tudo sobre os avisos automáticos num lugar só: conexões, textos e por onde cada aviso sai (WhatsApp, SMS ou os dois). Cada aviso é enviado uma única vez para cada pessoa.">WhatsApp e SMS</Titulo>
 
       <Card>
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -70,7 +80,25 @@ export default async function WhatsappAdminPage() {
         <ConexaoWhatsappForm instancia={con?.instancia ?? ""} tokenFinal={con ? con.token.slice(-4) : ""} conectado={ok} doPainel={con?.origem === "painel"} />
       </Card>
 
+      <Card>
+        <div id="sms" className="flex scroll-mt-24 flex-wrap items-center justify-between gap-3">
+          <h2 className="font-display text-xl font-extrabold">Conexão com o SMS (smsmais)</h2>
+          <span className={`rounded-full px-3 py-1 text-sm font-semibold ${smsCfg ? (smsCfg.ativo ? "bg-[#e5f6ec] text-[#0f6b3a]" : "bg-[#eceef3] text-ink-2") : "bg-[#fff8e6] text-[#7a5a00]"}`}>
+            {smsCfg ? (smsCfg.ativo ? "✓ Conectado e ligado" : "Conectado, mas desligado") : "Não conectado"}
+          </span>
+        </div>
+        <p className="text-[15px] text-ink-2">No smsmais, abra <strong>API &amp; Integrações</strong>, copie o token (📋) e cole aqui. Se gerar um token novo lá, o antigo para de funcionar: cole o novo aqui. Saldo e entregas ficam no painel do smsmais.</p>
+        <SmsForm conectado={!!smsCfg} ativo={smsCfg?.ativo ?? true} />
+        {smsCfg && (
+          <details className="rounded-xl border border-line p-4">
+            <summary className="min-h-8 cursor-pointer font-semibold text-navy">Enviar um SMS de teste (gasta 1 SMS)</summary>
+            <div className="pt-3"><SmsTeste /></div>
+          </details>
+        )}
+      </Card>
+
       <div className="flex flex-wrap gap-3">
+        <Numero rotulo="SMS enviados (24h)" valor={smsLista.filter((e) => e.status === "enviada" && Date.parse(e.created_at) > limite).length} />
         <Numero rotulo="Enviadas (24h)" valor={hoje.filter((e) => e.status === "enviada").length} />
         <Numero rotulo="Com erro (24h)" valor={hoje.filter((e) => e.status === "erro").length} />
       </div>
@@ -83,6 +111,9 @@ export default async function WhatsappAdminPage() {
 
       <section className="flex flex-col gap-4">
         <h2 className="font-display text-2xl font-extrabold">Avisos automáticos</h2>
+        {temSms
+          ? <p className="text-[15px] text-ink-2">Em cada aviso, escolha <strong>Enviar por</strong>: WhatsApp, SMS, os dois, ou “WhatsApp; se falhar, SMS” (bom para quem não tem WhatsApp no número). O SMS tem texto próprio e mais curto: até 160 caracteres sem acento nem emoji.</p>
+          : <p className="rounded-xl bg-brand-soft px-4 py-3 text-brand-deep">Rode o SQL <strong>0077_avisos_sms.sql</strong> no Supabase para poder enviar avisos também por SMS.</p>}
         <p className="text-[15px] text-ink-2">Variáveis: <code>{"{nome}"}</code> primeiro nome · <code>{"{link}"}</code> endereço do site · <code>{"{modulo}"}</code> nome do módulo · <code>{"{numero}"}</code> número do módulo · <code>{"{companhia}"}</code> companhia-alvo · loja: <code>{"{pedido}"}</code>, <code>{"{produto}"}</code>, <code>{"{rastreio}"}</code>, <code>{"{link_rastreio}"}</code>, <code>{"{transportadora}"}</code> · suporte: <code>{"{assunto}"}</code>, <code>{"{chamado}"}</code>.</p>
         <details className="group rounded-[22px] border-2 border-dashed border-[#c9cedb] bg-white open:border-solid open:border-navy">
           <summary className="flex min-h-14 cursor-pointer list-none items-center gap-3 px-5 font-display text-lg font-extrabold text-navy">
@@ -102,10 +133,13 @@ export default async function WhatsappAdminPage() {
           {modelos.map((m) => (
             <Card key={m.evento}>
               <div className="flex flex-col gap-0.5">
-                <h3 className="font-display text-lg font-extrabold">{m.titulo}</h3>
+                <h3 className="flex flex-wrap items-center gap-2 font-display text-lg font-extrabold">{m.titulo}
+                  {temSms && <span className="rounded-full bg-[#eef1ff] px-2.5 py-0.5 text-[12px] font-semibold text-navy">{ROTULO_CANAL[m.canal ?? "whatsapp"]}</span>}
+                  {!m.ativo && <span className="rounded-full bg-[#eceef3] px-2.5 py-0.5 text-[12px] font-semibold text-ink-2">Desligado</span>}
+                </h3>
                 <span className="text-[14px] text-muted">{m.quando}</span>
               </div>
-              <ModeloWhatsappForm evento={m.evento} texto={m.texto} ativo={m.ativo} />
+              <ModeloWhatsappForm evento={m.evento} texto={m.texto} ativo={m.ativo} comSms={temSms} canal={m.canal} textoSms={m.texto_sms} />
             </Card>
           ))}
           {personalizados.map((m) => (
@@ -114,15 +148,16 @@ export default async function WhatsappAdminPage() {
                 <h3 className="font-display text-lg font-extrabold">{m.titulo} <span className="ml-1 rounded-full bg-[#eef1ff] px-2.5 py-0.5 align-middle text-[12px] font-semibold text-navy">Personalizado</span></h3>
                 <form action={excluirAvisoPersonalizado}><input type="hidden" name="evento" value={m.evento} /><button className="min-h-10 cursor-pointer text-[14px] font-semibold text-brand-deep underline underline-offset-4">Excluir</button></form>
               </div>
-              <ModeloWhatsappForm evento={m.evento} texto={m.texto} ativo={m.ativo} personalizado titulo={m.titulo} gatilho={m.gatilho} gatilhos={GATILHOS} />
+              <ModeloWhatsappForm evento={m.evento} texto={m.texto} ativo={m.ativo} personalizado titulo={m.titulo} gatilho={m.gatilho} gatilhos={GATILHOS} comSms={temSms} canal={m.canal} textoSms={m.texto_sms} />
             </Card>
           ))}
         </div>
       </section>
 
       <section className="flex flex-col gap-3">
-        <h2 className="font-display text-2xl font-extrabold">Histórico</h2>
-        <div className="overflow-x-auto rounded-2xl border border-line bg-white">
+        <h2 className="font-display text-2xl font-extrabold">Histórico do WhatsApp</h2>
+        <p className="text-[14px] text-muted">Avisos que saíram só por SMS aparecem aqui com o texto começando por [SMS].</p>
+        <div className="relative overflow-x-auto rounded-2xl border border-line bg-white">
           <table className="w-full min-w-[720px] text-left text-[14px]">
             <thead className="border-b border-line text-[13px] text-muted">
               <tr><th className="p-3 font-semibold">Nome</th><th className="p-3 font-semibold">Telefone</th><th className="p-3 font-semibold">Tipo de aviso</th><th className="p-3 font-semibold">Status</th><th className="p-3"><span className="sr-only">Ações</span></th></tr>
@@ -149,6 +184,29 @@ export default async function WhatsappAdminPage() {
           </table>
         </div>
       </section>
+      {temSms && (
+        <section className="flex flex-col gap-3">
+          <h2 className="font-display text-2xl font-extrabold">Histórico de SMS</h2>
+          <div className="relative overflow-x-auto rounded-2xl border border-line bg-white">
+            <table className="w-full min-w-[640px] text-left text-[14px]">
+              <thead className="border-b border-line text-[13px] text-muted">
+                <tr><th className="p-3 font-semibold">Telefone</th><th className="p-3 font-semibold">Aviso</th><th className="p-3 font-semibold">Texto</th><th className="p-3 font-semibold">Status</th></tr>
+              </thead>
+              <tbody>
+                {smsLista.map((e) => (
+                  <tr key={e.id} className="border-b border-[#eceef3] align-top last:border-0">
+                    <td className="p-3 whitespace-nowrap">{e.telefone}</td>
+                    <td className="p-3">{titulo.get(e.evento) ?? (e.evento === "teste-admin" ? "Teste" : e.evento)}<span className="block text-[12px] text-muted">{new Date(e.created_at).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" })}</span></td>
+                    <td className="max-w-[360px] p-3 text-ink-2">{e.texto}</td>
+                    <td className="p-3"><span className={`inline-block rounded-full px-2.5 py-0.5 text-[13px] font-semibold ${STATUS[e.status]?.cor ?? ""}`}>{STATUS[e.status]?.rotulo ?? e.status}</span>{e.erro && <span className="block pt-1 text-[12px] text-muted">{e.erro}</span>}</td>
+                  </tr>
+                ))}
+                {!smsLista.length && <tr><td colSpan={4} className="p-6 text-center text-ink-2">Nenhum SMS enviado ainda.</td></tr>}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
     </>
   );
 }
