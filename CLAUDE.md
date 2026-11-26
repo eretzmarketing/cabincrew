@@ -58,3 +58,5 @@ Nunca peça senha do banco, tokens ou chaves no chat. Se o Daniel colar um, avis
 - Escolas de aviação (SQL 0076): tabela `escolas` editável em Configurações › Escolas de aviação (`/admin/configuracoes/escolas`,
   colar várias, renomear com correção nos alunos via RPC `admin_renomear_escola`, excluir várias). O cadastro e Minha conta
   usam `listaEscolas()` (`src/lib/escolas-dados.ts`); `src/lib/escolas.ts` é só o reserva se a tabela não existir.
+- SMS (smsmais): token em `~/.cabincrew-sms.json` (Admin › Configurações › SMS, `/admin/sms`), envio em `src/lib/sms.ts`
+  (`enviarSMS`, POST https://smsmais.com/api/enviar_sms.php; 403 = opt-out, `held_no_balance` = sem saldo). Evite emoji no texto (vira UCS-2, 70 caracteres).
