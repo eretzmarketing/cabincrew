@@ -45,6 +45,7 @@ Nunca peça senha do banco, tokens ou chaves no chat. Se o Daniel colar um, avis
   Acompanhamento por curso (quem estuda/parou/em risco): `/admin/acompanhamento?curso=…` + RPC `admin_acompanhamento` (SQL 0072);
   `/admin/head-hunter/alunos` redireciona para a aba Head Hunter.
 - Questões que mais erram (SQL 0073): `/admin/questoes/erros` + RPC `admin_questoes_erros` (por bloco, período, alternativa mais marcada).
+- Visão geral do admin (`src/app/admin/page.tsx`): indicadores, gráficos (`src/components/PainelGraficos.tsx`), cursos via `admin_acompanhamento`, rankings.
 - Painel do aluno: `src/app/conta/page.tsx` + `src/lib/painel-aluno.ts`.
 - Central de ajuda pública: `/ajuda` (perguntas em `src/lib/ajuda.ts`, busca em `src/components/CentralAjuda.tsx`). Atualize ao mudar regras.
 - Questões (SQL 0070): Reportar erro (grátis, `questao_reportes`), Comentários e Favoritas = "Questões Plus"
