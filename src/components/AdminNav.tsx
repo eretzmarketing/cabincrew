@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Fragment } from "react";
+import { abrirMenu } from "@/lib/menu-evento";
 
 type Item = { href: string; label: string; exato?: boolean };
 type Grupo = { id: string; label: string; itens: Item[]; secao?: string };
@@ -156,15 +157,14 @@ export function AdminAbas() {
   const atual = itemAtivo(path);
   if (!grupo || grupo.itens.length < 2) return null;
   return (
-    <nav aria-label={`Seções de ${grupo.label}`} className="-mb-2 flex flex-col gap-2 md:hidden">
-      <span className="font-display text-xs font-bold tracking-[.1em] text-muted uppercase">{grupo.label}</span>
-      <div className="flex gap-1 overflow-x-auto border-b border-line">
+    <nav aria-label={`Seções de ${grupo.label}`} className="-mt-2 md:hidden">
+      <div className="flex flex-wrap gap-2">
         {grupo.itens.map((i) => {
           const ativo = i === atual;
           return (
             <Link key={i.href} href={i.href} aria-current={ativo ? "page" : undefined}
-              className={`-mb-px inline-flex min-h-11 shrink-0 items-center border-b-[3px] px-3 text-[14px] font-semibold whitespace-nowrap ${
-                ativo ? "border-brand-strong text-navy" : "border-transparent text-ink-2 hover:text-navy"
+              className={`inline-flex min-h-10 items-center rounded-full border-2 px-3.5 text-[14px] font-semibold ${
+                ativo ? "border-navy bg-navy text-white" : "border-line bg-white text-navy hover:border-navy"
               }`}>
               {i.label}
             </Link>
@@ -172,5 +172,25 @@ export function AdminAbas() {
         })}
       </div>
     </nav>
+  );
+}
+
+/** No celular: botão com a seção atual que abre o menu completo do admin. */
+export function AdminTopoMobile() {
+  const path = usePathname();
+  const grupo = grupoAtivo(path);
+  const atual = itemAtivo(path);
+  return (
+    <button type="button" onClick={abrirMenu}
+      className="flex min-h-12 w-full cursor-pointer items-center justify-between gap-3 rounded-2xl border border-line bg-white px-4 text-left md:hidden">
+      <span className="flex min-w-0 flex-col">
+        <span className="font-display text-[11px] font-bold tracking-[.12em] text-muted uppercase">Administrador{grupo && grupo.itens.length > 1 ? ` · ${grupo.label}` : ""}</span>
+        <span className="truncate text-[16px] font-semibold text-navy">{atual?.label ?? "Menu"}</span>
+      </span>
+      <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-soft px-3 py-1.5 text-[13px] font-semibold text-navy">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" className="h-4 w-4" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
+        Trocar
+      </span>
+    </button>
   );
 }

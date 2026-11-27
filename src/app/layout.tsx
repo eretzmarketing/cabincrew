@@ -70,6 +70,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         <Header />
         <div className="flex-1">{children}</div>
         <Footer />
+        <div aria-hidden="true" className="h-[calc(60px+env(safe-area-inset-bottom))] bg-navy-deep md:hidden" />
           </>
         )}
       </body>
