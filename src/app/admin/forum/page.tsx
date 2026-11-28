@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { moderarRelato, mudarStatusSelecao } from "@/app/actions";
+import { moderarRelato } from "@/app/actions";
+import { SelecoesAdmin } from "@/components/SelecoesAdmin";
 import { CriarSelecaoForm } from "@/components/forms";
 import { Card, Chave, Titulo } from "@/components/admin-ui";
 import { getConfig } from "@/lib/config";
-import { STATUS_SELECAO, mesAno, type Selecao } from "@/lib/forum";
+import { type Selecao } from "@/lib/forum";
 import { getUser } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Fórum de Seleções" };
@@ -81,31 +82,7 @@ export default async function AdminForumPage() {
 
         <section className="flex flex-col gap-4">
           <h2 className="font-display text-xl font-bold">Seleções</h2>
-          <div className="overflow-x-auto rounded-2xl border border-line bg-white">
-            <table className="w-full min-w-[640px] text-left text-[15px]">
-              <thead className="border-b border-line text-sm text-muted">
-                <tr><th className="p-3 font-semibold">Seleção</th><th className="p-3 font-semibold">Relatos</th><th className="p-3 font-semibold">Status</th></tr>
-              </thead>
-              <tbody>
-                {((selecoes ?? []) as Selecao[]).map((s) => (
-                  <tr key={s.id} className="border-b border-[#eceef3] last:border-0">
-                    <td className="p-3"><Link href={`/forum/${s.slug}`} className="font-semibold text-navy">{s.companhia} · {s.base} · {mesAno(s.mes_ref)}</Link></td>
-                    <td className="p-3">{s.total_relatos}</td>
-                    <td className="p-3">
-                      <form action={mudarStatusSelecao} className="flex gap-2">
-                        <input type="hidden" name="id" value={s.id} />
-                        <label className="sr-only" htmlFor={`st-${s.id}`}>Status</label>
-                        <select id={`st-${s.id}`} name="status" defaultValue={s.status} className="min-h-11 rounded-lg border border-[#c9cedb] px-2 text-sm">
-                          {Object.entries(STATUS_SELECAO).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-                        </select>
-                        <button className={`${btn} bg-soft text-navy`}>Salvar</button>
-                      </form>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <SelecoesAdmin selecoes={(selecoes ?? []) as Selecao[]} />
         </section>
     </>
   );

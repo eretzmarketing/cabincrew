@@ -263,6 +263,7 @@ export async function criarSelecao(_: FormState, form: FormData): Promise<FormSt
     mes_ref: `${mes}-01`,
     status: String(form.get("status") ?? "andamento"),
     aberta_em: String(form.get("aberta_em") ?? "") || null,
+    ...(form.get("encerrada_em") ? { encerrada_em: String(form.get("encerrada_em")) } : {}),
     slug,
   });
   if (error) return { erro: error.code === "23505" ? "Já existe uma seleção com essa companhia, base e mês." : "Erro ao criar a seleção." };
@@ -272,8 +273,21 @@ export async function criarSelecao(_: FormState, form: FormData): Promise<FormSt
 
 export async function mudarStatusSelecao(form: FormData) {
   const { supabase } = await exigirAdmin();
-  await supabase.from("selecoes").update({ status: String(form.get("status")) }).eq("id", String(form.get("id")));
+  const dados: Record<string, string | null> = { status: String(form.get("status")) };
+  if (form.has("encerrada_em")) dados.encerrada_em = String(form.get("encerrada_em") ?? "") || null;
+  await supabase.from("selecoes").update(dados).eq("id", String(form.get("id")));
   revalidatePath("/", "layout");
+}
+
+/** Admin: exclui várias seleções de uma vez (os relatos delas são apagados junto). */
+export async function excluirSelecoes(ids: string[]): Promise<{ ok?: boolean; msg?: string; erro?: string }> {
+  const { supabase } = await exigirAdmin();
+  const lista = ids.filter((i) => /^[0-9a-f-]{36}$/i.test(i)).slice(0, 500);
+  if (!lista.length) return { erro: "Marque pelo menos uma seleção." };
+  const { error } = await supabase.from("selecoes").delete().in("id", lista);
+  if (error) return { erro: "Não foi possível excluir agora." };
+  revalidatePath("/", "layout");
+  return { ok: true, msg: `${lista.length} ${lista.length === 1 ? "seleção excluída" : "seleções excluídas"} ✓` };
 }
 
 export async function moderarRelato(form: FormData) {

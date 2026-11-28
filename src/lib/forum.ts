@@ -25,6 +25,8 @@ export type Selecao = {
   slug: string;
   status: "inscricoes" | "andamento" | "encerrada";
   aberta_em: string | null;
+  encerrada_em?: string | null;
+  status_manual?: "inscricoes" | "andamento" | "encerrada";
   total_relatos: number;
   fase_max: number | null;
   ultimo_relato: string | null;

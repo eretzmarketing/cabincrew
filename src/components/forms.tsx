@@ -339,6 +339,10 @@ export function CriarSelecaoForm({ companhias }: { companhias: { id: number; nom
           <input name="aberta_em" type="date" className={input} />
         </label>
         <label className={`${label} flex-[1_1_160px]`}>
+          Encerra em
+          <input name="encerrada_em" type="date" className={input} />
+        </label>
+        <label className={`${label} flex-[1_1_160px]`}>
           Status
           <select name="status" className={input}>
             <option value="inscricoes">Inscrições abertas</option>
