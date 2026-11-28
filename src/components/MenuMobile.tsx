@@ -106,11 +106,11 @@ export function MenuMobile({ d }: { d: DadosMenu }) {
   return (
     <>
       <button type="button" onClick={() => setAberto(true)} aria-label="Abrir menu" aria-expanded={aberto}
-        className="grid h-11 w-11 cursor-pointer place-items-center rounded-full border-2 border-line text-navy hover:border-navy md:hidden">
+        className="grid h-11 w-11 cursor-pointer place-items-center rounded-full border-2 border-line text-navy hover:border-navy xl:hidden">
         <Icone d={I.menu} />
       </button>
       {aberto && (
-        <div className="fixed inset-0 z-[60] md:hidden" role="dialog" aria-modal="true" aria-label="Menu">
+        <div className="fixed inset-0 z-[60] xl:hidden" role="dialog" aria-modal="true" aria-label="Menu">
           <button type="button" aria-label="Fechar menu" tabIndex={-1} onClick={() => setAberto(false)} className="absolute inset-0 cursor-default bg-navy/50 backdrop-blur-[2px]" />
           <nav className="absolute inset-y-0 right-0 flex w-[min(88vw,380px)] flex-col bg-white shadow-2xl">
             <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-3">

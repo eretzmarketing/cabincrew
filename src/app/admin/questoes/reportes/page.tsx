@@ -1,109 +1,80 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Card, Titulo, btnPrimario, btnSecundario } from "@/components/admin-ui";
-import { resolverReporte } from "@/app/questoes-admin-actions";
+import { Card, Titulo } from "@/components/admin-ui";
 import { BANCOS } from "@/lib/crew";
-import { getUser } from "@/lib/supabase/server";
+import { TIPO_REPORTE, quandoReporte, situacaoReporte, type Reporte } from "@/lib/reportes";
+import { avatarUrl, getUser } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Questões reportadas" };
 export const dynamic = "force-dynamic";
 
-type Rep = {
-  id: number; questao_id: string; banco: string; categoria: string | null; enunciado: string; alternativas: { letra: string; texto: string | null }[];
-  correta: string | null; explicacao: string | null; tipo: string; mensagem: string | null; status: string; resposta: string | null;
-  created_at: string; resolvido_em: string | null; aluno_id: string; aluno: string | null; email: string | null; reportes_da_questao: number;
-};
-const TIPO: Record<string, string> = { gabarito: "Resposta certa errada", enunciado: "Erro no enunciado", alternativas: "Erro nas alternativas", explicacao: "Erro na explicação", outro: "Outro problema" };
-const STATUS: Record<string, [string, string]> = {
-  aberto: ["Aberto", "bg-brand-soft text-brand-deep"],
-  corrigido: ["Corrigido", "bg-[#e5f6ec] text-[#0f6b3a]"],
-  sem_erro: ["Sem erro", "bg-[#eef0f4] text-ink-2"],
-};
-const quando = (iso: string) => new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+const FILTROS: [string, string][] = [["abertos", "Em aberto"], ["fechados", "Fechados"], ["todos", "Todos"]];
 
-export default async function Reportes({ searchParams }: { searchParams: Promise<{ status?: string; ok?: string; erro?: string }> }) {
+export default async function Reportes({ searchParams }: { searchParams: Promise<{ f?: string; ok?: string }> }) {
   const sp = await searchParams;
-  const status = ["aberto", "corrigido", "sem_erro", "todos"].includes(sp.status ?? "") ? sp.status! : "aberto";
+  const f = FILTROS.some(([v]) => v === sp.f) ? sp.f! : "abertos";
   const { supabase } = await getUser();
-  const { data, error } = await supabase.rpc("admin_reportes", { p_status: status });
-  const lista = (data ?? []) as Rep[];
-  const aqui = `/admin/questoes/reportes?status=${status}`;
+  const { data, error } = await supabase.rpc("admin_reportes", { p_status: f === "abertos" ? "aberto" : "todos" });
+  const todos = (data ?? []) as Reporte[];
+  const lista = f === "fechados" ? todos.filter((r) => r.status !== "aberto") : todos;
+  const ids = lista.map((r) => r.id);
+  const alunos = [...new Set(lista.map((r) => r.aluno_id))];
+  const [{ data: vistos }, { data: perfis }] = await Promise.all([
+    ids.length ? supabase.from("questao_reportes").select("id, visto_em").in("id", ids) : Promise.resolve({ data: [] }),
+    alunos.length ? supabase.from("profiles").select("id, avatar_em, escola").in("id", alunos) : Promise.resolve({ data: [] }),
+  ]);
+  const visto = new Map(((vistos ?? []) as { id: number; visto_em: string | null }[]).map((v) => [v.id, v.visto_em]));
+  const perfil = new Map(((perfis ?? []) as { id: string; avatar_em: string | null; escola: string | null }[]).map((p) => [p.id, p]));
 
   return (
     <>
-      <Titulo sub="Questões que os alunos marcaram com erro. Responda aqui: a resposta chega no painel de notificações do aluno, no WhatsApp e no e-mail. O texto do WhatsApp/SMS fica em Configurações › WhatsApp e SMS.">Questões reportadas</Titulo>
+      <Titulo sub="Questões que os alunos marcaram com erro. Clique no olho para ver tudo, responder (painel de notificações, WhatsApp e e-mail) ou excluir.">Questões reportadas</Titulo>
       {sp.ok && <p role="status" className="rounded-xl bg-[#e5f6ec] px-4 py-3 font-semibold text-[#0f6b3a]">{sp.ok}</p>}
       {error && <p role="alert" className="rounded-xl bg-brand-soft px-4 py-3 font-semibold text-brand-deep">Rode o SQL 0070_questoes_comunidade.sql no Supabase para usar esta página.</p>}
 
       <nav aria-label="Filtro" className="flex flex-wrap gap-2">
-        {[["aberto", "Abertos"], ["corrigido", "Corrigidos"], ["sem_erro", "Sem erro"], ["todos", "Todos"]].map(([v, t]) => (
-          <Link key={v} href={`/admin/questoes/reportes?status=${v}`} aria-current={status === v ? "page" : undefined}
-            className={`inline-flex min-h-11 items-center rounded-full px-5 text-sm font-semibold ${status === v ? "bg-navy text-white" : "border-2 border-line bg-white text-navy hover:border-navy"}`}>{t}</Link>
+        {FILTROS.map(([v, t]) => (
+          <Link key={v} href={`/admin/questoes/reportes?f=${v}`} aria-current={f === v ? "page" : undefined}
+            className={`inline-flex min-h-11 items-center rounded-full px-5 text-sm font-semibold ${f === v ? "bg-navy text-white" : "border-2 border-line bg-white text-navy hover:border-navy"}`}>{t}</Link>
         ))}
       </nav>
 
       {!lista.length ? (
-        <Card><p className="text-ink-2">{status === "aberto" ? "Nenhum reporte aberto. 🎉" : "Nada por aqui."}</p></Card>
-      ) : lista.map((r) => (
-        <Card key={r.id}>
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <span className="text-[14px] text-muted">
-              #{r.id} · {quando(r.created_at)} · {BANCOS[r.banco] ?? r.banco}{r.categoria ? ` · ${r.categoria}` : ""}
-            </span>
-            <span className="flex items-center gap-2">
-              {r.reportes_da_questao > 1 && <span className="rounded-full bg-[#fff8e6] px-3 py-1 text-xs font-bold text-[#7a5a00]">{r.reportes_da_questao} reportes abertos nesta questão</span>}
-              <span className={`rounded-full px-3 py-1 text-xs font-bold ${STATUS[r.status]?.[1]}`}>{STATUS[r.status]?.[0] ?? r.status}</span>
-            </span>
-          </div>
-          <div className="flex flex-col gap-1 rounded-xl bg-brand-soft/60 px-4 py-3">
-            <strong className="text-[15px] text-brand-deep">🚩 {TIPO[r.tipo] ?? r.tipo}</strong>
-            {r.mensagem && <p className="text-[15px] whitespace-pre-line">“{r.mensagem}”</p>}
-            <span className="text-[13px] text-muted">
-              Por <Link href={`/admin/usuarios/${r.aluno_id}`} className="font-semibold text-navy underline">{r.aluno ?? "Aluno"}</Link>{r.email ? ` · ${r.email}` : ""}
-            </span>
-          </div>
-          <p className="text-[16px] leading-relaxed font-semibold whitespace-pre-line">{r.enunciado}</p>
-          <ul className="flex flex-col gap-1.5">
-            {r.alternativas.map((a) => (
-              <li key={a.letra} className={`flex gap-3 rounded-xl border-2 px-3 py-2 text-[15px] ${a.letra === r.correta ? "border-[#2e9e62] bg-[#e5f6ec]" : "border-line"}`}>
-                <strong className="font-display">{a.letra}</strong><span className="flex-1">{a.texto}</span>
-                {a.letra === r.correta && <span className="text-xs font-bold text-[#0f6b3a]">CORRETA NO SISTEMA</span>}
+        <Card><p className="text-ink-2">{f === "abertos" ? "Nenhum reporte em aberto. 🎉" : "Nada por aqui."}</p></Card>
+      ) : (
+        <ul aria-label="Reportes" className="flex flex-col divide-y divide-line overflow-hidden rounded-2xl border border-line bg-white">
+          {lista.map((r) => {
+            const st = situacaoReporte(r.status, visto.get(r.id));
+            const p = perfil.get(r.aluno_id);
+            const foto = avatarUrl(r.aluno_id, p?.avatar_em);
+            const nome = r.aluno ?? "Aluno";
+            return (
+              <li key={r.id} className={`flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 ${st.rotulo === "Aberto" ? "bg-[#fffafa]" : ""}`}>
+                <div className="flex min-w-0 flex-[1_1_230px] items-center gap-3">
+                  {foto
+                    // eslint-disable-next-line @next/next/no-img-element
+                    ? <img src={foto} alt="" width={40} height={40} className="h-10 w-10 shrink-0 rounded-full object-cover" />
+                    : <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#e3e6ee] text-[13px] font-bold text-navy uppercase" aria-hidden="true">{nome.slice(0, 2)}</span>}
+                  <span className="flex min-w-0 flex-col">
+                    <span className={`truncate text-[15px] text-navy ${st.rotulo === "Aberto" ? "font-bold" : "font-semibold"}`}>{nome}</span>
+                    <span className="truncate text-[13px] text-muted">{TIPO_REPORTE[r.tipo] ?? r.tipo}{r.reportes_da_questao > 1 && r.status === "aberto" ? ` · ${r.reportes_da_questao} reportes nesta questão` : ""}</span>
+                  </span>
+                </div>
+                <span className="w-[130px] text-[14px] text-ink-2">{quandoReporte(r.created_at)}</span>
+                <span className="min-w-0 flex-[1_1_180px] truncate text-[14px] text-ink-2" title={`${BANCOS[r.banco] ?? r.banco}${r.categoria ? ` · ${r.categoria}` : ""}`}>
+                  {BANCOS[r.banco] ?? r.banco}{r.categoria ? ` · ${r.categoria}` : ""}
+                </span>
+                <span className={`w-[104px] rounded-full px-3 py-1 text-center text-[12px] font-bold ${st.cls}`}>{st.rotulo}{st.detalhe && <span className="block text-[11px] font-semibold opacity-80">{st.detalhe}</span>}</span>
+                <Link href={`/admin/questoes/reportes/${r.id}?f=${f}`} aria-label={`Ver o reporte de ${nome}`} title="Ver"
+                  className="grid h-11 w-11 shrink-0 place-items-center rounded-full border-2 border-line text-navy hover:border-navy">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" /><circle cx="12" cy="12" r="3" /></svg>
+                </Link>
               </li>
-            ))}
-          </ul>
-          {r.explicacao && <p className="rounded-xl bg-soft px-4 py-3 text-[15px]"><strong>Explicação: </strong>{r.explicacao}</p>}
-          <Link href={`/admin/questoes/${r.questao_id}?voltar=${encodeURIComponent(aqui)}`} className={`${btnSecundario} self-start`}>✏️ Abrir e corrigir a questão</Link>
-
-          {r.status === "aberto" ? (
-            <form action={resolverReporte} className="flex flex-col gap-3 border-t border-line pt-4">
-              <input type="hidden" name="id" value={r.id} /><input type="hidden" name="voltar" value={aqui} />
-              <label className="flex flex-col gap-1 text-[14px] font-semibold">Mensagem para o aluno (opcional)
-                <textarea name="resposta" rows={2} maxLength={1500} placeholder="Ex.: Você tem razão! Ajustamos a alternativa correta para a C."
-                  className="rounded-xl border border-[#c9cedb] px-4 py-2.5 text-[15px] font-normal outline-none focus:border-navy" />
-              </label>
-              <fieldset className="flex flex-col gap-1.5">
-                <legend className="mb-1 text-[14px] font-semibold">Avisar o aluno</legend>
-                <span className="flex min-h-9 items-center gap-2 text-[14px] text-ink-2">🔔 No painel de notificações dele (sempre)</span>
-                <label className="flex min-h-9 cursor-pointer items-center gap-2 text-[14px]"><input type="checkbox" name="avisar_whats" defaultChecked className="h-5 w-5 accent-navy" />No WhatsApp (ou SMS, conforme o aviso “Questão reportada respondida”)</label>
-                <label className="flex min-h-9 cursor-pointer items-center gap-2 text-[14px]"><input type="checkbox" name="avisar" defaultChecked className="h-5 w-5 accent-navy" />Por e-mail</label>
-                {r.reportes_da_questao > 1 && (
-                  <label className="mt-1 flex min-h-9 cursor-pointer items-center gap-2 rounded-xl bg-[#fff8e6] px-3 text-[14px] font-semibold text-[#7a5a00]"><input type="checkbox" name="todos" defaultChecked className="h-5 w-5 accent-navy" />Responder os {r.reportes_da_questao} reportes abertos desta questão de uma vez</label>
-                )}
-              </fieldset>
-              <div className="flex flex-wrap gap-2">
-                <button name="status" value="corrigido" className={btnPrimario}>✓ Corrigi a questão</button>
-                <button name="status" value="sem_erro" className={btnSecundario}>A questão está certa</button>
-              </div>
-            </form>
-          ) : (
-            <form action={resolverReporte} className="flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">
-              <input type="hidden" name="id" value={r.id} /><input type="hidden" name="voltar" value={aqui} />
-              <span className="text-[14px] text-ink-2">Resolvido em {r.resolvido_em ? quando(r.resolvido_em) : "—"}{r.resposta ? ` · “${r.resposta}”` : ""}</span>
-              <button name="status" value="aberto" className={btnSecundario}>Reabrir</button>
-            </form>
-          )}
-        </Card>
-      ))}
+            );
+          })}
+        </ul>
+      )}
+      <p className="text-[13px] text-muted"><strong>Aberto</strong>: ainda não visto · <strong>Pendente</strong>: já visto, falta responder · <strong>Fechado</strong>: respondido.</p>
     </>
   );
 }

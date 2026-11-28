@@ -159,6 +159,16 @@ export async function resolverReporte(form: FormData) {
   redirect(comMsg(volta, "ok", status === "aberto" ? "Reporte reaberto." : `${alvo.length > 1 ? `${alvo.length} reportes resolvidos` : "Reporte resolvido"} · ${avisados} ${avisados === 1 ? "aluno avisado" : "alunos avisados"}.`));
 }
 
+/** Admin: exclui um reporte sem responder (o aluno já foi atendido por outro canal). */
+export async function excluirReporte(form: FormData) {
+  const { supabase } = await admin();
+  const id = Number(form.get("id"));
+  const volta = voltarPara(form, "/admin/questoes/reportes");
+  if (id) await supabase.from("questao_reportes").delete().eq("id", id);
+  revalidatePath("/admin/questoes/reportes");
+  redirect(comMsg(volta, "ok", "Reporte excluído."));
+}
+
 /* ------------------------------------------------------------------ Comentários */
 
 export async function moderarComentario(form: FormData) {

@@ -24,7 +24,7 @@ export default async function Header() {
         </Link>
 
         {(user || !manutencao) && (
-          <nav aria-label="Principal" className="hidden flex-wrap items-center gap-x-6 gap-y-0 font-display text-[15px] font-semibold md:flex">
+          <nav aria-label="Principal" className="hidden flex-wrap items-center gap-x-4 gap-y-0 font-display text-[15px] font-semibold xl:flex">
             {user && <Link href="/head-hunter" className={link}>Head Hunter</Link>}
             {user && <Link href="/english" className={link}>English</Link>}
             {user && <Link href="/spanish" className={link}>Spanish</Link>}
@@ -59,7 +59,7 @@ export default async function Header() {
                   {profile?.apelido?.slice(0, 2) ?? "CC"}
                 </span>
               )}
-              <span className="hidden md:inline">Minha conta</span>
+              <span className="hidden 2xl:inline">Minha conta</span>
             </Link>
           ) : manutencao ? null : (
             <>
