@@ -6,6 +6,7 @@
 #   su - cabincrew -c "bash ~/htdocs/cabincrew.com.br/deploy/gerar-audios.sh"
 #
 # Opções (depois do .sh):  --curso spanish   --custo   --modulo 3   --aula 3.2   --vozes
+# Áudios curtos (vocabulário, expressões, ditado, exercícios):  --frases   (+ --curso spanish, --custo, --modulo, --refazer)
 # (sem --curso: Flight Attendant English)
 # Narração das aulas de texto do Head Hunter:  --head-hunter --modulo 12   (--custo  --voz)
 # A chave da API é pedida sem aparecer na tela e não fica salva em lugar nenhum.

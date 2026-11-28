@@ -5,12 +5,15 @@ import { useRouter } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { salvarQuizIdioma } from "@/app/crew-actions";
 import { NOTA_MINIMA, type Atividade, type AulaIngles, type Personagem, type Questao } from "@/lib/ingles-a-bordo";
+import { chaveFrase, expressaoParaFala, vocabParaFala } from "@/lib/frases-audio";
 
 /* =================================================================== idioma do curso (inglês ou espanhol) */
 
 export type IdiomaAula = { produto: "english" | "spanish"; lang: "en" | "es"; bcp: string; nome: string; base: string; elenco: Record<string, Personagem> };
 const IdiomaCtx = createContext<IdiomaAula>({ produto: "english", lang: "en", bcp: "en-US", nome: "inglês", base: "/english", elenco: {} });
 const useIdioma = () => useContext(IdiomaCtx);
+/** Áudios do ElevenLabs das frases curtas desta aula (chave -> URL). Sem áudio, usa a voz do aparelho. */
+const FrasesCtx = createContext<Record<string, string>>({});
 
 /* =================================================================== utilidades */
 
@@ -89,6 +92,10 @@ function useVoz() {
   const [falando, setFalando] = useState<string | null>(null);
   const [linha, setLinha] = useState(-1);
   const [suportado, setSuportado] = useState(true);
+  const frases = useContext(FrasesCtx);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const pararAudio = () => { const a = audioRef.current; if (a) { a.onended = null; a.onerror = null; a.pause(); } audioRef.current = null; };
+  useEffect(() => () => pararAudio(), []);
 
   useEffect(() => {
     if (!("speechSynthesis" in window)) { setSuportado(false); return; } // eslint-disable-line react-hooks/set-state-in-effect
@@ -117,14 +124,35 @@ function useVoz() {
     return escolhida;
   }, [vozes]);
 
-  const parar = useCallback(() => { if (suportado) window.speechSynthesis.cancel(); setFalando(null); setLinha(-1); }, [suportado]);
+  const parar = useCallback(() => { pararAudio(); if (suportado) window.speechSynthesis.cancel(); setFalando(null); setLinha(-1); }, [suportado]);
 
   /** Fala uma ou várias falas em sequência. Clicar de novo no mesmo botão para. */
   const falar = useCallback((id: string, falas: { en: string; quem?: string }[], rate = 0.92) => {
+    pararAudio();
+    if (suportado) window.speechSynthesis.cancel();
+    if (falando === id) { setFalando(null); setLinha(-1); return; }
+    // 1) áudio gravado no ElevenLabs, quando existe para todas as falas
+    const urls = falas.map((f) => frases[chaveFrase(L.lang, f.en, f.quem)]);
+    if (urls.length && urls.every(Boolean)) {
+      let i = 0;
+      const fim = () => { audioRef.current = null; setFalando(null); setLinha(-1); };
+      const tocar = () => {
+        const a = new Audio(urls[i]);
+        a.playbackRate = rate < 0.9 ? 0.8 : 1;
+        a.preservesPitch = true;
+        audioRef.current = a;
+        setLinha(i);
+        a.onended = () => { i++; if (i < urls.length) tocar(); else fim(); };
+        a.onerror = fim;
+        a.play().catch(fim);
+      };
+      setFalando(id);
+      tocar();
+      return;
+    }
+    // 2) voz do aparelho
     if (!suportado) return;
     const s = window.speechSynthesis;
-    s.cancel();
-    if (falando === id) { setFalando(null); setLinha(-1); return; }
     const usadas = new Map<string, SpeechSynthesisVoice | undefined>();
     falas.forEach((f, i) => {
       const u = new SpeechSynthesisUtterance(semColchetes(f.en));
@@ -140,7 +168,7 @@ function useVoz() {
       s.speak(u);
     });
     setFalando(id);
-  }, [falando, suportado, vozPara]);
+  }, [falando, suportado, vozPara, frases]);
 
   return { falar, parar, falando, linha, suportado };
 }
@@ -700,9 +728,9 @@ function Quiz({ aula, chave, notaAnterior, proxima, logado }: { aula: AulaIngles
 
 type PropsAula = { aula: AulaIngles; chave: string; audio?: string; notaAnterior?: number; proxima?: { href: string; titulo: string }; logado: boolean };
 
-export default function InglesAula({ idioma, ...props }: PropsAula & { idioma?: IdiomaAula }) {
+export default function InglesAula({ idioma, frases, ...props }: PropsAula & { idioma?: IdiomaAula; frases?: Record<string, string> }) {
   const padrao = useIdioma();
-  return <IdiomaCtx.Provider value={idioma ?? padrao}><Aula {...props} /></IdiomaCtx.Provider>;
+  return <IdiomaCtx.Provider value={idioma ?? padrao}><FrasesCtx.Provider value={frases ?? {}}><Aula {...props} /></FrasesCtx.Provider></IdiomaCtx.Provider>;
 }
 
 function Aula({ aula, chave, audio, notaAnterior, proxima, logado }: PropsAula) {
@@ -734,7 +762,7 @@ function Aula({ aula, chave, audio, notaAnterior, proxima, logado }: PropsAula) 
                 <strong lang={L.lang} className="text-[16px]">{v.en}</strong>
                 <span className="text-[14px] text-muted">{v.pt}</span>
               </span>
-              <BotaoOuvir voz={voz} id={`voc-${v.en}`} texto={v.en.split(" (")[0].replace(" / ", ", ")} rotulo="" />
+              <BotaoOuvir voz={voz} id={`voc-${v.en}`} texto={vocabParaFala(v.en)} rotulo="" />
             </li>
           ))}
         </ul>
@@ -747,7 +775,7 @@ function Aula({ aula, chave, audio, notaAnterior, proxima, logado }: PropsAula) 
                 <span className="text-[14px] text-ink-2">{e.pt}</span>
                 {e.uso && <span className="text-[13px] text-muted">{e.uso}</span>}
               </span>
-              <BotaoOuvir voz={voz} id={`exp-${e.en}`} texto={e.en.replace("…", "")} rotulo="" />
+              <BotaoOuvir voz={voz} id={`exp-${e.en}`} texto={expressaoParaFala(e.en)} rotulo="" />
             </li>
           ))}
         </ul>

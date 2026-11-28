@@ -8,6 +8,10 @@
  *          --aula 3.2      só uma aula
  *          --custo         só mostra quantos caracteres seriam usados
  *          --vozes         escolher as vozes de novo
+ *          --frases        gera os áudios curtos (vocabulário, expressões, ditado, ordenar, falar, role-play e cada fala do diálogo)
+ *                          com a voz de cada personagem; o resto com a voz de --voz-frases (padrão: Grace no inglês, a 1ª voz feminina no espanhol)
+ *          --refazer       com --frases: gera de novo mesmo os que já existem
+ *          --com-dialogo   com --frases: também cada fala do diálogo (botão 🔊 de cada linha), com a voz do personagem
  *
  * A "versão" no nome do arquivo muda quando o texto ou as vozes mudam. Rodar de novo só gera o que mudou.
  */
@@ -20,6 +24,7 @@ import readline from "node:readline";
 import { chaveAula, type AulaIngles } from "@/lib/ingles-a-bordo";
 import { CURSOS_IDIOMA, type ProdutoIdioma } from "@/lib/cursos-idioma";
 import { aplicarAjustes, type AjusteIdioma } from "@/lib/idioma-conteudo";
+import { chaveFrase, frasesDaAula, textoFrase } from "@/lib/frases-audio";
 
 const API = process.env.ELEVEN_API_BASE || "https://api.elevenlabs.io";
 const MODELO = process.env.ELEVEN_MODEL || "eleven_v4";
@@ -195,8 +200,63 @@ async function aulasDoCurso(): Promise<AulaIngles[]> {
   }
 }
 
+/* ------------------------------------------------------------------ frases curtas (--frases) */
+
+const MODELO_TTS = process.env.ELEVEN_TTS_MODEL || "eleven_multilingual_v2";
+
+async function gerarFrase(texto: string, voz: string, destino: string) {
+  const r = await api(`/v1/text-to-speech/${voz}?output_format=mp3_44100_128`, {
+    method: "POST",
+    body: JSON.stringify({ text: paraFala(textoFrase(texto)), model_id: MODELO_TTS, voice_settings: { stability: 0.6, similarity_boost: 0.8, style: 0.1, use_speaker_boost: true } }),
+  });
+  const buf = Buffer.from(await r.arrayBuffer());
+  if (buf.length < 1000) throw new Error("o ElevenLabs devolveu um arquivo vazio");
+  await writeFile(destino + ".tmp", buf);
+  await rename(destino + ".tmp", destino);
+  return buf.length;
+}
+
+async function mainFrases(aulas: AulaIngles[]) {
+  const narrador = opc("--voz-frases") ?? (ESPANHOL ? Object.keys(ELENCO).find((k) => ELENCO[k].voz === "f" && ELENCO[k].sotaque !== "BR") ?? "Ana" : "Grace");
+  const todas = aulas.flatMap((a) => frasesDaAula(a, args.includes("--com-dialogo")).map((f) => ({ ...f, aula: chaveAula(a), quem: f.quem && ELENCO[f.quem] ? f.quem : undefined })));
+  const unicas = [...new Map(todas.map((f) => [chaveFrase(CURSO.lang, f.texto, f.quem), f])).entries()];
+  const pastaFrases = path.join(PASTA, "frases");
+  await mkdir(pastaFrases, { recursive: true });
+  const existentes = new Set(await readdir(pastaFrases));
+  const refazer = args.includes("--refazer");
+  const falta = unicas.filter(([k]) => refazer || !existentes.has(`${k}.mp3`));
+  const caracteres = falta.reduce((s, [, f]) => s + paraFala(textoFrase(f.texto)).length, 0);
+  console.log(`${CURSO.nome} · frases curtas: ${unicas.length} no total, ${falta.length} para gerar, ${caracteres.toLocaleString("pt-BR")} caracteres (modelo ${MODELO_TTS}).`);
+  console.log(`Vocabulário, expressões e exercícios com a voz de ${narrador}${args.includes("--com-dialogo") ? "; falas do diálogo com a voz de cada personagem" : ""}.`);
+  if (SO_CUSTO || !falta.length) return;
+  if (!CHAVE) throw new Error("Falta a chave da API. Rode pelo deploy/gerar-audios.sh.");
+  const personagens = [...new Set([narrador, ...falta.map(([, f]) => f.quem).filter(Boolean) as string[]])];
+  const vozes = await escolherVozes(personagens);
+
+  let feitas = 0, falhas = 0;
+  for (const [k, f] of falta) {
+    const voz = vozes[f.quem ?? narrador];
+    process.stdout.write(`  ${f.aula.padEnd(5)} ${textoFrase(f.texto).slice(0, 60).padEnd(60)} `);
+    try {
+      await gerarFrase(f.texto, voz, path.join(pastaFrases, `${k}.mp3`));
+      console.log("ok");
+      feitas++;
+    } catch (e) {
+      console.log(`ERRO: ${(e as Error).message}`);
+      falhas++;
+      if (/\b(401|402|403)\b/.test((e as Error).message)) { console.log("\nParei: verifique a chave e os créditos da sua conta ElevenLabs."); break; }
+    }
+  }
+  console.log(`\nPronto: ${feitas} frase(s) gerada(s), ${falhas} com erro. As aulas já usam os áudios novos (atualize a página).`);
+}
+
 async function main() {
   const TODAS_AULAS = await aulasDoCurso();
+  if (args.includes("--frases")) {
+    const sel = TODAS_AULAS.filter((a) => (!SO_MODULO || String(a.modulo) === SO_MODULO) && (!SO_AULA || chaveAula(a) === SO_AULA));
+    if (!sel.length) { console.log("Nenhuma aula encontrada com esse filtro."); return; }
+    return mainFrases(sel);
+  }
   const aulas = TODAS_AULAS.filter((a) => (!SO_MODULO || String(a.modulo) === SO_MODULO) && (!SO_AULA || chaveAula(a) === SO_AULA));
   if (!aulas.length) { console.log("Nenhuma aula encontrada com esse filtro."); return; }
   const caracteres = aulas.reduce((s, a) => s + a.dialogo.falas.reduce((x, f) => x + paraFala(f.en).length, 0), 0);

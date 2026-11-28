@@ -6,6 +6,7 @@ import CursoPlayer from "@/components/CursoPlayer";
 import InglesAula from "@/components/InglesAula";
 import { NOTA_MINIMA, chaveAula } from "@/lib/ingles-a-bordo";
 import { aulaLiberadaEm, carregarIdioma } from "@/lib/ingles-dados";
+import { frasesComAudio } from "@/lib/ingles-audios";
 import { exigirCurso } from "@/lib/crew-gate";
 import { navegacaoIdioma } from "@/lib/curso-navegacao";
 import { idiomaDaAula, type CursoIdioma } from "@/lib/cursos-idioma";
@@ -255,6 +256,7 @@ export async function AulaIdioma({ c, modulo, aula }: { c: CursoIdioma; modulo: 
           aula={a}
           chave={chave}
           audio={audios[chave]}
+          frases={await frasesComAudio(c.pastaAudios, c.lang, a)}
           notaAnterior={progresso[chave]?.nota}
           logado={comProgresso}
           proxima={prox ? { href: `${c.base}/${prox.modulo}/${prox.numero}`, titulo: prox.titulo } : undefined}

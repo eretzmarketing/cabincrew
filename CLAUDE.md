@@ -39,6 +39,8 @@ Nunca peça senha do banco, tokens ou chaves no chat. Se o Daniel colar um, avis
 ## Mapa rápido
 - Cursos: Head Hunter (`modulos`/`aulas`, curso `head-hunter`), English/Spanish (conteúdo em código + ajustes em `idioma_conteudo`),
   cursos novos criados no admin (`/curso/[slug]`). Acesso: tabela `acessos` + RPC `tem_acesso`.
+- Áudios curtos dos cursos de idioma (vocabulário, expressões, ditado, exercícios): ElevenLabs via `deploy/gerar-audios.sh --frases [--curso spanish] [--com-dialogo]`,
+  arquivos em `<pastaAudios>/frases/<chaveFrase>.mp3` (`src/lib/frases-audio.ts`); sem arquivo, o site usa a voz do aparelho.
 - IA: vídeo (`src/lib/ia-video.ts`) e currículo (`src/lib/ia-curriculo.ts`), limite por compra + liberação na ficha do aluno.
 - Admin: `src/app/admin/*`, menu em `src/components/AdminNav.tsx`. Gestão de alunos em Usuários.
   Toda liberação de acesso do aluno fica em `/admin/usuarios/[id]/acessos` (cursos, Questões Plus, IA, reset de módulos).
