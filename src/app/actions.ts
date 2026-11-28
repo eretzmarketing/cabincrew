@@ -339,3 +339,10 @@ export async function excluirMinhaConta(_: FormState, form: FormData): Promise<F
   revalidatePath("/", "layout");
   redirect("/entrar?conta=excluida");
 }
+
+/** Aluno: marca as próprias notificações como lidas. */
+export async function marcarNotificacoesLidas() {
+  const { supabase, user } = await getUser();
+  if (!user) return;
+  await supabase.rpc("marcar_notificacoes_lidas", { p_id: null });
+}

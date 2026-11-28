@@ -10,6 +10,7 @@ import { EVENTO_MENU as EVENTO, abrirMenu } from "@/lib/menu-evento";
 export type DadosMenu = {
   logado: boolean; admin: boolean; nome: string; iniciais: string; avatar: string | null;
   forum: boolean; publico: boolean; // publico = site aberto (sem modo manutenção)
+  naoLidas?: number;
 };
 
 
@@ -28,6 +29,7 @@ const I = {
   suporte: <><path d="M4 5h16v11H9l-5 4V5z" /></>,
   vendas: <><path d="M12 3v18M16.5 7.5c0-1.9-2-3-4.5-3s-4.5 1.1-4.5 3 2 2.7 4.5 3.3 4.5 1.4 4.5 3.4-2 3.3-4.5 3.3-4.5-1.2-4.5-3" /></>,
   seta: <path d="M9 6l6 6-6 6" />,
+  sino: <><path d="M6 8a6 6 0 1112 0c0 7 3 8 3 8H3s3-1 3-8" /><path d="M10.3 20a2 2 0 003.4 0" /></>,
 };
 function Icone({ d, className = "h-6 w-6" }: { d: React.ReactNode; className?: string }) {
   return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">{d}</svg>;
@@ -148,6 +150,7 @@ export function MenuMobile({ d }: { d: DadosMenu }) {
               {d.logado ? (
                 <>
                   {lk("/conta", "Minha conta", I.conta, true)}
+                  {lk("/conta/notificacoes", d.naoLidas ? `Notificações (${d.naoLidas} nova${d.naoLidas > 1 ? "s" : ""})` : "Notificações", I.sino)}
                   {lk("/conta/pedidos", "Meus pedidos", I.planos)}
                   {lk("/conta/suporte", "Suporte", I.suporte)}
                 </>

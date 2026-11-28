@@ -31,7 +31,7 @@ export default async function Reportes({ searchParams }: { searchParams: Promise
 
   return (
     <>
-      <Titulo sub="Questões que os alunos marcaram com erro. Uma cópia também vai para o e-mail e os WhatsApps da equipe (Suporte › E-mail e avisos).">Questões reportadas</Titulo>
+      <Titulo sub="Questões que os alunos marcaram com erro. Responda aqui: a resposta chega no painel de notificações do aluno, no WhatsApp e no e-mail. O texto do WhatsApp/SMS fica em Configurações › WhatsApp e SMS.">Questões reportadas</Titulo>
       {sp.ok && <p role="status" className="rounded-xl bg-[#e5f6ec] px-4 py-3 font-semibold text-[#0f6b3a]">{sp.ok}</p>}
       {error && <p role="alert" className="rounded-xl bg-brand-soft px-4 py-3 font-semibold text-brand-deep">Rode o SQL 0070_questoes_comunidade.sql no Supabase para usar esta página.</p>}
 
@@ -81,7 +81,15 @@ export default async function Reportes({ searchParams }: { searchParams: Promise
                 <textarea name="resposta" rows={2} maxLength={1500} placeholder="Ex.: Você tem razão! Ajustamos a alternativa correta para a C."
                   className="rounded-xl border border-[#c9cedb] px-4 py-2.5 text-[15px] font-normal outline-none focus:border-navy" />
               </label>
-              <label className="flex items-center gap-2 text-[14px]"><input type="checkbox" name="avisar" defaultChecked className="h-4 w-4 accent-navy" />Avisar o aluno por e-mail</label>
+              <fieldset className="flex flex-col gap-1.5">
+                <legend className="mb-1 text-[14px] font-semibold">Avisar o aluno</legend>
+                <span className="flex min-h-9 items-center gap-2 text-[14px] text-ink-2">🔔 No painel de notificações dele (sempre)</span>
+                <label className="flex min-h-9 cursor-pointer items-center gap-2 text-[14px]"><input type="checkbox" name="avisar_whats" defaultChecked className="h-5 w-5 accent-navy" />No WhatsApp (ou SMS, conforme o aviso “Questão reportada respondida”)</label>
+                <label className="flex min-h-9 cursor-pointer items-center gap-2 text-[14px]"><input type="checkbox" name="avisar" defaultChecked className="h-5 w-5 accent-navy" />Por e-mail</label>
+                {r.reportes_da_questao > 1 && (
+                  <label className="mt-1 flex min-h-9 cursor-pointer items-center gap-2 rounded-xl bg-[#fff8e6] px-3 text-[14px] font-semibold text-[#7a5a00]"><input type="checkbox" name="todos" defaultChecked className="h-5 w-5 accent-navy" />Responder os {r.reportes_da_questao} reportes abertos desta questão de uma vez</label>
+                )}
+              </fieldset>
               <div className="flex flex-wrap gap-2">
                 <button name="status" value="corrigido" className={btnPrimario}>✓ Corrigi a questão</button>
                 <button name="status" value="sem_erro" className={btnSecundario}>A questão está certa</button>

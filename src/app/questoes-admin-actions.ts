@@ -4,7 +4,8 @@ import { after } from "next/server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { getUser } from "@/lib/supabase/server";
-import { enviarEmail } from "@/lib/suporte";
+import { SITE, enviarEmail } from "@/lib/suporte";
+import { avisosLigados, enviarAviso, preencher } from "@/lib/whatsapp";
 
 const UUID = /^[0-9a-f-]{36}$/i;
 
@@ -81,38 +82,81 @@ export async function removerPlus(form: FormData) {
 
 /* ------------------------------------------------------------------ Reportes */
 
+const SITUACAO: Record<string, string> = {
+  corrigido: "Você tinha razão: a questão já foi corrigida no sistema. ✅",
+  sem_erro: "Conferimos com atenção e o gabarito dessa questão está correto.",
+};
+
 export async function resolverReporte(form: FormData) {
   const { supabase, user } = await admin();
   const id = Number(form.get("id"));
   const status = String(form.get("status") ?? "");
   const resposta = String(form.get("resposta") ?? "").trim().slice(0, 1500);
-  const avisar = form.get("avisar") === "on";
+  const porEmail = form.get("avisar") === "on";
+  const porWhats = form.get("avisar_whats") === "on";
+  const todos = form.get("todos") === "on";
   const volta = voltarPara(form, "/admin/questoes/reportes");
   if (!id || !["corrigido", "sem_erro", "aberto"].includes(status)) redirect(volta);
 
-  const { data: rep } = await supabase.from("questao_reportes").select("user_id, questao_id").eq("id", id).maybeSingle();
+  const { data: rep } = await supabase.from("questao_reportes").select("user_id, questao_id, status").eq("id", id).maybeSingle();
+  if (!rep) redirect(volta);
+  // responde só este reporte ou todos os abertos da mesma questão
+  let alvo = [id];
+  if (todos && status !== "aberto") {
+    const { data: abertos } = await supabase.from("questao_reportes").select("id").eq("questao_id", rep.questao_id).eq("status", "aberto");
+    alvo = [...new Set([id, ...((abertos ?? []) as { id: number }[]).map((r) => r.id)])];
+  }
   await supabase.from("questao_reportes").update({
     status, resposta: resposta || null,
     resolvido_em: status === "aberto" ? null : new Date().toISOString(), resolvido_por: status === "aberto" ? null : user.id,
-  }).eq("id", id);
+  }).in("id", alvo);
 
-  // avisa o aluno por e-mail
-  if (avisar && rep && status !== "aberto") {
+  let avisados = 0;
+  if (status !== "aberto") {
     const { data: lista } = await supabase.rpc("admin_reportes", { p_status: "todos" });
-    const r = ((lista ?? []) as { id: number; aluno: string; email: string | null; enunciado: string }[]).find((x) => x.id === id);
-    if (r?.email) {
-      const para = r.email, nome = (r.aluno ?? "").split(" ")[0];
-      const texto = status === "corrigido"
-        ? `Olá, ${nome}!\n\nObrigada por avisar. Verificamos a questão que você reportou e ela já foi corrigida em nosso sistema.${resposta ? `\n\n${resposta}` : ""}\n\nBons estudos!\nEquipe Cabin Crew`
-        : `Olá, ${nome}!\n\nObrigada por avisar. Verificamos a questão que você reportou e a resposta do gabarito está correta.${resposta ? `\n\n${resposta}` : ""}\n\nBons estudos!\nEquipe Cabin Crew`;
-      after(async () => {
-        const e = await enviarEmail({ para, assunto: status === "corrigido" ? "Corrigimos a questão que você reportou" : "Verificamos a questão que você reportou", linhas: [["Questão", r.enunciado.length > 90 ? `${r.enunciado.slice(0, 90)}…` : r.enunciado]], texto });
-        if (!e.ok) console.error("[reporte] e-mail de retorno:", e.erro);
-      });
-    }
+    type R = { id: number; aluno_id: string; aluno: string | null; email: string | null; enunciado: string };
+    const doAlvo = ((lista ?? []) as R[]).filter((x) => alvo.includes(x.id));
+    // um aviso por aluno, mesmo que ele tenha reportado a mesma questão mais de uma vez
+    const porAluno = [...new Map(doAlvo.map((r) => [r.aluno_id, r])).values()];
+    const ids = porAluno.map((r) => r.aluno_id);
+    const { data: perfis } = ids.length ? await supabase.from("profiles").select("id, nome, apelido, whatsapp").in("id", ids) : { data: [] };
+    const perfil = new Map(((perfis ?? []) as { id: string; nome: string | null; apelido: string | null; whatsapp: string | null }[]).map((p) => [p.id, p]));
+    const { data: modelo } = await supabase.from("whatsapp_modelos").select("texto, ativo").eq("evento", "reporte_respondido").maybeSingle();
+    const trecho = (t: string) => (t.length > 140 ? `${t.slice(0, 140)}…` : t);
+    const titulo = status === "corrigido" ? "Corrigimos a questão que você reportou" : "Verificamos a questão que você reportou";
+
+    // 1) notificação no painel do aluno (sempre)
+    await supabase.from("notificacoes").insert(porAluno.map((r) => ({
+      user_id: r.aluno_id, tipo: "reporte", titulo,
+      texto: `${SITUACAO[status]}${resposta ? `\n\n💬 ${resposta}` : ""}\n\nQuestão: “${trecho(r.enunciado)}”`,
+      link: "/simulados-anac",
+    })));
+    avisados = porAluno.length;
+
+    after(async () => {
+      for (const r of porAluno) {
+        const p = perfil.get(r.aluno_id);
+        const nome = (p?.nome || p?.apelido || r.aluno || "").split(" ")[0];
+        // 2) e-mail
+        if (porEmail && r.email) {
+          const texto = `Olá, ${nome}!\n\nObrigada por avisar. ${SITUACAO[status].replace(" ✅", "")}${resposta ? `\n\n${resposta}` : ""}\n\nBons estudos!\nEquipe Cabin Crew`;
+          const e = await enviarEmail({ para: r.email, assunto: titulo, linhas: [["Questão", trecho(r.enunciado)]], texto });
+          if (!e.ok) console.error("[reporte] e-mail de retorno:", e.erro);
+        }
+        // 3) WhatsApp (ou SMS, conforme o aviso em Configurações › WhatsApp e SMS)
+        if (porWhats && p?.whatsapp && modelo?.ativo && avisosLigados()) {
+          const vars = { nome, situacao: SITUACAO[status], resposta: resposta ? `💬 ${resposta}\n` : "", link: SITE };
+          const res = await enviarAviso(supabase, "reporte_respondido", p.whatsapp, preencher(modelo.texto, vars), vars);
+          await supabase.from("whatsapp_envios").insert({
+            user_id: r.aluno_id, evento: "reporte_respondido", ref: `reporte-${r.id}-${Date.now()}`, telefone: p.whatsapp,
+            texto: res.texto, status: res.ok ? "enviada" : res.status, erro: res.ok ? null : res.erro,
+          });
+        }
+      }
+    });
   }
   revalidatePath("/admin/questoes/reportes");
-  redirect(comMsg(volta, "ok", status === "aberto" ? "Reporte reaberto." : "Reporte resolvido."));
+  redirect(comMsg(volta, "ok", status === "aberto" ? "Reporte reaberto." : `${alvo.length > 1 ? `${alvo.length} reportes resolvidos` : "Reporte resolvido"} · ${avisados} ${avisados === 1 ? "aluno avisado" : "alunos avisados"}.`));
 }
 
 /* ------------------------------------------------------------------ Comentários */

@@ -65,3 +65,5 @@ Nunca peça senha do banco, tokens ou chaves no chat. Se o Daniel colar um, avis
   Todo aviso de modelo passa por `enviarAviso()` em `src/lib/whatsapp.ts` (histórico de SMS em `sms_envios`, RPC `sms_registrar`).
   Campanhas, mensagens avulsas e avisos da equipe continuam só no WhatsApp.
   Histórico unificado com reenvio por WhatsApp ou SMS: `/admin/whatsapp/historico` (ação `reenviarPorCanal`).
+- Notificações do aluno (SQL 0078): tabela `notificacoes` (sininho no topo, `/conta/notificacoes`, lidas via RPC `marcar_notificacoes_lidas`).
+  Admin cria com insert (RLS is_admin). Resposta de questão reportada (`resolverReporte`) avisa no painel + WhatsApp/SMS (aviso `reporte_respondido`) + e-mail.
